@@ -1,7 +1,9 @@
 import { Injectable } from '@angular/core';
-import { Auth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, authState, User, onAuthStateChanged } from '@angular/fire/auth';
+import { Auth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, authState, User, onAuthStateChanged, setPersistence, browserLocalPersistence } from '@angular/fire/auth';
 import { Firestore, doc, setDoc, getDoc, updateDoc } from '@angular/fire/firestore';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, firstValueFrom } from 'rxjs';
+import { Router } from '@angular/router';
+import { map, filter, take } from 'rxjs/operators';
 
 export interface UserData {
   uid: string;
@@ -23,34 +25,52 @@ export interface UserData {
 })
 export class AuthService {
   private currentUserSubject = new BehaviorSubject<UserData | null>(null);
+  private authInitialized = new BehaviorSubject<boolean>(false);
+  
   public currentUser$ = this.currentUserSubject.asObservable();
+  public authInitialized$ = this.authInitialized.asObservable();
 
   constructor(
     private auth: Auth,
-    private firestore: Firestore
+    private firestore: Firestore,
+    private router: Router
   ) {
     console.log('AuthService initialized with Firebase Auth and Firestore');
-    
-    // Listen to auth state changes
-    onAuthStateChanged(this.auth, async (user) => {
-      console.log('Auth state changed:', user ? user.uid : 'No user');
-      if (user) {
-        try {
-          // Fetch user data from Firestore
-          const userData = await this.fetchUserData(user.uid);
-          this.currentUserSubject.next(userData);
-          
-          // Update last login in background
-          this.updateLastLoginBackground(user.uid);
-        } catch (error) {
-          console.error('Error fetching user data:', error);
-          // If user doesn't exist in Firestore, sign them out
-          await this.signOut();
+    this.initializeAuth();
+  }
+
+  private async initializeAuth() {
+    try {
+      // Set persistence to LOCAL to maintain sessions across browser restarts
+      await setPersistence(this.auth, browserLocalPersistence);
+      
+      // Listen to auth state changes
+      onAuthStateChanged(this.auth, async (user) => {
+        console.log('Auth state changed:', user ? user.uid : 'No user');
+        if (user) {
+          try {
+            // Fetch user data from Firestore
+            const userData = await this.fetchUserData(user.uid);
+            this.currentUserSubject.next(userData);
+            
+            // Update last login in background
+            this.updateLastLoginBackground(user.uid);
+          } catch (error) {
+            console.error('Error fetching user data:', error);
+            // If user doesn't exist in Firestore, sign them out
+            await this.signOut();
+          }
+        } else {
+          this.currentUserSubject.next(null);
         }
-      } else {
-        this.currentUserSubject.next(null);
-      }
-    });
+        if (!this.authInitialized.value) {
+          this.authInitialized.next(true);
+        }
+      });
+    } catch (error) {
+      console.error('Error setting auth persistence:', error);
+      this.authInitialized.next(true); // Still mark as initialized even if persistence fails
+    }
   }
 
   private async fetchUserData(uid: string): Promise<UserData> {
@@ -228,6 +248,7 @@ export class AuthService {
       console.log('Signing out...');
       await signOut(this.auth);
       this.currentUserSubject.next(null);
+      this.router.navigate(['/log-in']);
       console.log('✅ Sign out successful');
     } catch (error) {
       console.error('❌ Sign out error:', error);
@@ -241,11 +262,24 @@ export class AuthService {
     return this.currentUserSubject.value;
   }
 
-  isAuthenticated(): boolean {
+  isAuthenticated(): Observable<boolean> {
+    return this.currentUser$.pipe(
+      map(user => {
+        const hasUser = !!user;
+        const hasFirebaseUser = !!this.auth.currentUser;
+        
+        console.log('Auth check:', { hasUser, hasFirebaseUser });
+        return hasUser && hasFirebaseUser;
+      })
+    );
+  }
+
+  // Add a synchronous method for checking auth state when needed
+  isAuthenticatedSync(): boolean {
     const hasUser = !!this.currentUserSubject.value;
     const hasFirebaseUser = !!this.auth.currentUser;
     
-    console.log('Auth check:', { hasUser, hasFirebaseUser });
+    console.log('Sync auth check:', { hasUser, hasFirebaseUser });
     return hasUser && hasFirebaseUser;
   }
 
@@ -296,5 +330,28 @@ export class AuthService {
       console.error('❌ Error updating user data:', error);
       throw error;
     }
+  }
+
+  // Wait for auth to be initialized
+  async waitForAuthInitialization(): Promise<void> {
+    if (this.authInitialized.value) {
+      return Promise.resolve();
+    }
+    
+    return firstValueFrom(
+      this.authInitialized$.pipe(
+        filter(initialized => initialized),
+        take(1)
+      )
+    ).then(() => {});
+  }
+
+  // Get user token
+  async getIdToken(): Promise<string | null> {
+    const firebaseUser = this.auth.currentUser;
+    if (firebaseUser) {
+      return await firebaseUser.getIdToken();
+    }
+    return null;
   }
 }

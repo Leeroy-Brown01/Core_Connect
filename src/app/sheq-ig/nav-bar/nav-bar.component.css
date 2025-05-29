@@ -1,0 +1,75 @@
+
+/* Custom scrollbar for dropdown menus */
+.max-h-64::-webkit-scrollbar {
+  width: 6px;
+}
+
+.max-h-64::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.max-h-64::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 10px;
+}
+
+.max-h-64::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Animation for dropdown appearance */
+.absolute.top-full {
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Focus styles for better accessibility */
+button:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+input:focus-visible {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Hover effects for interactive elements */
+.hover\:bg-gray-50:hover {
+  transition: background-color 0.15s ease-in-out;
+}
+
+/* Badge pulse animation for new notifications */
+.bg-red-500 {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: .7;
+  }
+}
+
+/* Search input focus enhancement */
+input[type="text"]:focus {
+  transform: scale(1.02);
+  transition: transform 0.2s ease-in-out;
+}
+
+/* Dropdown shadow enhancement */
+.shadow-lg {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}

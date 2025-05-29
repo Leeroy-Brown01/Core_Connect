@@ -1,6 +1,6 @@
 import { Component, ViewChild, OnInit } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../services/auth.service';
 
@@ -15,6 +15,7 @@ export class LogInComponent implements OnInit {
   submitted = false;
   loading = false;
   loginError: string = '';
+  private returnUrl: string = '/home';
   
   user = {
     email: '',
@@ -23,10 +24,14 @@ export class LogInComponent implements OnInit {
 
   constructor(
     private router: Router,
-    public authService: AuthService
+    public authService: AuthService,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit() {
+    // Get return url from route parameters or default to '/home'
+    this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/home';
+    
     // Only check if user is already authenticated if we have a valid auth state
     // Remove automatic navigation - let user manually navigate after login
     this.authService.currentUser$.subscribe(user => {
@@ -60,8 +65,8 @@ export class LogInComponent implements OnInit {
         
         console.log('Login successful, user data:', userData);
         
-        // Show success message but don't auto-navigate
-        // Let user manually navigate or add a "Continue" button
+        // Navigate to return URL or home
+        this.router.navigate([this.returnUrl]);
         
       } catch (error: any) {
         console.error('Login error:', error);

@@ -71,5 +71,9 @@ import { CommonModule } from '@angular/common';
         </div>
       </section>
     </div>
-  `
+  `,
+
 })
+export class TrainingContentComponent {
+  constructor() {}
+}
