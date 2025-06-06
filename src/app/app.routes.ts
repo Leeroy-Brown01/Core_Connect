@@ -28,6 +28,7 @@ import { VideoOutputComponent } from './sheq-ig/video-output/video-output.compon
 import { NavBarComponent } from './sheq-ig/nav-bar/nav-bar.component';
 import { TestComponent } from './test-component/test-component.component';
 import { ProfileSettingsComponent } from './sheq-ig/profile-settings/profile-settings.component';
+import { CreateTrainingComponent } from './sheq-ig/create-training/create-training.component';
 
 export const routes: Routes = [
   // Public routes (no authentication required)
@@ -121,6 +122,11 @@ export const routes: Routes = [
   {
     path: 'admin-sheq',
     component: AdminSheqComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'create-training',
+    component: CreateTrainingComponent,
     canActivate: [AuthGuard]
   },
   {

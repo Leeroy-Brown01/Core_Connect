@@ -1,4 +1,3 @@
-
 /* Custom scrollbar for dropdown menus */
 .max-h-64::-webkit-scrollbar {
   width: 6px;
@@ -72,4 +71,31 @@ input[type="text"]:focus {
 /* Dropdown shadow enhancement */
 .shadow-lg {
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Ensure navbar stays on top */
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  backdrop-filter: blur(8px);
+}
+
+/* Dropdown positioning */
+.dropdown-menu {
+  z-index: 1050;
+}
+
+/* Hover effects for smooth transitions */
+.group:hover .group-hover\:visible {
+  visibility: visible;
+}
+
+.group:hover .group-hover\:opacity-100 {
+  opacity: 1;
+}
+
+/* Ensure proper layering for overlays */
+.overlay {
+  z-index: 999;
 }
