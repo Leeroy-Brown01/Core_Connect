@@ -1,10 +1,7 @@
-import { ResolveStart, Routes } from '@angular/router';
+import { Routes } from '@angular/router';
 import { AuthGuard } from './guards/auth.guard';
 import { PlayerComponent } from './sheq-ig/player/player.component';
-import { SheqIgComponent } from './sheq-ig/sheq-ig.component';
-import { VideoOutputComponent } from './sheq-ig/video-output/video-output.component';
 import { UserManagementAComponent } from './sheq-ig/user-management-a/user-management-a.component';
-import { CourseDashboardComponent } from './sheq-ig/course-dashboard/course-dashboard.component';
 import { AdminSheqComponent } from './sheq-ig/admin-sheq/admin-sheq.component';
 import { CourseDetailsComponent } from './sheq-ig/course-details/course-details.component';
 import { HelpCenterComponent } from './sheq-ig/help-center/help-center.component';
@@ -26,8 +23,15 @@ import { GetStartedComponent } from './sheq-ig/get-started/get-started.component
 import { CreateUserAccountComponent } from './sheq-ig/create-user-account/create-user-account.component';
 import { LogInComponent } from './sheq-ig/log-in/log-in.component';
 import { HomeComponent } from './sheq-ig/home/home.component';
+import { SheqIgComponent } from './sheq-ig/sheq-ig.component';
+import { VideoOutputComponent } from './sheq-ig/video-output/video-output.component';
+import { NavBarComponent } from './sheq-ig/nav-bar/nav-bar.component';
+import { TestComponent } from './test-component/test-component.component';
+import { ProfileSettingsComponent } from './sheq-ig/profile-settings/profile-settings.component';
+import { CreateTrainingComponent } from './sheq-ig/create-training/create-training.component';
 
 export const routes: Routes = [
+  // Public routes (no authentication required)
   {
     path: '',
     redirectTo: '/log-in',
@@ -42,107 +46,196 @@ export const routes: Routes = [
     component: CreateUserAccountComponent
   },
   {
-    path: 'home',
-    component: HomeComponent
-  },
-  {
-    path: 'course/:id',
-    component: VideoOutputComponent
-  },
-  {
-    path: 'admin-sheq',
-    component: AdminSheqComponent
-  },
-  {
-    path: 'schedule',
-    component: ScheduleComponent
+    path: 'nav-bar',
+    component: NavBarComponent
   },
   {
     path: 'get-started',
     component: GetStartedComponent
   },
   {
-    path: 'notifications',
-    component: NotificationsComponent
-  },
-  {
-    path: 'employee-dashboard',
-    component: EmployeeDashboardComponent
-  },
-  {
-    path: 'inventory',
-    component: InventoryComponent
-  },
-  {
-    path: 'bin-counts',
-    component: BinCountsComponent
-  },
-  {
-    path: 'stock-adjustments',
-    component: StockAdjustmentsComponent
-  },
-  {
-    path: 'admin-dashboard',
-    component: AdminDashboardComponent
-  },
-  {
-    path: 'stock-overview',
-    component: StockOverviewComponent
-  },
-  {
-    path: 'warehouse',
-    component: WarehouseComponent
-  },
-  {
-    path: 'admin-overview',
-    component: AdminOverviewComponent
-  },
-  {
-    path: 'dashboard',
-    redirectTo: '/course-dashboard',
-    pathMatch: 'full'
-  },
-  {
-    path: 'fundo-isms',
-    component: FundoIsmsComponent
-  },
-  {
-    path: 'help-center',
-    component: HelpCenterComponent
-  },
-  {
-    path: 'user-management-a',
-    component: UserManagementAComponent
-  },
-  {
-    path: 'player',
-    component: PlayerComponent
-  },
-  {
-    path: 'course-details',
-    component: CourseDetailsComponent
-  },
-  {
-    path: 'course-management',
-    component: CourseManagementComponent
-  },
-  {
     path: 'landing-page',
-    component: LandingPageComponent
+    component: LandingPageComponent,
   },
+
+  // Protected routes (authentication required)
   {
-    path: 'sheq-ig',
-    component: SheqIgComponent
+    path: 'home',
+    component: HomeComponent,
+    canActivate: [AuthGuard]
   },
   {
     path: 'course/:id',
-    redirectTo: 'dashboard/course/:id',
-    pathMatch: 'prefix'
+    component: VideoOutputComponent,
+    canActivate: [AuthGuard]
   },
   {
-    path: '**',
-    redirectTo: '/log-in'
-  }
+    path: 'course-details/:id',
+    component: CourseDetailsComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'course-details',
+    component: CourseDetailsComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'player',
+    component: PlayerComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'schedule',
+    component: ScheduleComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'notifications',
+    component: NotificationsComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'help-center',
+    component: HelpCenterComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'sheq-ig',
+    component: SheqIgComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'profile-settings',
+    component: ProfileSettingsComponent,
+    canActivate: [AuthGuard]
+  },
+
+  // Employee routes
+  {
+    path: 'employee-dashboard',
+    component: EmployeeDashboardComponent,
+    canActivate: [AuthGuard],
+    data: { roles: ['trainee', 'employee', 'manager', 'supervisor'] } // Add role-based access if using RoleGuard
+  },
+
+  // Admin routes
+  {
+    path: 'admin-sheq',
+    component: AdminSheqComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'create-training',
+    component: CreateTrainingComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'admin-dashboard',
+    component: AdminDashboardComponent,
+    canActivate: [AuthGuard],
+    data: { roles: ['admin'] } // Add role-based access if using RoleGuard
+  },
+  {
+    path: 'admin-overview',
+    component: AdminOverviewComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'user-management-a',
+    component: UserManagementAComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'course-management',
+    component: CourseManagementComponent,
+    canActivate: [AuthGuard]
+  },
+
+  // Inventory system routes
+  {
+    path: 'fundo-isms',
+    component: FundoIsmsComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'dashboard',
+    component: DashboardComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'inventory',
+    component: InventoryComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'bin-counts',
+    component: BinCountsComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'stock-adjustments',
+    component: StockAdjustmentsComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'stock-overview',
+    component: StockOverviewComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'warehouse',
+    component: WarehouseComponent,
+    canActivate: [AuthGuard]
+  },
+
+  // Category routes for industrial cleaning
+  {
+    path: 'category/facility-maintenance',
+    component: HomeComponent, // You can create specific category components later
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'category/industrial-equipment',
+    component: HomeComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'category/chemical-safety',
+    component: HomeComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'category/environmental-compliance',
+    component: HomeComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'category/waste-management',
+    component: HomeComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'category/health-safety',
+    component: HomeComponent,
+    canActivate: [AuthGuard]
+  },
+
+  // Test route for debugging navigation
+  {
+    path: 'test',
+    component: TestComponent,
+    canActivate: [AuthGuard]
+  },
+
+  // Add video-output route if not already present
+  {
+    path: 'video-output',
+    component: VideoOutputComponent,
+    canActivate: [AuthGuard]
+  },
+
+  // Fallback route
+  
 ];
 
 

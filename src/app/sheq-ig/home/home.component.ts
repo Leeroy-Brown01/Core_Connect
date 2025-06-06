@@ -199,11 +199,6 @@ hideCategoryTooltip(): void {
   }
 }
 
-navigateTo(url: string): void {
-  this.router.navigate([url]);
-
-}
-
 // New method to start the hiding process with a delay
 startHideCategoryTooltip(): void {
   this.hideTooltipTimeout = setTimeout(() => {
@@ -220,10 +215,16 @@ cancelHideCategoryTooltip(): void {
   }
 }
 
+// Single navigateTo method implementation
+navigateTo(url: string): void {
+  this.router.navigate([url]);
+}
+
 exploreCategoryDetails(categoryId: number): void {
   // Navigate to the category courses component with the category ID
   this.router.navigate(['/dashboard/courses/category', categoryId]);
 }
+
   // Dummy data
   currentCourses: Course[] = [
     { id: 1, title: 'Introduction to Angular', category: 'Web Development', progress: 45 },
@@ -335,130 +336,129 @@ exploreCategoryDetails(categoryId: number): void {
   recommendedCourses: RecommendedCourse[] = [
     {
       id: 101,
-      title: 'Complete Angular Developer in 2023',
-      instructor: 'John Smith',
-      imageUrl: 'https://images.unsplash.com/photo-1587620962725-abab7fe55159?w=800&h=600&fit=crop',
+      title: 'Industrial Facility Cleaning Certification',
+      instructor: 'Sarah Johnson, ISSA Certified',
+      imageUrl: 'https://images.unsplash.com/photo-1628177142898-93e36e4e3a50?w=800&h=600&fit=crop',
       rating: 4.8,
-      price: 49.99,
-      participants: 12453
+      price: 149.99,
+      participants: 2453
     },
     {
       id: 102,
-      title: 'Modern JavaScript for Beginners',
-      instructor: 'Sarah Johnson',
-      imageUrl: 'assets/images/courses/javascript.jpg',
+      title: 'Urban Street Cleaning Operations',
+      instructor: 'Michael Chen, City Operations',
+      imageUrl: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=800&h=600&fit=crop',
       rating: 4.5,
-      price: 39.99,
-      participants: 8763
+      price: 89.99,
+      participants: 1876
     },
     {
       id: 103,
-      title: 'UI/UX Design Principles',
-      instructor: 'Michael Chen',
-      imageUrl: 'assets/images/courses/uiux.jpg',
+      title: 'Chemical Safety & Handling',
+      instructor: 'Dr. Emma Wilson, ChemSafe',
+      imageUrl: 'https://images.unsplash.com/photo-1584464491033-06628f3a6b7b?w=800&h=600&fit=crop',
       rating: 4.9,
-      price: 59.99,
-      participants: 5289
+      price: 199.99,
+      participants: 3289
     },
     {
       id: 104,
-      title: 'Python for Data Science',
-      instructor: 'Emma Wilson',
-      imageUrl: 'assets/images/courses/python.jpg',
+      title: 'Commercial Kitchen Deep Cleaning',
+      instructor: 'Chef Roberto Martinez',
+      imageUrl: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&h=600&fit=crop',
       rating: 4.7,
-      price: 44.99,
-      participants: 9874
+      price: 124.99,
+      participants: 1574
     },
     {
       id: 105,
-      title: 'Web Development Bootcamp',
-      instructor: 'Alex Rodriguez',
-      imageUrl: 'assets/images/courses/webdev.jpg',
-      rating: 4.6,
-      price: 69.99,
-      participants: 15632
+      title: 'Hospital & Healthcare Sanitization',
+      instructor: 'Nurse Patricia Adams, RN',
+      imageUrl: 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=800&h=600&fit=crop',
+      rating: 4.8,
+      price: 179.99,
+      participants: 2832
     },
     {
       id: 106,
-      title: 'Introduction to Machine Learning',
-      instructor: 'David Kim',
-      imageUrl: 'assets/images/courses/ml.jpg',
-      rating: 4.4,
-      price: 49.99,
-      participants: 7345
+      title: 'High-Rise Window Cleaning Safety',
+      instructor: 'James Rodriguez, Safety Expert',
+      imageUrl: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=800&h=600&fit=crop',
+      rating: 4.6,
+      price: 249.99,
+      participants: 945
     },
     {
       id: 107,
-      title: 'Mobile App Development with React Native',
-      instructor: 'Lisa Wang',
-      imageUrl: 'assets/images/courses/reactnative.jpg',
-      rating: 4.3,
-      price: 54.99,
-      participants: 6289
+      title: 'Carpet & Upholstery Professional Care',
+      instructor: 'Linda Thompson, IICRC',
+      imageUrl: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=600&fit=crop',
+      rating: 4.4,
+      price: 95.99,
+      participants: 2189
     },
     {
       id: 108,
-      title: 'HTML & CSS Basics',
-      instructor: 'James Wilson',
-      imageUrl: 'assets/images/courses/htmlcss.jpg',
-      rating: 4.5,
+      title: 'Green Cleaning Solutions & Sustainability',
+      instructor: 'Dr. Mark Green, EcoClean',
+      imageUrl: 'https://images.unsplash.com/photo-1563453392212-326d32d2d69f?w=800&h=600&fit=crop',
+      rating: 4.7,
       price: 0,
-      participants: 25631
+      participants: 4631
     },
-    // Adding 6 more courses
     {
       id: 109,
-      title: 'Advanced CSS and Sass',
-      instructor: 'Melissa Thompson',
-      imageUrl: 'assets/images/courses/css-sass.jpg',
-      rating: 4.7,
-      price: 42.99,
-      participants: 11238
+      title: 'Warehouse & Logistics Cleaning',
+      instructor: 'Tom Anderson, Logistics Pro',
+      imageUrl: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=800&h=600&fit=crop',
+      rating: 4.5,
+      price: 134.99,
+      participants: 1823
     },
     {
       id: 110,
-      title: 'Blockchain Development Fundamentals',
-      instructor: 'Robert Chen',
-      imageUrl: 'assets/images/courses/blockchain.jpg',
-      rating: 4.2,
-      price: 64.99,
-      participants: 3487
+      title: 'Biohazard & Crime Scene Cleanup',
+      instructor: 'Officer David Smith, Specialist',
+      imageUrl: 'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=800&h=600&fit=crop',
+      rating: 4.8,
+      price: 299.99,
+      participants: 567
     },
     {
       id: 111,
-      title: 'Game Development with Unity',
-      instructor: 'Daniel Brown',
-      imageUrl: 'assets/images/courses/unity.jpg',
-      rating: 4.6,
-      price: 59.99,
-      participants: 8912
+      title: 'Fleet Vehicle Interior Cleaning',
+      instructor: 'Maria Gonzalez, Auto Detail',
+      imageUrl: 'https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?w=800&h=600&fit=crop',
+      rating: 4.3,
+      price: 79.99,
+      participants: 1456
     },
     {
       id: 112,
-      title: 'Data Structures and Algorithms',
-      instructor: 'Jennifer Lee',
-      imageUrl: 'assets/images/courses/algorithms.jpg',
-      rating: 4.8,
-      price: 54.99,
-      participants: 14562
+      title: 'Public Transportation Sanitization',
+      instructor: 'Robert Kim, Transit Authority',
+      imageUrl: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&h=600&fit=crop',
+      rating: 4.6,
+      price: 159.99,
+      participants: 2145
     },
     {
       id: 113,
-      title: 'Cloud Architecture with AWS',
-      instructor: 'Thomas Wilson',
-      imageUrl: 'assets/images/courses/aws.jpg',
+      title: 'Swimming Pool & Aquatic Facility Maintenance',
+      instructor: 'Jennifer Lee, Pool Tech',
+      imageUrl: 'https://images.unsplash.com/photo-1530549387789-4c1017266635?w=800&h=600&fit=crop',
       rating: 4.4,
-      price: 69.99,
-      participants: 5673
+      price: 189.99,
+      participants: 1278
     },
     {
       id: 114,
-      title: 'DevOps Engineering',
-      instructor: 'Sophia Garcia',
-      imageUrl: 'assets/images/courses/devops.jpg',
-      rating: 4.7,
-      price: 79.99,
-      participants: 7211
+      title: 'Emergency Spill Response & Cleanup',
+      instructor: 'Captain Steve Wilson, HazMat',
+      imageUrl: 'https://images.unsplash.com/photo-1559757175-0eb30cd718ea?w=800&h=600&fit=crop',
+      rating: 4.9,
+      price: 349.99,
+      participants: 892
     }
   ];
   
@@ -469,42 +469,42 @@ exploreCategoryDetails(categoryId: number): void {
   continueLearningCourses: ContinueLearningCourse[] = [
     {
       id: 201,
-      title: 'Advanced React Patterns',
-      imageUrl: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&h=600&fit=crop',
+      title: 'Advanced Industrial Equipment Cleaning',
+      imageUrl: 'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=800&h=600&fit=crop',
       progress: 65,
-      lastWatched: 'Module 4: Context API',
+      lastWatched: 'Module 4: Heavy Machinery Decontamination',
       remainingTime: '2h 15m'
     },
     {
       id: 202,
-      title: 'Flutter App Development',
-      imageUrl: 'assets/images/courses/flutter.jpg',
+      title: 'Municipal Waste Management Systems',
+      imageUrl: 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=800&h=600&fit=crop',
       progress: 32,
-      lastWatched: 'Module 2: Widgets',
+      lastWatched: 'Module 2: Collection Route Optimization',
       remainingTime: '4h 45m'
     },
     {
       id: 203,
-      title: 'Cybersecurity Fundamentals',
-      imageUrl: 'assets/images/courses/cybersecurity.jpg',
+      title: 'OSHA Safety Protocols for Cleaning',
+      imageUrl: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=800&h=600&fit=crop',
       progress: 78,
-      lastWatched: 'Module 6: Encryption',
+      lastWatched: 'Module 6: Personal Protective Equipment',
       remainingTime: '1h 20m'
     },
     {
       id: 204,
-      title: 'GraphQL API Development',
-      imageUrl: 'assets/images/courses/graphql.jpg',
+      title: 'Pressure Washing Certification',
+      imageUrl: 'https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=800&h=600&fit=crop',
       progress: 45,
-      lastWatched: 'Module 3: Resolvers',
+      lastWatched: 'Module 3: Surface-Specific Techniques',
       remainingTime: '3h 30m'
     },
     {
       id: 205,
-      title: 'Docker & Kubernetes',
-      imageUrl: 'assets/images/courses/docker.jpg',
+      title: 'Contamination Control in Clean Rooms',
+      imageUrl: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800&h=600&fit=crop',
       progress: 52,
-      lastWatched: 'Module 5: Container Orchestration',
+      lastWatched: 'Module 5: Air Filtration Systems',
       remainingTime: '2h 40m'
     }
   ];
@@ -732,48 +732,7 @@ exploreCategoryDetails(categoryId: number): void {
       .toUpperCase();
   }
 
-  toggleNotifications(): void {
-    this.showNotifications = !this.showNotifications;
-    this.showWishlist = false;
-    this.showUserMenu = false;
-  }
 
-  toggleWishlist(): void {
-    this.showWishlist = !this.showWishlist;
-    this.showNotifications = false;
-    this.showUserMenu = false;
-  }
-
-  toggleUserMenu(): void {
-    this.showUserMenu = !this.showUserMenu;
-    this.showNotifications = false;
-    this.showWishlist = false;
-  }
-
-  toggleNav(): void {
-    this.isNavOpen = !this.isNavOpen;
-  }
-
-  toggleSidenav(): void {
-    this.isSidenavOpen = !this.isSidenavOpen;
-  }
-
-  logout(): void {
-    // Remove localStorage dependency
-    this.authService.signOut().then(() => {
-      this.router.navigate(['/log-in']);
-    }).catch(error => {
-      console.error('Logout error:', error);
-      // Force navigation even if logout fails
-      this.router.navigate(['/log-in']);
-    });
-  }
-
-  search(): void {
-    // Implement search functionality
-    console.log('Searching for:', this.searchQuery);
-  }
-  
   startSliderAutoplay(): void {
     this.sliderInterval = setInterval(() => {
       this.currentSlide = (this.currentSlide + 1) % 3; // 3 is the number of slides

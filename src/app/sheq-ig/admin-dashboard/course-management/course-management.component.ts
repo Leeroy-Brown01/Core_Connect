@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { UserService } from '../../../services/user.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-course-management',
@@ -10,6 +12,14 @@ import { FormsModule } from '@angular/forms';
   styleUrl: './course-management.component.scss'
 })
 export class CourseManagementComponent {
+
+  constructor(
+    private userService: UserService,
+    private router: Router
+  ) {
+    // Removed FormBuilder and initializeForm call
+  }
+
 
   // Province filter
   selectedProvince: string = 'All Provinces';
@@ -121,6 +131,11 @@ sortTable(key: string) {
 
   ngOnInit() {
     this.calculateMetrics();
+  }
+
+  // Navigation to create user account
+  navigateToCreateTraining() {
+    this.router.navigate(['/create-training']);
   }
 
   private calculateMetrics() {
