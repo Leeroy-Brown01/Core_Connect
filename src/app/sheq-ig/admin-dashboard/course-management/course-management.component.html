@@ -20,12 +20,18 @@
 
   <!-- Key Metrics Grid -->
   <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-    <!-- Total Published Training Courses -->
+    <!-- Total Published Courses -->
     <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-green-500">
       <div class="flex justify-between items-center">
         <div>
-          <p class="text-xs text-gray-500 mb-1">Total Published Training<br>Courses</p>
-          <p class="text-xl font-bold">{{ publishedCoursesCount }}</p>
+          <p class="text-xs text-gray-500 mb-1">Total Published Courses</p>
+          <p class="text-xl font-bold">
+            <span *ngIf="!isLoadingMetrics">{{ publishedCoursesCount }}</span>
+            <span *ngIf="isLoadingMetrics" class="animate-pulse">Loading...</span>
+          </p>
+          <span *ngIf="!isLoadingMetrics && totalCourses > 0" class="text-xs text-green-500">
+            {{ publishedCoursesCount }}/{{ totalCourses }} courses
+          </span>
         </div>
       </div>
     </div>
@@ -35,7 +41,10 @@
       <div class="flex justify-between items-center">
         <div>
           <p class="text-xs text-gray-500 mb-1">Course Requiring<br>Approval</p>
-          <p class="text-xl font-bold">{{ coursesAwaitingApproval }}</p>
+          <p class="text-xl font-bold">
+            <span *ngIf="!isLoadingMetrics">{{ coursesAwaitingApproval }}</span>
+            <span *ngIf="isLoadingMetrics" class="animate-pulse">Loading...</span>
+          </p>
           <span class="text-xs text-orange-500">Pending review</span>
         </div>
       </div>
@@ -46,8 +55,14 @@
       <div class="flex justify-between items-center">
         <div>
           <p class="text-xs text-gray-500 mb-1">Completed Courses</p>
-          <p class="text-xl font-bold">{{ completionPercentage }}%</p>
-          <span class="text-xs text-blue-500">{{ completedCoursesCount }}/{{ totalCourses }} courses</span>
+          <p class="text-xl font-bold">
+            <span *ngIf="!isLoadingMetrics">{{ completionPercentage }}%</span>
+            <span *ngIf="isLoadingMetrics" class="animate-pulse">Loading...</span>
+          </p>
+          <span class="text-xs text-blue-500">
+            <span *ngIf="!isLoadingMetrics">{{ completedCoursesCount }}/{{ totalCourses }} courses</span>
+            <span *ngIf="isLoadingMetrics" class="animate-pulse">Loading...</span>
+          </span>
         </div>
       </div>
     </div>
@@ -154,7 +169,13 @@
   <div class="bg-white rounded-lg shadow-lg p-6">
     <h3 class="text-lg font-semibold mb-4 text-gray-800">Course Library</h3>
     
-    <div class="overflow-x-auto">
+    <!-- Loading indicator for courses table -->
+    <div *ngIf="isLoadingCourses" class="flex justify-center items-center py-8">
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      <span class="ml-2">Loading courses...</span>
+    </div>
+    
+    <div class="overflow-x-auto" *ngIf="!isLoadingCourses">
       <table class="w-full border-collapse">
         <thead>
           <tr class="bg-gray-50 border-b">
@@ -175,12 +196,20 @@
           <tr *ngFor="let course of filteredCourses" class="border-b hover:bg-gray-50 transition-colors">
             <td class="p-4">{{course.title}}</td>
             <td class="p-4">
-              <span class="px-2 py-1 rounded-full text-xs"
-                    [class.bg-green-100]="course.status === 'Published'"
-                    [class.text-green-800]="course.status === 'Published'"
-                    [class.bg-yellow-100]="course.status === 'Draft'"
-                    [class.text-yellow-800]="course.status === 'Draft'">
-                {{course.status}}
+              <span class="px-2 py-1 rounded-full text-xs font-medium"
+                    [class.bg-blue-100]="course.category === 'Safety Training'"
+                    [class.text-blue-800]="course.category === 'Safety Training'"
+                    [class.bg-green-100]="course.category === 'Health & Wellness'"
+                    [class.text-green-800]="course.category === 'Health & Wellness'"
+                    [class.bg-purple-100]="course.category === 'Compliance'"
+                    [class.text-purple-800]="course.category === 'Compliance'"
+                    [class.bg-orange-100]="course.category === 'Technical Skills'"
+                    [class.text-orange-800]="course.category === 'Technical Skills'"
+                    [class.bg-pink-100]="course.category === 'Emergency Response'"
+                    [class.text-pink-800]="course.category === 'Emergency Response'"
+                    [class.bg-gray-100]="course.category === 'N/A' || (!['Safety Training', 'Health & Wellness', 'Compliance', 'Technical Skills', 'Emergency Response'].includes(course.category))"
+                    [class.text-gray-800]="course.category === 'N/A' || (!['Safety Training', 'Health & Wellness', 'Compliance', 'Technical Skills', 'Emergency Response'].includes(course.category))">
+                {{course.category}}
               </span>
             </td>
             <td class="p-4">{{course.instructor}}</td>
@@ -191,6 +220,9 @@
                 Preview
               </button>
             </td>
+          </tr>
+          <tr *ngIf="filteredCourses.length === 0">
+            <td colspan="5" class="p-4 text-center text-gray-500">No courses found</td>
           </tr>
         </tbody>
       </table>

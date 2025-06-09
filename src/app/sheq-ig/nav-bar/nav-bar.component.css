@@ -99,3 +99,321 @@ nav {
 .overlay {
   z-index: 999;
 }
+
+/* ========================================
+   HAMBURGER MENU TRANSFORMATION
+   ======================================== */
+
+/* Hamburger Menu Container */
+.hamburger {
+  display: flex;
+  flex-direction: column;
+  width: 24px;
+  height: 18px;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+/* Hamburger Menu Lines */
+.hamburger span {
+  display: block;
+  height: 2px;
+  width: 100%;
+  background-color: #374151; /* gray-700 */
+  border-radius: 1px;
+  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  transform-origin: center;
+}
+
+/* First line */
+.hamburger span:nth-child(1) {
+  transform-origin: top left;
+}
+
+/* Second line */
+.hamburger span:nth-child(2) {
+  transform-origin: center;
+}
+
+/* Third line */
+.hamburger span:nth-child(3) {
+  transform-origin: bottom left;
+}
+
+/* Active state - Transform to X */
+.menu-toggle.active .hamburger span:nth-child(1) {
+  transform: rotate(45deg) translate(2px, 2px);
+}
+
+.menu-toggle.active .hamburger span:nth-child(2) {
+  opacity: 0;
+  transform: scaleX(0);
+}
+
+.menu-toggle.active .hamburger span:nth-child(3) {
+  transform: rotate(-45deg) translate(2px, -2px);
+}
+
+/* Hover effect for hamburger */
+.menu-toggle:hover .hamburger span {
+  background-color: #1f2937; /* gray-800 */
+}
+
+/* Active state hover */
+.menu-toggle.active:hover .hamburger span {
+  background-color: #dc2626; /* red-600 */
+}
+
+/* Hamburger Menu Lines using div elements */
+.hamburger-line {
+  transform-origin: center;
+  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* First line */
+.hamburger .hamburger-line:nth-child(1) {
+  transform-origin: top left;
+}
+
+/* Second line */
+.hamburger .hamburger-line:nth-child(2) {
+  transform-origin: center;
+}
+
+/* Third line */
+.hamburger .hamburger-line:nth-child(3) {
+  transform-origin: bottom left;
+}
+
+/* Active state - Transform to X */
+.menu-toggle.active .hamburger .hamburger-line:nth-child(1) {
+  transform: rotate(45deg) translate(4px, 4px);
+}
+
+.menu-toggle.active .hamburger .hamburger-line:nth-child(2) {
+  opacity: 0;
+  transform: scaleX(0);
+}
+
+.menu-toggle.active .hamburger .hamburger-line:nth-child(3) {
+  transform: rotate(-45deg) translate(4px, -4px);
+}
+
+/* Hover effect for hamburger */
+.menu-toggle:hover .hamburger-line {
+  background-color: #1f2937; /* gray-800 */
+}
+
+/* Active state hover */
+.menu-toggle.active:hover .hamburger-line {
+  background-color: #dc2626; /* red-600 */
+}
+
+/* Alternative approach using Tailwind classes only */
+.hamburger-alt {
+  @apply w-6 h-5 flex flex-col justify-between cursor-pointer;
+}
+
+.hamburger-alt > div {
+  @apply w-full h-0.5 bg-gray-700 rounded transition-all duration-300;
+  transform-origin: center;
+}
+
+/* ========================================
+   MOBILE MENU OVERLAY
+   ======================================== */
+
+/* Mobile menu slide-in animation */
+.mobile-menu-overlay {
+  animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* Mobile menu slide-out animation */
+.mobile-menu-overlay.closing {
+  animation: slideOutRight 0.3s ease-in;
+}
+
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* Smooth scroll for mobile menu content */
+.mobile-menu-content {
+  scroll-behavior: smooth;
+}
+
+/* Mobile menu backdrop blur effect */
+.mobile-menu-backdrop {
+  backdrop-filter: blur(4px);
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Enhanced mobile menu item hover effects */
+.mobile-menu-item {
+  transition: all 0.2s ease-in-out;
+}
+
+.mobile-menu-item:hover {
+  transform: translateX(4px);
+  background-color: #f3f4f6; /* gray-100 */
+}
+
+/* Mobile menu section dividers */
+.mobile-menu-section {
+  position: relative;
+}
+
+.mobile-menu-section::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 1rem;
+  right: 1rem;
+  height: 1px;
+  background: linear-gradient(to right, transparent, #e5e7eb, transparent);
+}
+
+/* User avatar animation in mobile menu */
+.mobile-user-avatar {
+  transition: transform 0.3s ease-in-out;
+}
+
+.mobile-user-avatar:hover {
+  transform: scale(1.05);
+}
+
+/* Sign out button special styling */
+.mobile-sign-out {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  border: 1px solid #f87171;
+}
+
+.mobile-sign-out:hover {
+  background: linear-gradient(135deg, #fecaca 0%, #fca5a5 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(220, 38, 38, 0.2);
+}
+
+/* Responsive adjustments */
+@media (max-width: 320px) {
+  .hamburger {
+    width: 20px;
+    height: 16px;
+  }
+  
+  .hamburger span {
+    height: 2px;
+  }
+
+  .hamburger-line {
+    height: 2px;
+  }
+
+  /* Adjust X transformation for smaller screens */
+  .menu-toggle.active .hamburger .hamburger-line:nth-child(1) {
+    transform: rotate(45deg) translate(1.5px, 1px);
+  }
+  
+  .menu-toggle.active .hamburger .hamburger-line:nth-child(3) {
+    transform: rotate(-45deg) translate(1.5px, -1px);
+  }
+}
+
+/* Alternative smaller X transformation for better viewport fit */
+@media (max-width: 375px) {
+  .menu-toggle.active .hamburger .hamburger-line:nth-child(1) {
+    transform: rotate(45deg) translate(1.8px, 0.8px);
+  }
+  
+  .menu-toggle.active .hamburger .hamburger-line:nth-child(3) {
+    transform: rotate(-45deg) translate(1.8px, -0.8px);
+  }
+}
+
+/* Ensure X stays within button bounds */
+.menu-toggle.active .hamburger {
+  overflow: hidden;
+}
+
+/* Dark mode support (if needed later) */
+@media (prefers-color-scheme: dark) {
+  .hamburger span {
+    background-color: #f9fafb; /* gray-50 */
+  }
+  
+  .menu-toggle:hover .hamburger span {
+    background-color: #ffffff;
+  }
+  
+  .menu-toggle.active:hover .hamburger span {
+    background-color: #ef4444; /* red-500 */
+  }
+
+  .hamburger-line {
+    background-color: #f9fafb; /* gray-50 */
+  }
+  
+  .menu-toggle:hover .hamburger-line {
+    background-color: #ffffff;
+  }
+  
+  .menu-toggle.active:hover .hamburger-line {
+    background-color: #ef4444; /* red-500 */
+  }
+}
+
+/* Accessibility improvements */
+.menu-toggle:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.menu-toggle:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Accessibility improvements - Remove focus styles that create blue border */
+.menu-toggle {
+  outline: none;
+  border: none;
+  box-shadow: none;
+}
+
+.menu-toggle:focus,
+.menu-toggle:active,
+.menu-toggle:focus-visible {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  .hamburger span,
+  .mobile-menu-overlay,
+  .mobile-menu-item {
+    transition: none;
+    animation: none;
+  }
+
+  .hamburger-line,
+  .mobile-menu-overlay,
+  .mobile-menu-item {
+    transition: none;
+    animation: none;
+  }
+}

@@ -159,11 +159,137 @@ export class UserService {
   // Get user metrics
   getUserMetrics(): Observable<any> {
     return this.getAllUsers().pipe(
-      map(users => ({
-        totalActiveUsers: users.filter(u => u.status === 'Active').length,
-        totalUsers: users.length,
-        completedUsers: users.filter(u => u.trainingCompleted === true).length
-      }))
+      map(users => {
+        console.log('Raw users data for metrics:', users);
+        
+        // Count total users
+        const totalUsers = users.length;
+        
+        // Count active users - check multiple possible status formats
+        const activeUsers = users.filter(user => {
+          const status = user.status?.toLowerCase();
+          const isActive = user.isActive;
+          const active = status === 'active' || isActive === true || (!status && !isActive);
+          return active;
+        });
+        
+        // Count completed users - check multiple possible completion formats
+        const completedUsers = users.filter(user => {
+          return user.trainingCompleted === true || 
+                 user.trainingComplete === true ||
+                 user.completed === true ||
+                 user.status === 'completed';
+        });
+        
+        const metrics = {
+          totalUsers: totalUsers,
+          totalActiveUsers: activeUsers.length,
+          completedUsers: completedUsers.length
+        };
+        
+        console.log('Calculated metrics:', metrics);
+        console.log('Sample user for debugging:', users[0]);
+        
+        return metrics;
+      })
+    );
+  }
+
+  // Get user metrics by role - reusable across the system
+  getUserCountByRole(role: string): Observable<number> {
+    return this.getAllUsers().pipe(
+      map(users => {
+        console.log(`Counting users with role: ${role}`);
+        const filteredUsers = users.filter(user => {
+          const userRole = user.role?.toLowerCase() || user.userRole?.toLowerCase() || user.type?.toLowerCase();
+          return userRole === role.toLowerCase();
+        });
+        console.log(`Found ${filteredUsers.length} users with role: ${role}`);
+        return filteredUsers.length;
+      })
+    );
+  }
+
+  // Get users by multiple roles
+  getUserCountByRoles(roles: string[]): Observable<{[key: string]: number}> {
+    return this.getAllUsers().pipe(
+      map(users => {
+        console.log('Counting users by roles:', roles);
+        const roleCounts: {[key: string]: number} = {};
+        
+        roles.forEach(role => {
+          roleCounts[role] = users.filter(user => {
+            const userRole = user.role?.toLowerCase() || user.userRole?.toLowerCase() || user.type?.toLowerCase();
+            return userRole === role.toLowerCase();
+          }).length;
+        });
+        
+        console.log('Role counts:', roleCounts);
+        return roleCounts;
+      })
+    );
+  }
+
+  // Get active users by role
+  getActiveUserCountByRole(role: string): Observable<number> {
+    return this.getAllUsers().pipe(
+      map(users => {
+        const activeUsersInRole = users.filter(user => {
+          const userRole = user.role?.toLowerCase() || user.userRole?.toLowerCase() || user.type?.toLowerCase();
+          const isActive = user.status?.toLowerCase() === 'active' || user.isActive === true;
+          return userRole === role.toLowerCase() && isActive;
+        });
+        console.log(`Found ${activeUsersInRole.length} active users with role: ${role}`);
+        return activeUsersInRole.length;
+      })
+    );
+  }
+
+  // Get comprehensive role-based metrics for admin dashboard
+  getAdminRoleMetrics(): Observable<any> {
+    return this.getAllUsers().pipe(
+      map(users => {
+        console.log('Calculating admin role metrics from users:', users.length);
+        
+        // Count by roles
+        const trainers = users.filter(user => {
+          const userRole = user.role?.toLowerCase() || user.userRole?.toLowerCase() || user.type?.toLowerCase();
+          return userRole === 'instructor' || userRole === 'trainer';
+        });
+        
+        const trainees = users.filter(user => {
+          const userRole = user.role?.toLowerCase() || user.userRole?.toLowerCase() || user.type?.toLowerCase();
+          return userRole === 'trainee' || userRole === 'student';
+        });
+        
+        const admins = users.filter(user => {
+          const userRole = user.role?.toLowerCase() || user.userRole?.toLowerCase() || user.type?.toLowerCase();
+          return userRole === 'admin' || userRole === 'administrator';
+        });
+        
+        // Count active users in each role
+        const activeTrainers = trainers.filter(user => 
+          user.status?.toLowerCase() === 'active' || user.isActive === true
+        );
+        
+        const activeTrainees = trainees.filter(user => 
+          user.status?.toLowerCase() === 'active' || user.isActive === true
+        );
+        
+        const metrics = {
+          totalTrainers: trainers.length,
+          activeTrainers: activeTrainers.length,
+          totalTrainees: trainees.length,
+          activeTrainees: activeTrainees.length,
+          totalAdmins: admins.length,
+          totalUsers: users.length
+        };
+        
+        console.log('Admin role metrics calculated:', metrics);
+        console.log('Sample user structure for debugging:', users[0]);
+        
+        return metrics;
+      })
     );
   }
 }

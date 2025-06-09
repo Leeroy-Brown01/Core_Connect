@@ -16,14 +16,18 @@ export class UserManagementAComponent implements OnInit {
   // Province filter
   selectedProvince: string = 'All Provinces';
 
-  // User metrics properties
-  totalActiveUsers: number = 152;
-  usersAwaitingApproval: number = 8;
-  totalUsers: number = 165;
-  completedUsers: number = 134;
-  userCompletionPercentage: number = 81;
+  // User metrics properties - will be populated from service
+  totalActiveUsers: number = 0;
+  usersAwaitingApproval: number = 0;
+  totalUsers: number = 0;
+  completedUsers: number = 0;
+  userCompletionPercentage: number = 0;
 
-  // User registration requests data
+  // Loading states
+  isLoadingUsers: boolean = false;
+  isLoadingMetrics: boolean = false;
+
+  // User registration requests data (keeping hardcoded as requested)
   userRegistrationRequests = [
     { fullName: 'Sarah Mitchell', department: 'Safety', position: 'Safety Inspector', requestDate: new Date('2024-12-15'), status: 'Pending' },
     { fullName: 'Michael Johnson', department: 'Operations', position: 'Site Supervisor', requestDate: new Date('2024-12-14'), status: 'Approved' },
@@ -39,7 +43,7 @@ export class UserManagementAComponent implements OnInit {
     { fullName: 'Kevin Miller', department: 'Training', position: 'Skills Assessor', requestDate: new Date('2024-12-04'), status: 'Pending' }
   ];
 
-  // User activity updates data
+  // User activity updates data (keeping hardcoded as requested)
   userActivityUpdates = [
     { action: 'Completed Safety Training', userName: 'John Smith', timestamp: new Date('2024-12-15'), type: 'Training' },
     { action: 'Profile Updated', userName: 'Sarah Johnson', timestamp: new Date('2024-12-14'), type: 'Profile' },
@@ -61,24 +65,14 @@ export class UserManagementAComponent implements OnInit {
   userTableColumns = [
     { key: 'name', label: 'Name' },
     { key: 'department', label: 'Department' },
-    { key: 'position', label: 'Position' },
+    { key: 'role', label: 'Role' },
     { key: 'status', label: 'Status' },
     { key: 'lastLogin', label: 'Last Login' }
   ];
 
-  // User directory data
-  filteredUsers = [
-    { name: 'John Smith', department: 'Safety', position: 'Safety Manager', status: 'Active', lastLogin: new Date('2024-12-15') },
-    { name: 'Sarah Johnson', department: 'Operations', position: 'Site Supervisor', status: 'Active', lastLogin: new Date('2024-12-14') },
-    { name: 'Mike Wilson', department: 'Training', position: 'Training Manager', status: 'Active', lastLogin: new Date('2024-12-13') },
-    { name: 'Emma Davis', department: 'HR', position: 'HR Coordinator', status: 'Pending', lastLogin: new Date('2024-12-12') },
-    { name: 'Tom Brown', department: 'Maintenance', position: 'Maintenance Lead', status: 'Active', lastLogin: new Date('2024-12-11') },
-    { name: 'Lisa Garcia', department: 'Safety', position: 'Safety Officer', status: 'Active', lastLogin: new Date('2024-12-10') },
-    { name: 'David Lee', department: 'Operations', position: 'Shift Manager', status: 'Inactive', lastLogin: new Date('2024-12-05') },
-    { name: 'Rachel Green', department: 'Training', position: 'Instructor', status: 'Active', lastLogin: new Date('2024-12-14') },
-    { name: 'James Carter', department: 'Maintenance', position: 'Technician', status: 'Active', lastLogin: new Date('2024-12-13') },
-    { name: 'Maria Rodriguez', department: 'Safety', position: 'Safety Analyst', status: 'Active', lastLogin: new Date('2024-12-12') }
-  ];
+  // User directory data - will be populated from service
+  filteredUsers: any[] = [];
+  allUsers: any[] = [];
 
   // Sorting properties
   currentUserSort = 'name';
@@ -87,20 +81,148 @@ export class UserManagementAComponent implements OnInit {
   constructor(
     private userService: UserService,
     private router: Router
-  ) {
-    // Removed FormBuilder and initializeForm call
-  }
+  ) {}
 
   ngOnInit() {
-    this.calculateUserMetrics();
+    this.loadUserData();
+    this.loadUserMetrics();
+  }
+
+  // Load user data from service
+  private loadUserData() {
+    this.isLoadingUsers = true;
+    
+    if (this.selectedProvince === 'All Provinces') {
+      this.userService.getAllUsers().subscribe({
+        next: (users) => {
+          console.log('Raw users data received:', users);
+          this.allUsers = users;
+          this.filteredUsers = this.transformUsersForTable(users);
+          this.isLoadingUsers = false;
+          console.log('Users loaded successfully:', users.length);
+          
+          // If metrics failed to load, try calculating from here
+          if (this.totalUsers === 0 && users.length > 0) {
+            console.log('Metrics seem empty, calculating from user data...');
+            this.totalUsers = users.length;
+            this.totalActiveUsers = users.filter(u => 
+              u.status?.toLowerCase() === 'active' || u.isActive === true
+            ).length;
+            this.completedUsers = users.filter(u => 
+              u.trainingCompleted === true || u.trainingComplete === true
+            ).length;
+            this.usersAwaitingApproval = Math.max(0, this.totalUsers - this.totalActiveUsers);
+            this.calculateUserMetrics();
+          }
+        },
+        error: (error) => {
+          console.error('Error loading users:', error);
+          this.isLoadingUsers = false;
+        }
+      });
+    } else {
+      this.userService.getUsersByProvince(this.selectedProvince).subscribe({
+        next: (users) => {
+          this.allUsers = users;
+          this.filteredUsers = this.transformUsersForTable(users);
+          this.isLoadingUsers = false;
+          console.log('Users loaded for province:', this.selectedProvince, users.length);
+        },
+        error: (error) => {
+          console.error('Error loading users by province:', error);
+          this.isLoadingUsers = false;
+        }
+      });
+    }
+  }
+
+  // Load user metrics from service
+  private loadUserMetrics() {
+    this.isLoadingMetrics = true;
+    
+    this.userService.getUserMetrics().subscribe({
+      next: (metrics) => {
+        console.log('Received metrics from service:', metrics);
+        
+        this.totalUsers = metrics.totalUsers;
+        this.totalActiveUsers = metrics.totalActiveUsers;
+        this.completedUsers = metrics.completedUsers;
+        this.usersAwaitingApproval = Math.max(0, this.totalUsers - this.totalActiveUsers);
+        this.calculateUserMetrics();
+        this.isLoadingMetrics = false;
+        
+        console.log('Component metrics after assignment:', {
+          totalUsers: this.totalUsers,
+          totalActiveUsers: this.totalActiveUsers,
+          completedUsers: this.completedUsers,
+          usersAwaitingApproval: this.usersAwaitingApproval
+        });
+      },
+      error: (error) => {
+        console.error('Error loading user metrics:', error);
+        this.isLoadingMetrics = false;
+        
+        // Fallback: try to calculate from loaded users
+        if (this.allUsers.length > 0) {
+          console.log('Using fallback metrics calculation from loaded users');
+          this.totalUsers = this.allUsers.length;
+          this.totalActiveUsers = this.allUsers.filter(u => 
+            u.status?.toLowerCase() === 'active' || u.isActive === true
+          ).length;
+          this.completedUsers = this.allUsers.filter(u => 
+            u.trainingCompleted === true || u.trainingComplete === true
+          ).length;
+          this.usersAwaitingApproval = Math.max(0, this.totalUsers - this.totalActiveUsers);
+          this.calculateUserMetrics();
+        }
+      }
+    });
+  }
+
+  // Transform user data for table display
+  private transformUsersForTable(users: any[]): any[] {
+    return users.map(user => ({
+      name: user.fullName || user.name || `${user.firstName} ${user.lastName}` || 'N/A',
+      department: user.department || 'N/A',
+      role: this.formatUserRole(user.role || user.userRole || user.type) || 'N/A',
+      status: user.status || (user.isActive ? 'Active' : 'Inactive'),
+      lastLogin: user.lastLogin ? new Date(user.lastLogin) : new Date()
+    }));
+  }
+
+  // Format user role for display
+  private formatUserRole(role: string): string {
+    if (!role) return 'N/A';
+    
+    const roleMap: { [key: string]: string } = {
+      'instructor': 'Instructor',
+      'trainer': 'Trainer',
+      'trainee': 'Trainee',
+      'student': 'Student',
+      'admin': 'Administrator',
+      'administrator': 'Administrator',
+      'manager': 'Manager',
+      'supervisor': 'Supervisor'
+    };
+    
+    const normalizedRole = role.toLowerCase();
+    return roleMap[normalizedRole] || this.capitalizeFirstLetter(role);
+  }
+
+  // Helper method to capitalize first letter
+  private capitalizeFirstLetter(string: string): string {
+    return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
+  }
+
+  // Handle province filter change
+  onProvinceChange() {
+    this.loadUserData();
   }
 
   private calculateUserMetrics() {
     // Calculate user completion percentage
-    this.userCompletionPercentage = Math.round((this.completedUsers / this.totalUsers) * 100);
-    
-    // Update total active users
-    this.totalActiveUsers = this.totalUsers - this.usersAwaitingApproval;
+    this.userCompletionPercentage = this.totalUsers > 0 ? 
+      Math.round((this.completedUsers / this.totalUsers) * 100) : 0;
   }
 
   // User table sorting

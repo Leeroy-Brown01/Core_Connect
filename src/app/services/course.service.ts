@@ -31,28 +31,27 @@ export interface TrainingRequirement {
 export interface Course {
   id?: string;
   title: string;
-  description: string;
+  description?: string;
   category: string;
-  difficulty: string;
-  estimatedDuration: string;
-  imageUrl: string;
+  difficulty?: string;
+  estimatedDuration?: string;
+  imageUrl?: string;
   status: string;
-  tags: string[];
-  courseContent: CourseContent[];
-  instructors: Instructor[];
-  learningOutcomes: LearningOutcome[];
-  qualificationDetails: QualificationDetail[];
-  trainingRequirements: TrainingRequirement[];
-  createdAt: Date | Timestamp;
-  updatedAt: Date | Timestamp;
-  createdBy: string;
-  enrollmentCount?: number;
-  completionRate?: number;
-  // UI-specific properties for displaying courses
-  instructor?: string; // For backward compatibility
-  rating?: number; // Generated rating for display
-  price?: number; // Generated or actual price
-  participants?: number; // Alternative to enrollmentCount
+  tags?: string[];
+  instructor?: string;
+  instructorName?: string;
+  createdAt?: any;
+  updatedAt?: any;
+  createdBy?: string;
+  published?: boolean;
+  isActive?: boolean;
+  // Course structure properties
+  courseContent?: CourseContent[];
+  instructors?: Instructor[];
+  learningOutcomes?: LearningOutcome[];
+  qualificationDetails?: QualificationDetail[];
+  trainingRequirements?: TrainingRequirement[];
+  // Remove rating, price, participants as they're not needed
 }
 
 @Injectable({
@@ -83,7 +82,7 @@ export class CourseService {
       if (courseDoc.exists()) {
         const data = courseDoc.data();
         console.log('Course data fetched successfully for:', courseId);
-        return this.transformCourseData({ id: courseDoc.id, ...data });
+        return { id: courseDoc.id, ...data } as Course;
       } else {
         console.log('No course document found for:', courseId);
         return null;
@@ -109,9 +108,7 @@ export class CourseService {
     try {
       const coursesCollection = collection(this.firestore, 'courses');
       const coursesSnapshot = await getDocs(coursesCollection);
-      const courses = coursesSnapshot.docs.map(doc => 
-        this.transformCourseData({ id: doc.id, ...doc.data() })
-      );
+      const courses = coursesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Course[];
       console.log('Fetched', courses.length, 'courses');
       return courses;
     } catch (error) {
@@ -136,9 +133,7 @@ export class CourseService {
       const coursesCollection = collection(this.firestore, 'courses');
       const q = query(coursesCollection, where('category', '==', category));
       const coursesSnapshot = await getDocs(q);
-      const courses = coursesSnapshot.docs.map(doc => 
-        this.transformCourseData({ id: doc.id, ...doc.data() })
-      );
+      const courses = coursesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Course[];
       console.log('Fetched', courses.length, 'courses for category:', category);
       return courses;
     } catch (error) {
@@ -163,9 +158,7 @@ export class CourseService {
       const coursesCollection = collection(this.firestore, 'courses');
       const q = query(coursesCollection, where('status', '==', status));
       const coursesSnapshot = await getDocs(q);
-      const courses = coursesSnapshot.docs.map(doc => 
-        this.transformCourseData({ id: doc.id, ...doc.data() })
-      );
+      const courses = coursesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Course[];
       console.log('Fetched', courses.length, 'courses with status:', status);
       return courses;
     } catch (error) {
@@ -200,9 +193,7 @@ export class CourseService {
       const coursesCollection = collection(this.firestore, 'courses');
       const q = query(coursesCollection, where('difficulty', '==', difficulty));
       const coursesSnapshot = await getDocs(q);
-      const courses = coursesSnapshot.docs.map(doc => 
-        this.transformCourseData({ id: doc.id, ...doc.data() })
-      );
+      const courses = coursesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Course[];
       console.log('Fetched', courses.length, 'courses with difficulty:', difficulty);
       return courses;
     } catch (error) {
@@ -231,9 +222,7 @@ export class CourseService {
         limit(limitCount)
       );
       const coursesSnapshot = await getDocs(q);
-      const courses = coursesSnapshot.docs.map(doc => 
-        this.transformCourseData({ id: doc.id, ...doc.data() })
-      );
+      const courses = coursesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Course[];
       console.log('Fetched', courses.length, 'recent courses');
       return courses;
     } catch (error) {
@@ -243,24 +232,17 @@ export class CourseService {
   }
 
   // Create new course
-  async createCourse(courseData: Omit<Course, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
+  async createCourse(courseData: Partial<Course>): Promise<any> {
     try {
-      console.log('Creating new course:', courseData.title);
+      console.log('Creating course:', courseData);
       const coursesCollection = collection(this.firestore, 'courses');
-      const now = Timestamp.now();
-      
-      const courseToSave = {
+      const docRef = await addDoc(coursesCollection, {
         ...courseData,
-        createdAt: now,
-        updatedAt: now,
-        status: courseData.status || 'draft',
-        enrollmentCount: 0,
-        completionRate: 0
-      };
-
-      const docRef = await addDoc(coursesCollection, courseToSave);
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
       console.log('Course created successfully with ID:', docRef.id);
-      return docRef.id;
+      return docRef;
     } catch (error) {
       console.error('Error creating course:', error);
       throw error;
@@ -274,7 +256,7 @@ export class CourseService {
       const courseDocRef = doc(this.firestore, `courses/${courseId}`);
       await updateDoc(courseDocRef, {
         ...courseData,
-        updatedAt: Timestamp.now()
+        updatedAt: new Date().toISOString()
       });
       console.log('Course updated successfully');
     } catch (error) {
@@ -332,32 +314,62 @@ export class CourseService {
   // Get course metrics
   getCourseMetrics(): Observable<any> {
     return this.getAllCourses().pipe(
-      map(courses => ({
-        totalCourses: courses.length,
-        publishedCourses: courses.filter(c => c.status === 'published').length,
-        draftCourses: courses.filter(c => c.status === 'draft').length,
-        totalEnrollments: courses.reduce((sum, c) => sum + (c.enrollmentCount || 0), 0),
-        averageCompletionRate: courses.length > 0 
-          ? courses.reduce((sum, c) => sum + (c.completionRate || 0), 0) / courses.length 
-          : 0,
-        coursesByCategory: this.groupCoursesByCategory(courses),
-        coursesByDifficulty: this.groupCoursesByDifficulty(courses)
-      }))
+      map(courses => {
+        console.log('Raw courses data for metrics:', courses);
+        
+        // Count total courses
+        const totalCourses = courses.length;
+        
+        // Count published courses - check multiple possible status formats
+        const publishedCourses = courses.filter(course => {
+          const status = course.status?.toLowerCase();
+          const isPublished = course.published;
+          const isActive = course.isActive;
+          return status === 'published' || status === 'active' || isPublished === true || isActive === true;
+        });
+        
+        // Count draft/pending courses
+        const draftCourses = courses.filter(course => {
+          const status = course.status?.toLowerCase();
+          return status === 'draft' || status === 'pending' || status === 'awaiting approval';
+        });
+        
+        // Count completed courses (courses that have been fully processed)
+        const completedCourses = courses.filter(course => {
+          return course.status?.toLowerCase() === 'completed' || course.status?.toLowerCase() === 'finished';
+        });
+        
+        const metrics = {
+          totalCourses: totalCourses,
+          publishedCourses: publishedCourses.length,
+          draftCourses: draftCourses.length,
+          completedCourses: completedCourses.length,
+          coursesAwaitingApproval: draftCourses.length
+        };
+        
+        console.log('Calculated course metrics:', metrics);
+        console.log('Sample course for debugging:', courses[0]);
+        
+        return metrics;
+      })
     );
   }
 
-  private groupCoursesByCategory(courses: Course[]): { [key: string]: number } {
-    return courses.reduce((acc, course) => {
-      acc[course.category] = (acc[course.category] || 0) + 1;
-      return acc;
-    }, {} as { [key: string]: number });
+  // Get courses by instructor
+  getCoursesByInstructor(instructorId: string): Observable<Course[]> {
+    return from(this.fetchCoursesByInstructor(instructorId));
   }
 
-  private groupCoursesByDifficulty(courses: Course[]): { [key: string]: number } {
-    return courses.reduce((acc, course) => {
-      acc[course.difficulty] = (acc[course.difficulty] || 0) + 1;
-      return acc;
-    }, {} as { [key: string]: number });
+  private async fetchCoursesByInstructor(instructorId: string): Promise<Course[]> {
+    try {
+      const coursesCollection = collection(this.firestore, 'courses');
+      const q = query(coursesCollection, where('createdBy', '==', instructorId));
+      const coursesSnapshot = await getDocs(q);
+      return coursesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Course[];
+    } catch (error) {
+      console.error('Error fetching courses by instructor:', error);
+      throw error;
+    }
   }
 
   // Transform Firestore data to consistent format
@@ -366,15 +378,27 @@ export class CourseService {
       ...data,
       createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(data.createdAt),
       updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : new Date(data.updatedAt),
-      courseContent: data.courseContent || [],
+      // Ensure course content is properly formatted
+      courseContent: this.formatCourseContent(data.courseContent || []),
       instructors: data.instructors || [],
       learningOutcomes: data.learningOutcomes || [],
       qualificationDetails: data.qualificationDetails || [],
       trainingRequirements: data.trainingRequirements || [],
-      tags: data.tags || [],
-      enrollmentCount: data.enrollmentCount || 0,
-      completionRate: data.completionRate || 0
+      tags: data.tags || []
     } as Course;
+  }
+
+  // Format course content to ensure consistent structure
+  private formatCourseContent(courseContent: any[]): CourseContent[] {
+    if (!courseContent || !Array.isArray(courseContent)) {
+      return [];
+    }
+    
+    return courseContent.map(content => ({
+      title: content.title || 'Module',
+      description: content.description || '',
+      duration: content.duration || '30 minutes'
+    }));
   }
 
   // Bulk operations
@@ -402,5 +426,84 @@ export class CourseService {
       console.error('Error creating multiple courses:', error);
       throw error;
     }
+  }
+
+  // Simple course counting method - similar to user counting approach
+  getCourseCount(): Observable<number> {
+    return this.getAllCourses().pipe(
+      map(courses => {
+        console.log('Counting total courses:', courses.length);
+        return courses.length;
+      })
+    );
+  }
+
+  // Get published course count
+  getPublishedCourseCount(): Observable<number> {
+    return this.getAllCourses().pipe(
+      map(courses => {
+        console.log('Counting published courses from all courses:', courses.length);
+        const publishedCourses = courses.filter(course => {
+          const status = course.status?.toLowerCase();
+          const isPublished = course.published;
+          const isActive = course.isActive;
+          return status === 'published' || status === 'active' || isPublished === true || isActive === true;
+        });
+        console.log('Found published courses:', publishedCourses.length);
+        return publishedCourses.length;
+      })
+    );
+  }
+
+  // Get draft/pending course count
+  getDraftCourseCount(): Observable<number> {
+    return this.getAllCourses().pipe(
+      map(courses => {
+        const draftCourses = courses.filter(course => {
+          const status = course.status?.toLowerCase();
+          return status === 'draft' || status === 'pending' || status === 'awaiting approval';
+        });
+        console.log('Found draft/pending courses:', draftCourses.length);
+        return draftCourses.length;
+      })
+    );
+  }
+
+  // Simplified course metrics for individual metric cards
+  getSimpleCourseMetrics(): Observable<any> {
+    return this.getAllCourses().pipe(
+      map(courses => {
+        console.log('Calculating simple course metrics from courses:', courses.length);
+        
+        const totalCourses = courses.length;
+        
+        const publishedCourses = courses.filter(course => {
+          const status = course.status?.toLowerCase();
+          const isPublished = course.published;
+          const isActive = course.isActive;
+          return status === 'published' || status === 'active' || isPublished === true || isActive === true;
+        });
+        
+        const draftCourses = courses.filter(course => {
+          const status = course.status?.toLowerCase();
+          return status === 'draft' || status === 'pending' || status === 'awaiting approval';
+        });
+        
+        const completedCourses = courses.filter(course => {
+          return course.status?.toLowerCase() === 'completed' || course.status?.toLowerCase() === 'finished';
+        });
+        
+        const metrics = {
+          totalCourses: totalCourses,
+          publishedCourses: publishedCourses.length,
+          draftCourses: draftCourses.length,
+          completedCourses: completedCourses.length,
+          coursesAwaitingApproval: draftCourses.length
+        };
+        
+        console.log('Simple course metrics calculated:', metrics);
+        return metrics;
+      })
+    );
   }
 }

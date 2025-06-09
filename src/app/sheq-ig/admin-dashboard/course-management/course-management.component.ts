@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { UserService } from '../../../services/user.service';
 import { Router } from '@angular/router';
+import { CourseService, Course } from '../../../services/course.service';
 
 @Component({
   selector: 'app-course-management',
@@ -11,30 +11,27 @@ import { Router } from '@angular/router';
   templateUrl: './course-management.component.html',
   styleUrl: './course-management.component.scss'
 })
-export class CourseManagementComponent {
-
-  constructor(
-    private userService: UserService,
-    private router: Router
-  ) {
-    // Removed FormBuilder and initializeForm call
-  }
-
+export class CourseManagementComponent implements OnInit {
 
   // Province filter
   selectedProvince: string = 'All Provinces';
 
-  // Existing properties
-  approvedCourses: number = 12;
-  coursesAwaitingApproval: number = 3;
-  totalCourses: number = 50;
+  // Course metrics - will be populated from service
+  publishedCoursesCount: number = 0;
+  coursesAwaitingApproval: number = 0;
+  totalCourses: number = 0;
+  completedCoursesCount: number = 0;
+  completionPercentage: number = 0;
 
-  // New metric properties
-  publishedCoursesCount: number = 47;
-  completedCoursesCount: number = 42;
-  completionPercentage: number = 84;
+  // Loading states
+  isLoadingCourses: boolean = false;
+  isLoadingMetrics: boolean = false;
 
-  // Expanded data for sections
+  // Course data - will be populated from service
+  filteredCourses: any[] = [];
+  allCourses: Course[] = [];
+
+  // Hardcoded data (keeping as requested)
   instructorSubmissions = [
     { courseTitle: 'Advanced Safety Protocols', instructor: 'John Smith', submissionDate: new Date('2024-12-15'), status: 'Pending' },
     { courseTitle: 'Equipment Maintenance 101', instructor: 'Sarah Johnson', submissionDate: new Date('2024-12-14'), status: 'Approved' },
@@ -69,39 +66,206 @@ export class CourseManagementComponent {
     { title: 'Mobile App Update', description: 'Released training app v2.1', updateDate: new Date('2024-12-02'), type: 'System' }
   ];
 
-  accordionItems = [
-    { id: 'new-course', title: 'Add New Course', isOpen: false },
-    { id: 'submissions', title: `Instructor Submissions (${this.coursesAwaitingApproval} Pending)`, isOpen: false },
-    { id: 'library', title: 'Course Library', isOpen: true },
-    { id: 'recertification', title: 'Recertification Tracker', isOpen: false }
-  ];
-
+  // Updated table configuration to use category instead of status
   tableColumns = [
     { key: 'title', label: 'Course Title' },
-    { key: 'status', label: 'Status' },
+    { key: 'category', label: 'Category' },
     { key: 'instructor', label: 'Instructor' },
     { key: 'modified', label: 'Last Modified' }
   ];
 
-  filteredCourses = [
-    { title: 'Safety Training', status: 'Published', instructor: 'John Doe', modified: new Date() },
-    { title: 'HR Compliance', status: 'Draft', instructor: 'Jane Smith', modified: new Date() },
-    // Add more dummy data
-  ];
-
+  // Sorting properties
   currentSort = 'title';
   sortDirection: 'asc' | 'desc' = 'asc';
 
-  toggleAccordion(id: string) {
-    this.accordionItems = this.accordionItems.map(item => ({
-      ...item,
-      isOpen: item.id === id ? !item.isOpen : false
+  constructor(
+    private courseService: CourseService,
+    private router: Router
+  ) {}
+
+  ngOnInit() {
+    this.loadCourseData();
+    this.loadCourseMetrics();
+  }
+
+  // Load course data from service
+  private loadCourseData() {
+    this.isLoadingCourses = true;
+    
+    this.courseService.getAllCourses().subscribe({
+      next: (courses) => {
+        console.log('Raw courses data received:', courses);
+        this.allCourses = courses;
+        this.filteredCourses = this.transformCoursesForTable(courses);
+        this.isLoadingCourses = false;
+        console.log('Courses loaded successfully:', courses.length);
+        
+        // If metrics failed to load, try calculating from here
+        if (this.totalCourses === 0 && courses.length > 0) {
+          console.log('Metrics seem empty, calculating from course data...');
+          this.calculateFallbackMetrics(courses);
+        }
+      },
+      error: (error) => {
+        console.error('Error loading courses:', error);
+        this.isLoadingCourses = false;
+      }
+    });
+  }
+
+  // Load course metrics from service - simplified approach like user management
+  private loadCourseMetrics() {
+    this.isLoadingMetrics = true;
+    
+    this.courseService.getSimpleCourseMetrics().subscribe({
+      next: (metrics) => {
+        console.log('Received simple course metrics from service:', metrics);
+        
+        this.totalCourses = metrics.totalCourses;
+        this.publishedCoursesCount = metrics.publishedCourses;
+        this.coursesAwaitingApproval = metrics.coursesAwaitingApproval;
+        this.completedCoursesCount = metrics.completedCourses;
+        this.calculateCompletionMetrics();
+        this.isLoadingMetrics = false;
+        
+        console.log('Component course metrics after assignment:', {
+          totalCourses: this.totalCourses,
+          publishedCoursesCount: this.publishedCoursesCount,
+          coursesAwaitingApproval: this.coursesAwaitingApproval,
+          completedCoursesCount: this.completedCoursesCount
+        });
+      },
+      error: (error) => {
+        console.error('Error loading course metrics:', error);
+        this.isLoadingMetrics = false;
+        
+        // Fallback: try individual counting methods
+        this.loadFallbackMetrics();
+      }
+    });
+  }
+
+  // Fallback method for individual course counting
+  private loadFallbackMetrics() {
+    console.log('Using fallback course metrics calculation');
+    
+    // Get total course count
+    this.courseService.getCourseCount().subscribe({
+      next: (count) => {
+        this.totalCourses = count;
+        console.log('Fallback total course count:', count);
+      },
+      error: (error) => console.error('Error getting total course count:', error)
+    });
+    
+    // Get published course count
+    this.courseService.getPublishedCourseCount().subscribe({
+      next: (count) => {
+        this.publishedCoursesCount = count;
+        console.log('Fallback published course count:', count);
+      },
+      error: (error) => console.error('Error getting published course count:', error)
+    });
+    
+    // Get draft course count
+    this.courseService.getDraftCourseCount().subscribe({
+      next: (count) => {
+        this.coursesAwaitingApproval = count;
+        console.log('Fallback draft course count:', count);
+      },
+      error: (error) => console.error('Error getting draft course count:', error)
+    });
+  }
+
+  // Transform course data for table display - fix instructor display
+  private transformCoursesForTable(courses: Course[]): any[] {
+    return courses.map(course => ({
+      title: course.title || 'N/A',
+      category: this.formatCourseCategory(course.category) || 'N/A',
+      instructor: this.extractInstructorName(course),
+      modified: course.updatedAt ? new Date(course.updatedAt) : course.createdAt ? new Date(course.createdAt) : new Date(),
+      status: course.status || 'Draft' // Keep for internal use
     }));
   }
-  
-  // ... existing code ...
 
-sortTable(key: string) {
+  // Extract instructor name from various possible sources
+  private extractInstructorName(course: Course): string {
+    // Check if instructors array exists and has data
+    if (course.instructors && course.instructors.length > 0) {
+      return course.instructors[0].name;
+    }
+    
+    // Check for direct instructor name field
+    if (course.instructorName) {
+      return course.instructorName;
+    }
+    
+    // Check for instructor field
+    if (course.instructor) {
+      return course.instructor;
+    }
+    
+    // Check for createdBy field (might contain name or ID)
+    if (course.createdBy) {
+      // If createdBy looks like a name (contains spaces), use it
+      if (course.createdBy.includes(' ')) {
+        return course.createdBy;
+      }
+      // Otherwise it's probably an ID, return a placeholder
+      return 'Instructor';
+    }
+    
+    return 'N/A';
+  }
+
+  // Format course category for display
+  private formatCourseCategory(category: string): string {
+    if (!category) return 'N/A';
+    
+    const categoryMap: { [key: string]: string } = {
+      'safety': 'Safety Training',
+      'health': 'Health & Wellness',
+      'compliance': 'Compliance',
+      'technical': 'Technical Skills',
+      'soft-skills': 'Soft Skills',
+      'leadership': 'Leadership',
+      'emergency': 'Emergency Response',
+      'equipment': 'Equipment Training',
+      'environmental': 'Environmental Safety'
+    };
+    
+    const normalizedCategory = category.toLowerCase();
+    return categoryMap[normalizedCategory] || this.capitalizeFirstLetter(category);
+  }
+
+  // Helper method to capitalize first letter
+  private capitalizeFirstLetter(string: string): string {
+    return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
+  }
+
+  // Calculate fallback metrics from course data
+  private calculateFallbackMetrics(courses: Course[]) {
+    this.totalCourses = courses.length;
+    this.publishedCoursesCount = courses.filter(c => 
+      c.status?.toLowerCase() === 'published' || c.published === true
+    ).length;
+    this.coursesAwaitingApproval = courses.filter(c => 
+      c.status?.toLowerCase() === 'pending' || c.status?.toLowerCase() === 'draft'
+    ).length;
+    this.completedCoursesCount = courses.filter(c => 
+      c.status?.toLowerCase() === 'completed'
+    ).length;
+    this.calculateCompletionMetrics();
+  }
+
+  private calculateCompletionMetrics() {
+    // Calculate completion percentage
+    this.completionPercentage = this.totalCourses > 0 ? 
+      Math.round((this.completedCoursesCount / this.totalCourses) * 100) : 0;
+  }
+
+  // Course table sorting
+  sortTable(key: string) {
     if (this.currentSort === key) {
       this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
     } else {
@@ -129,27 +293,14 @@ sortTable(key: string) {
     });
   }
 
-  ngOnInit() {
-    this.calculateMetrics();
-  }
-
-  // Navigation to create user account
+  // Navigation to create training
   navigateToCreateTraining() {
     this.router.navigate(['/create-training']);
   }
 
-  private calculateMetrics() {
-    // Calculate completion percentage
-    this.completionPercentage = Math.round((this.completedCoursesCount / this.totalCourses) * 100);
-    
-    // Update published courses (total - pending approval)
-    this.publishedCoursesCount = this.totalCourses - this.coursesAwaitingApproval;
-  }
-
-  // ... existing code ...
-
+  // Course management methods
   openPreview(course: any) {
-    // Implement preview modal
+    console.log('Opening course preview:', course);
+    // Implement preview modal or navigation
   }
-
 }

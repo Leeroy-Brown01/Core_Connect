@@ -24,6 +24,14 @@ interface ContinueLearningCourse {
   remainingTime: string;
 }
 
+interface WasteManagementCourse {
+  id: number;
+  title: string;
+  imageUrl: string;
+  lastWatched: string;
+  remainingTime: string;
+}
+
 @Component({
   selector: 'app-home',
   standalone: true,
@@ -69,6 +77,11 @@ throw new Error('Method not implemented.');
   continueLearningCourses: ContinueLearningCourse[] = [];
   currentContinueLearningIndex = 0;
   visibleContinueLearningCount = 4;
+
+  // Waste Management (New Section)
+  wasteManagementCourses: WasteManagementCourse[] = [];
+  currentWasteManagementIndex = 0;
+  visibleWasteManagementCount = 4;
 
   constructor(
     private authService: AuthService,
@@ -134,16 +147,15 @@ throw new Error('Method not implemented.');
         
         // Use all courses for recommended if we have them
         if (courses && courses.length > 0) {
-          console.log('📋 Using all courses for recommended section');
-          this.recommendedCourses = this.transformCoursesForRecommended(courses);
-          console.log('🎯 Transformed recommended courses:', this.recommendedCourses);
+          console.log('📋 Using all courses for sections');
         } else {
           console.log('⚠️ No courses found, loading fallback');
           this.loadFallbackCourses();
         }
         
-        // 🎯 THIS IS WHERE CONTINUE LEARNING GETS ITS DATA
+        // Update both sections with the same data
         this.updateContinueLearningSection(courses);
+        this.updateWasteManagementSection(courses);
         this.coursesLoading = false;
       },
       error: (error) => {
@@ -169,8 +181,10 @@ throw new Error('Method not implemented.');
         this.publishedCourses = courses;
         
         if (courses && courses.length > 0) {
-          this.recommendedCourses = this.transformCoursesForRecommended(courses);
-          console.log('🎯 Transformed recommended courses from published:', this.recommendedCourses);
+          // Update both sections
+          this.updateContinueLearningSection(courses);
+          this.updateWasteManagementSection(courses);
+          console.log('🎯 Updated both sections from published courses');
         } else {
           console.log('⚠️ No published courses found, loading fallback');
           this.loadFallbackCourses();
@@ -208,24 +222,18 @@ throw new Error('Method not implemented.');
         // Ensure instructor property exists for the UI
         instructor: course.instructors && course.instructors.length > 0 
           ? course.instructors[0].name 
-          : 'Professional Instructor',
-        // Generate rating if not exists
-        rating: course.rating || this.generateRating(course),
-        // Generate price if not exists
-        price: course.price || this.generatePrice(course),
-        // Use enrollmentCount or generate participants
-        participants: course.participants || course.enrollmentCount || this.generateParticipants(course)
+          : course.instructorName || course.createdBy || 'Professional Instructor',
+        // Ensure course content is properly formatted
+        courseContent: this.formatCourseContent(course.courseContent || [])
       };
       
       console.log(`✅ Transformed course ${index + 1}:`, {
         id: transformedCourse.id,
         title: transformedCourse.title,
         instructor: transformedCourse.instructor,
-        rating: transformedCourse.rating,
-        price: transformedCourse.price,
-        participants: transformedCourse.participants,
         status: transformedCourse.status,
-        category: transformedCourse.category
+        category: transformedCourse.category,
+        courseContentCount: transformedCourse.courseContent?.length || 0
       });
       
       return transformedCourse;
@@ -235,51 +243,17 @@ throw new Error('Method not implemented.');
     return transformedCourses;
   }
 
-  private generateRating(course: Course): number {
-    const baseRating = 4.0;
-    const variationFactor = course.title.length % 10 / 10;
-    return Math.round((baseRating + variationFactor) * 10) / 10;
-  }
-  
-  private generatePrice(course: Course): number {
-    const basePrices = {
-      'beginner': 49.99,
-      'intermediate': 99.99,
-      'advanced': 149.99
-    };
-    
-    const basePrice = basePrices[course.difficulty.toLowerCase() as keyof typeof basePrices] || 99.99;
-    const contentMultiplier = (course.courseContent?.length || 1) * 0.1;
-    
-    return Math.round((basePrice + (basePrice * contentMultiplier)) * 100) / 100;
-  }
-  
-  private generateParticipants(course: Course): number {
-    const baseParticipants = 500;
-    
-    // Fix the createdAt handling to work with both Date and Timestamp
-    let ageMultiplier = 1;
-    if (course.createdAt) {
-      let createdDate: Date;
-      
-      // Handle both Date and Timestamp types
-      if (course.createdAt instanceof Date) {
-        createdDate = course.createdAt;
-      } else if (typeof course.createdAt === 'object' && 'toDate' in course.createdAt) {
-        // It's a Firestore Timestamp
-        createdDate = (course.createdAt as any).toDate();
-      } else {
-        // It's a string or number, convert to Date
-        createdDate = new Date(course.createdAt as string | number);
-      }
-      
-      const daysSinceCreation = Math.floor(
-        (new Date().getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24)
-      );
-      ageMultiplier = Math.floor(daysSinceCreation / 30) || 1; // Convert to months
+  // Format course content to ensure consistent structure
+  private formatCourseContent(courseContent: any[]): any[] {
+    if (!courseContent || !Array.isArray(courseContent)) {
+      return [];
     }
     
-    return baseParticipants + (ageMultiplier * 100) + Math.floor(Math.random() * 1000);
+    return courseContent.map(content => ({
+      title: content.title || 'Module',
+      description: content.description || '',
+      duration: content.duration || '30 minutes'
+    }));
   }
   
   private updateContinueLearningSection(courses: Course[]): void {
@@ -294,8 +268,8 @@ throw new Error('Method not implemented.');
         title: course.title,
         imageUrl: course.imageUrl || 'https://via.placeholder.com/800x600?text=' + encodeURIComponent(course.title),
         progress: Math.floor(Math.random() * 80) + 10, // 🎲 Random progress between 10-89%
-        lastWatched: `Module ${Math.floor(Math.random() * 5) + 1}: ${course.courseContent && course.courseContent.length > 0 ? course.courseContent[0].title : 'Introduction'}`,
-        remainingTime: `${Math.floor(Math.random() * 4) + 1}h ${Math.floor(Math.random() * 60)}m` // 🎲 Random remaining time
+        lastWatched: this.getLastWatchedContent(course),
+        remainingTime: this.calculateEstimatedTime(course)
       };
     });
     
@@ -303,72 +277,154 @@ throw new Error('Method not implemented.');
     console.log('✅ Continue Learning courses updated:', this.continueLearningCourses);
   }
   
+  private updateWasteManagementSection(courses: Course[]): void {
+    console.log('🔄 Updating Waste Management section with courses:', courses.length);
+    
+    // Takes the first 5 courses from the fetched data (same as continue learning)
+    const wasteManagementCourses = courses.slice(0, 5).map((course, index) => {
+      console.log(`♻️ Processing course ${index + 1} for Waste Management:`, course.title);
+      
+      return {
+        id: parseInt(course.id || '0'),
+        title: course.title,
+        imageUrl: course.imageUrl || 'https://via.placeholder.com/800x600?text=' + encodeURIComponent(course.title),
+        lastWatched: course.category || 'Professional Training', // Show category instead of progress
+        remainingTime: this.calculateEstimatedTime(course)
+      };
+    });
+    
+    this.wasteManagementCourses = wasteManagementCourses;
+    console.log('✅ Waste Management courses updated:', this.wasteManagementCourses);
+  }
+
+  // Helper method to get last watched content from course structure
+  private getLastWatchedContent(course: Course): string {
+    if (course.courseContent && course.courseContent.length > 0) {
+      const firstModule = course.courseContent[0];
+      return `Module 1: ${firstModule.title || 'Introduction'}`;
+    }
+    
+    // Fallback based on category or difficulty
+    if (course.category) {
+      return `${course.category} Module`;
+    }
+    
+    return 'Introduction Module';
+  }
+
+  // Helper method to calculate estimated time from course data
+  private calculateEstimatedTime(course: Course): string {
+    // Use estimatedDuration if available
+    if (course.estimatedDuration) {
+      return course.estimatedDuration;
+    }
+    
+    // Calculate from course content if available
+    if (course.courseContent && course.courseContent.length > 0) {
+      const totalMinutes = course.courseContent.reduce((total, content) => {
+        // Parse duration strings like "30 minutes", "1 hour", etc.
+        const duration = content.duration || '30 minutes';
+        const minutes = this.parseDurationToMinutes(duration);
+        return total + minutes;
+      }, 0);
+      
+      return this.formatMinutesToDuration(totalMinutes);
+    }
+    
+    // Fallback based on difficulty
+    const difficultyMap: { [key: string]: string } = {
+      'beginner': '2h 30m',
+      'intermediate': '4h 15m',
+      'advanced': '6h 45m'
+    };
+    
+    return difficultyMap[course.difficulty?.toLowerCase() || 'intermediate'] || '3h 30m';
+  }
+
+  // Parse duration string to minutes
+  private parseDurationToMinutes(duration: string): number {
+    const hourMatch = duration.match(/(\d+)\s*h/i);
+    const minuteMatch = duration.match(/(\d+)\s*m/i);
+    
+    let totalMinutes = 0;
+    
+    if (hourMatch) {
+      totalMinutes += parseInt(hourMatch[1]) * 60;
+    }
+    
+    if (minuteMatch) {
+      totalMinutes += parseInt(minuteMatch[1]);
+    }
+    
+    // If no match found, assume it's minutes
+    if (!hourMatch && !minuteMatch) {
+      const numberMatch = duration.match(/(\d+)/);
+      if (numberMatch) {
+        totalMinutes = parseInt(numberMatch[1]);
+      } else {
+        totalMinutes = 30; // Default fallback
+      }
+    }
+    
+    return totalMinutes;
+  }
+
+  // Format minutes back to duration string
+  private formatMinutesToDuration(totalMinutes: number): string {
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    
+    if (hours > 0 && minutes > 0) {
+      return `${hours}h ${minutes}m`;
+    } else if (hours > 0) {
+      return `${hours}h`;
+    } else {
+      return `${minutes}m`;
+    }
+  }
+
   private loadFallbackCourses(): void {
     console.log('🔄 Loading fallback courses due to error or no data');
-    this.recommendedCourses = [
+    
+    // Create fallback data for Continue Learning
+    this.continueLearningCourses = [
       {
-        id: 'fallback-1',
+        id: 1,
         title: 'Industrial Facility Cleaning Certification',
-        description: 'Professional cleaning techniques for industrial facilities',
-        category: 'Industrial Cleaning',
-        difficulty: 'intermediate',
-        estimatedDuration: '4 weeks',
         imageUrl: 'https://images.unsplash.com/photo-1628177142898-93e36e4e3a50?w=800&h=600&fit=crop',
-        status: 'published',
-        tags: ['cleaning', 'industrial', 'certification'],
-        courseContent: [
-          { title: 'Safety Protocols', description: 'Learn basic safety', duration: '30 min' },
-          { title: 'Equipment Handling', description: 'Equipment basics', duration: '45 min' }
-        ],
-        instructors: [{ name: 'Sarah Johnson', bio: 'ISSA Certified', role: 'Lead Instructor' }],
-        learningOutcomes: [
-          { outcome: 'Master industrial cleaning techniques' },
-          { outcome: 'Understand safety protocols' }
-        ],
-        qualificationDetails: [],
-        trainingRequirements: [],
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        createdBy: 'system',
-        enrollmentCount: 2453,
-        instructor: 'Sarah Johnson',
-        rating: 4.7,
-        price: 99.99,
-        participants: 2453
-      } as Course,
+        progress: 75,
+        lastWatched: 'Module 3: Safety Protocols',
+        remainingTime: '2h 30m'
+      },
       {
-        id: 'fallback-2',
+        id: 2,
         title: 'Commercial Office Cleaning Standards',
-        description: 'Learn professional office cleaning standards and techniques',
-        category: 'Commercial Cleaning',
-        difficulty: 'beginner',
-        estimatedDuration: '3 weeks',
         imageUrl: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=800&h=600&fit=crop',
-        status: 'published',
-        tags: ['office', 'commercial', 'standards'],
-        courseContent: [
-          { title: 'Office Environment Overview', description: 'Understanding office spaces', duration: '25 min' },
-          { title: 'Cleaning Techniques', description: 'Effective cleaning methods', duration: '40 min' }
-        ],
-        instructors: [{ name: 'Mike Chen', bio: 'Commercial Cleaning Expert', role: 'Senior Instructor' }],
-        learningOutcomes: [
-          { outcome: 'Maintain professional office standards' },
-          { outcome: 'Efficient cleaning workflows' }
-        ],
-        qualificationDetails: [],
-        trainingRequirements: [],
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        createdBy: 'system',
-        enrollmentCount: 1847,
-        instructor: 'Mike Chen',
-        rating: 4.5,
-        price: 79.99,
-        participants: 1847
-      } as Course
+        progress: 45,
+        lastWatched: 'Module 2: Cleaning Techniques',
+        remainingTime: '4h 15m'
+      }
+    ];
+
+    // Create fallback data for Waste Management
+    this.wasteManagementCourses = [
+      {
+        id: 1,
+        title: 'Industrial Facility Cleaning Certification',
+        imageUrl: 'https://images.unsplash.com/photo-1628177142898-93e36e4e3a50?w=800&h=600&fit=crop',
+        lastWatched: 'Industrial Cleaning',
+        remainingTime: '4h 30m'
+      },
+      {
+        id: 2,
+        title: 'Commercial Office Cleaning Standards',
+        imageUrl: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=800&h=600&fit=crop',
+        lastWatched: 'Commercial Cleaning',
+        remainingTime: '3h 45m'
+      }
     ];
     
-    console.log('📋 Fallback courses loaded:', this.recommendedCourses);
+    console.log('📋 Fallback courses loaded for both sections');
   }
 
   // Navigation methods
@@ -417,6 +473,19 @@ throw new Error('Method not implemented.');
   nextContinueLearning(): void {
     if (this.currentContinueLearningIndex < this.continueLearningCourses.length - this.visibleContinueLearningCount) {
       this.currentContinueLearningIndex++;
+    }
+  }
+
+  // Waste Management navigation methods
+  prevWasteManagement(): void {
+    if (this.currentWasteManagementIndex > 0) {
+      this.currentWasteManagementIndex--;
+    }
+  }
+  
+  nextWasteManagement(): void {
+    if (this.currentWasteManagementIndex < this.wasteManagementCourses.length - this.visibleWasteManagementCount) {
+      this.currentWasteManagementIndex++;
     }
   }
 

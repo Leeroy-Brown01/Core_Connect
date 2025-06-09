@@ -40,6 +40,9 @@ export class NavBarComponent implements OnInit, OnDestroy {
   notificationsDropdownOpen = false;
   userDropdownOpen = false;
   
+  // Mobile menu state
+  mobileMenuOpen = false;
+  
   // Tooltip states
   showMessagesTooltip = false;
   
@@ -183,6 +186,16 @@ export class NavBarComponent implements OnInit, OnDestroy {
     this.closeOtherDropdowns('user');
   }
 
+  // Mobile menu toggle
+  toggleMobileMenu() {
+    this.mobileMenuOpen = !this.mobileMenuOpen;
+    this.closeOtherDropdowns('mobile');
+  }
+
+  closeMobileMenu() {
+    this.mobileMenuOpen = false;
+  }
+
   // Close specific dropdowns
   closeExploreDropdown() {
     this.exploreDropdownOpen = false;
@@ -206,6 +219,11 @@ export class NavBarComponent implements OnInit, OnDestroy {
     if (except !== 'messages') this.messagesDropdownOpen = false;
     if (except !== 'notifications') this.notificationsDropdownOpen = false;
     if (except !== 'user') this.userDropdownOpen = false;
+    if (except !== 'mobile') this.mobileMenuOpen = false;
+  }
+
+  navigateTo(url: string): void {
+    this.router.navigate([url])
   }
 
   // Sign out functionality with proper Firebase integration
@@ -255,6 +273,11 @@ export class NavBarComponent implements OnInit, OnDestroy {
         this.router.navigate(['/admin-dashboard']);
         break;
         
+      case 'instructor':
+        console.log('🎓 NavBar: Navigating instructor to instructor dashboard');
+        this.router.navigate(['/instructor-dashboard']);
+        break;
+        
       case 'trainee':
       case 'employee':
         console.log('👨‍💼 NavBar: Navigating employee/trainee to employee dashboard');
@@ -282,6 +305,8 @@ export class NavBarComponent implements OnInit, OnDestroy {
     switch (normalizedRole) {
       case 'admin':
         return '/admin-dashboard';
+      case 'instructor':
+        return '/instructor-dashboard';
       case 'trainee':
       case 'employee':
         return '/employee-dashboard';
@@ -298,10 +323,21 @@ export class NavBarComponent implements OnInit, OnDestroy {
     return this.currentUser?.role?.toLowerCase() === 'admin';
   }
 
+  // Check if current user is instructor
+  isCurrentUserInstructor(): boolean {
+    return this.currentUser?.role?.toLowerCase() === 'instructor';
+  }
+
   // Check if current user is trainee/employee
   isCurrentUserEmployee(): boolean {
     const role = this.currentUser?.role?.toLowerCase();
     return role === 'trainee' || role === 'employee';
+  }
+
+  // Check if current user has administrative privileges (admin or instructor)
+  isCurrentUserAdministrative(): boolean {
+    const role = this.currentUser?.role?.toLowerCase();
+    return role === 'admin' || role === 'instructor';
   }
 
   // Mark notification as read
@@ -348,6 +384,8 @@ export class NavBarComponent implements OnInit, OnDestroy {
     switch (role) {
       case 'admin':
         return 'Admin';
+      case 'instructor':
+        return 'Instructor';
       case 'trainee':
         return 'Trainee';
       case 'employee':
@@ -361,14 +399,27 @@ export class NavBarComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Navigate to instructor panel (admin dashboard)
+  // Navigate to instructor panel (accessible by admin and instructor)
   navigateToInstructorPanel() {
     if (this.isCurrentUserAdmin()) {
-      console.log('🎓 NavBar: Navigating to instructor panel (admin dashboard)');
+      console.log('👑 NavBar: Admin navigating to instructor panel (admin dashboard)');
       this.router.navigate(['/admin-dashboard']);
+    } else if (this.isCurrentUserInstructor()) {
+      console.log('🎓 NavBar: Instructor navigating to instructor panel (instructor dashboard)');
+      this.router.navigate(['/instructor-dashboard']);
     } else {
-      console.warn('⚠️ NavBar: Non-admin user attempted to access instructor panel');
+      console.warn('⚠️ NavBar: Non-administrative user attempted to access instructor panel');
       // Could show a toast message here
+    }
+  }
+
+  // Navigate to instructor dashboard specifically
+  navigateToInstructorDashboard() {
+    if (this.isCurrentUserInstructor() || this.isCurrentUserAdmin()) {
+      console.log('🎓 NavBar: Navigating to instructor dashboard');
+      this.router.navigate(['/instructor-dashboard']);
+    } else {
+      console.warn('⚠️ NavBar: Unauthorized access attempt to instructor dashboard');
     }
   }
 
@@ -383,5 +434,20 @@ export class NavBarComponent implements OnInit, OnDestroy {
     console.log('🔧 NavBar: Navigating to profile settings');
     this.router.navigate(['/profile-settings']);
     this.closeUserDropdown();
+  }
+
+  // Check if user can create courses (admin or instructor)
+  canCreateCourses(): boolean {
+    return this.isCurrentUserAdmin() || this.isCurrentUserInstructor();
+  }
+
+  // Check if user can manage students (admin or instructor)
+  canManageStudents(): boolean {
+    return this.isCurrentUserAdmin() || this.isCurrentUserInstructor();
+  }
+
+  // Check if user has teaching capabilities
+  hasTeachingCapabilities(): boolean {
+    return this.isCurrentUserInstructor();
   }
 }

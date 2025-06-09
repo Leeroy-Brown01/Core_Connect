@@ -3,7 +3,7 @@
   <!-- Province Filter -->
   <div class="flex justify-start mb-6">
     <div class="border border-full border-black p-1 rounded-full w-64">
-      <select [(ngModel)]="selectedProvince" class="border-none focus:ring-0 bg-transparent text-sm w-full">
+      <select [(ngModel)]="selectedProvince" (ngModelChange)="onProvinceChange()" class="border-none focus:ring-0 bg-transparent text-sm w-full">
         <option>All Provinces</option>
         <option>Gauteng</option>
         <option>Western Cape</option>
@@ -24,8 +24,11 @@
     <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-green-500">
       <div class="flex justify-between items-center">
         <div>
-          <p class="text-xs text-gray-500 mb-1">Total Active<br>Users</p>
-          <p class="text-xl font-bold">{{ totalActiveUsers }}</p>
+          <p class="text-xs text-gray-500 mb-1">Total Users</p>
+          <p class="text-xl font-bold">
+            <span *ngIf="!isLoadingMetrics">{{ totalActiveUsers }}</span>
+            <span *ngIf="isLoadingMetrics" class="animate-pulse">Loading...</span>
+          </p>
         </div>
       </div>
     </div>
@@ -35,7 +38,10 @@
       <div class="flex justify-between items-center">
         <div>
           <p class="text-xs text-gray-500 mb-1">Users Requiring<br>Approval</p>
-          <p class="text-xl font-bold">{{ usersAwaitingApproval }}</p>
+          <p class="text-xl font-bold">
+            <span *ngIf="!isLoadingMetrics">{{ usersAwaitingApproval }}</span>
+            <span *ngIf="isLoadingMetrics" class="animate-pulse">Loading...</span>
+          </p>
           <span class="text-xs text-orange-500">Pending review</span>
         </div>
       </div>
@@ -46,8 +52,14 @@
       <div class="flex justify-between items-center">
         <div>
           <p class="text-xs text-gray-500 mb-1">Training Completion Rate</p>
-          <p class="text-xl font-bold">{{ userCompletionPercentage }}%</p>
-          <span class="text-xs text-blue-500">{{ completedUsers }}/{{ totalUsers }} users</span>
+          <p class="text-xl font-bold">
+            <span *ngIf="!isLoadingMetrics">{{ userCompletionPercentage }}%</span>
+            <span *ngIf="isLoadingMetrics" class="animate-pulse">Loading...</span>
+          </p>
+          <span class="text-xs text-blue-500">
+            <span *ngIf="!isLoadingMetrics">{{ completedUsers }}/{{ totalUsers }} users</span>
+            <span *ngIf="isLoadingMetrics" class="animate-pulse">Loading...</span>
+          </span>
         </div>
       </div>
     </div>
@@ -154,7 +166,13 @@
   <div class="bg-white rounded-lg shadow-lg p-6">
     <h3 class="text-lg font-semibold mb-4 text-gray-800">User Directory</h3>
     
-    <div class="overflow-x-auto">
+    <!-- Loading indicator for users table -->
+    <div *ngIf="isLoadingUsers" class="flex justify-center items-center py-8">
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      <span class="ml-2">Loading users...</span>
+    </div>
+    
+    <div class="overflow-x-auto" *ngIf="!isLoadingUsers">
       <table class="w-full border-collapse">
         <thead>
           <tr class="bg-gray-50 border-b">
@@ -175,7 +193,19 @@
           <tr *ngFor="let user of filteredUsers" class="border-b hover:bg-gray-50 transition-colors">
             <td class="p-4">{{user.name}}</td>
             <td class="p-4">{{user.department}}</td>
-            <td class="p-4">{{user.position}}</td>
+            <td class="p-4">
+              <span class="px-2 py-1 rounded-full text-xs font-medium"
+                    [class.bg-blue-100]="user.role === 'Instructor' || user.role === 'Trainer'"
+                    [class.text-blue-800]="user.role === 'Instructor' || user.role === 'Trainer'"
+                    [class.bg-green-100]="user.role === 'Trainee' || user.role === 'Student'"
+                    [class.text-green-800]="user.role === 'Trainee' || user.role === 'Student'"
+                    [class.bg-purple-100]="user.role === 'Administrator'"
+                    [class.text-purple-800]="user.role === 'Administrator'"
+                    [class.bg-gray-100]="user.role === 'N/A' || (!user.role.includes('Instructor') && !user.role.includes('Trainer') && !user.role.includes('Trainee') && !user.role.includes('Student') && !user.role.includes('Administrator'))"
+                    [class.text-gray-800]="user.role === 'N/A' || (!user.role.includes('Instructor') && !user.role.includes('Trainer') && !user.role.includes('Trainee') && !user.role.includes('Student') && !user.role.includes('Administrator'))">
+                {{user.role}}
+              </span>
+            </td>
             <td class="p-4">
               <span class="px-2 py-1 rounded-full text-xs"
                     [class.bg-green-100]="user.status === 'Active'"
@@ -198,6 +228,9 @@
                 Edit
               </button>
             </td>
+          </tr>
+          <tr *ngIf="filteredUsers.length === 0">
+            <td colspan="6" class="p-4 text-center text-gray-500">No users found</td>
           </tr>
         </tbody>
       </table>

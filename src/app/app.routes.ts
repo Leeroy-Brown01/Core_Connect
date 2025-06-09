@@ -29,6 +29,8 @@ import { NavBarComponent } from './sheq-ig/nav-bar/nav-bar.component';
 import { TestComponent } from './test-component/test-component.component';
 import { ProfileSettingsComponent } from './sheq-ig/profile-settings/profile-settings.component';
 import { CreateTrainingComponent } from './sheq-ig/create-training/create-training.component';
+import { InstructorDashboardComponent } from './sheq-ig/instructor-dashboard/instructor-dashboard.component';
+import { InstructorOverviewComponent } from './sheq-ig/instructor-dashboard/instructor-overview/instructor-overview.component';
 
 export const routes: Routes = [
   // Public routes (no authentication required)
@@ -69,6 +71,7 @@ export const routes: Routes = [
     component: VideoOutputComponent,
     canActivate: [AuthGuard]
   },
+  
   {
     path: 'course-details/:id',
     component: CourseDetailsComponent,
@@ -117,23 +120,44 @@ export const routes: Routes = [
     canActivate: [AuthGuard],
     data: { roles: ['trainee', 'employee', 'manager', 'supervisor'] } // Add role-based access if using RoleGuard
   },
+  // instructor routes
+  {
+    path: 'instructor-dashboard',
+    component: InstructorDashboardComponent,
+    canActivate: [AuthGuard],
+    data: { roles: ['admin', 'instructor',] } // Add role-based access if using RoleGuard
+  },
+  {
+    path: 'instructor-overview',
+    component: InstructorOverviewComponent,
+    canActivate: [AuthGuard],
+    data: { roles: ['admin', 'instructor',] } // Add role-based access if using RoleGuard
+  },
+  {
+    path: 'instructor-course-management',
+    component: CourseManagementComponent,
+    canActivate: [AuthGuard],
+    data: { roles: ['admin', 'instructor',] } // Add role-based access if using RoleGuard
+  },
 
   // Admin routes
   {
     path: 'admin-sheq',
     component: AdminSheqComponent,
-    canActivate: [AuthGuard]
+    canActivate: [AuthGuard],
+    data: { roles: ['admin'] }
   },
   {
     path: 'create-training',
     component: CreateTrainingComponent,
-    canActivate: [AuthGuard]
+    canActivate: [AuthGuard],
+    data: { roles: ['admin', 'instructor'] } // Allow both admin and instructor
   },
   {
     path: 'admin-dashboard',
     component: AdminDashboardComponent,
     canActivate: [AuthGuard],
-    data: { roles: ['admin'] } // Add role-based access if using RoleGuard
+    data: { roles: ['admin'] } // Keep admin-only
   },
   {
     path: 'admin-overview',
