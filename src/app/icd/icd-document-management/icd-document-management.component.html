@@ -1,0 +1,126 @@
+<div class="space-y-6">
+  <div class="document-management-container">
+    <!-- Document Management Table -->
+    <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
+      <!-- Header -->
+      <div class="bg-gradient-to-r from-slate-50 to-blue-50 px-8 py-6 border-b border-slate-100">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-3">
+            <h3 class="text-2xl font-bold text-slate-900">Document Management</h3>
+          </div>
+          
+          <button class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+            </svg>
+            Upload Document
+          </button>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="p-8 border-b border-slate-100 bg-slate-50">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <!-- Search -->
+          <div class="md:col-span-2">
+            <label class="block text-sm font-semibold text-slate-700 mb-2">Search Documents</label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg class="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+              </div>
+              <input 
+                type="text" 
+                [(ngModel)]="searchQuery"
+                (input)="onSearchChange()"
+                class="block w-full pl-10 pr-3 py-3 border border-slate-300 rounded-xl leading-5 bg-white placeholder-slate-500 focus:outline-none focus:placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                placeholder="Search by title, department, or uploader...">
+            </div>
+          </div>
+
+          <!-- Sort By -->
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">Sort By</label>
+            <select 
+              [(ngModel)]="sortBy" 
+              (change)="onSortChange()"
+              class="block w-full px-3 py-3 border border-slate-300 rounded-xl bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+              <option value="title">Title</option>
+              <option value="department">Department</option>
+              <option value="uploadedBy">Uploaded By</option>
+              <option value="uploadedDate">Upload Date</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Documents Table -->
+      <div class="overflow-x-auto">
+        <table class="min-w-full">
+          <thead class="bg-slate-50">
+            <tr>
+              <th class="px-8 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Document</th>
+              <th class="px-8 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Department</th>
+              <th class="px-8 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Size</th>
+              <th class="px-8 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Uploaded</th>
+              <th class="px-8 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-slate-100">
+            <tr *ngFor="let doc of filteredDocuments" class="hover:bg-slate-50 transition-colors">
+              <td class="px-8 py-6 whitespace-nowrap">
+                <div class="flex items-center space-x-3">
+                  <div class="w-10 h-10 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                  </div>
+                  <div>
+                    <div class="text-sm font-semibold text-slate-900">{{ doc.title }}</div>
+                    <div class="text-sm text-slate-500">ID: {{ doc.id }}</div>
+                  </div>
+                </div>
+              </td>
+              <td class="px-8 py-6 whitespace-nowrap">
+                <div class="text-sm font-medium text-slate-900">{{ doc.department }}</div>
+              </td>
+              <td class="px-8 py-6 whitespace-nowrap">
+                <div class="text-sm font-medium text-slate-900">{{ doc.size }}</div>
+              </td>
+              <td class="px-8 py-6 whitespace-nowrap">
+                <div class="text-sm text-slate-900">{{ doc.uploadedBy }}</div>
+                <div class="text-xs text-slate-500">{{ doc.uploadedDate | date:'MMM d, y' }}</div>
+              </td>
+              <td class="px-8 py-6 whitespace-nowrap text-sm font-medium">
+                <div class="flex items-center space-x-3">
+                  <button 
+                    (click)="viewDocument(doc.id)"
+                    class="text-blue-600 hover:text-blue-800 font-semibold transition-colors">View</button>
+                  <button 
+                    (click)="downloadDocument(doc.id)"
+                    class="text-green-600 hover:text-green-800 font-semibold transition-colors">Download</button>
+                  <button 
+                    (click)="editDocument(doc.id)"
+                    class="text-slate-400 hover:text-slate-600 transition-colors">Edit</button>
+                  <button 
+                    (click)="deleteDocument(doc.id)"
+                    class="text-red-600 hover:text-red-800 font-semibold transition-colors">Delete</button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Empty State -->
+      <div *ngIf="filteredDocuments.length === 0" class="text-center py-12">
+        <svg class="mx-auto h-12 w-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+        </svg>
+        <h3 class="mt-2 text-sm font-medium text-slate-900">No documents found</h3>
+        <p class="mt-1 text-sm text-slate-500">Try adjusting your search or filter criteria.</p>
+      </div>
+    </div>
+  </div>
+</div>

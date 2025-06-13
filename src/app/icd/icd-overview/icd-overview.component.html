@@ -1,0 +1,123 @@
+<div class="space-y-6">
+  <!-- Filter Dropdown -->
+  <div class="flex items-center justify-between">
+    <div class="flex items-center space-x-4">
+      <span class="text-lg font-medium text-gray-700">Filter by:</span>
+      <div class="relative">
+        <select 
+          [(ngModel)]="selectedFilter"
+          (change)="onFilterChange()"
+          class="appearance-none bg-white border border-gray-300 rounded-full px-6 py-3 pr-10 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer shadow-sm hover:shadow-md transition-all duration-200">
+          <option *ngFor="let option of filterOptions" [value]="option.value">
+            {{ option.label }}
+          </option>
+        </select>
+        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Stats Grid -->
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+    <div *ngFor="let stat of stats" class="bg-white p-6 rounded-lg shadow border hover:shadow-lg transition-shadow duration-200 relative">
+      <div class="flex items-center">
+        <div class="p-3 rounded-full text-white mr-4" [ngClass]="stat.color">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="stat.icon"></path>
+          </svg>
+        </div>
+        <div>
+          <p class="text-2xl font-bold text-gray-900">{{ stat.value | number }}</p>
+          <p class="text-sm text-gray-600">{{ stat.title }}</p>
+        </div>
+      </div>
+      
+      <!-- Open Folder Icon for Shared Documents -->
+      <div *ngIf="stat.hasOpenIcon" class="absolute top-3 right-3">
+        <svg class="w-5 h-5 text-gray-400 hover:text-gray-600 cursor-pointer" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- Side by Side Content: Active Departments & Activity Log -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    
+    <!-- Active Departments -->
+    <div class="bg-white rounded-lg shadow border border-gray-200 flex flex-col">
+      <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-semibold text-gray-900">Active Departments</h3>
+      </div>
+      
+      <div class="flex-1 p-6">
+        <div class="space-y-4">
+          <div *ngFor="let dept of activeDepartments" class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+            <div class="flex items-center space-x-3">
+              <div class="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
+                <span class="text-white font-bold text-sm">{{ dept.name.charAt(0) }}</span>
+              </div>
+              <div>
+                <h4 class="font-medium text-gray-900">{{ dept.name }}</h4>
+                <p class="text-sm text-gray-600">{{ dept.users }} users</p>
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="inline-flex items-center px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
+                {{ dept.status }}
+              </span>
+              <p class="text-xs text-gray-500 mt-1">{{ dept.lastActivity | date:'MMM d, HH:mm' }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Bottom Panel for View All Link -->
+      <div class="px-6 py-4 border-t border-gray-100 bg-gray-50">
+        <button class="w-full text-sm text-blue-600 hover:text-blue-800 font-medium text-center py-2">
+          View All Departments →
+        </button>
+      </div>
+    </div>
+
+    <!-- Activity Log -->
+    <div class="bg-white rounded-lg shadow border border-gray-200 flex flex-col">
+      <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-semibold text-gray-900">Activity Log</h3>
+      </div>
+      
+      <div class="flex-1 p-6">
+        <div class="space-y-4">
+          <div *ngFor="let activity of activityLogs" class="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+            <div class="flex-shrink-0 mt-1">
+              <div class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+              </div>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm text-gray-900">
+                <span class="font-medium">{{ activity.user }}</span>
+                <span class="text-gray-600"> {{ activity.action }} </span>
+                <span class="font-medium">{{ activity.target }}</span>
+              </p>
+              <p class="text-xs text-gray-500 mt-1">{{ activity.timestamp | date:'MMM d, yyyy HH:mm' }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Bottom Panel for View All Link -->
+      <div class="px-6 py-4 border-t border-gray-100 bg-gray-50">
+        <button class="w-full text-sm text-blue-600 hover:text-blue-800 font-medium text-center py-2">
+          View All Activity →
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

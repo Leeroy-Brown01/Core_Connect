@@ -1,0 +1,46 @@
+<div class="p-6 bg-white rounded-lg shadow-sm">
+  <!-- Header -->
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">ICD Dashboard</h1>
+    <p class="text-gray-600">Monitor and manage document circulation</p>
+  </div>
+
+  <!-- Simple Tab Navigation -->
+  <div class="border-b border-gray-200 mb-6 ">
+    <nav class="flex space-x-8 z-0 sticky">
+      <button
+        *ngFor="let tab of tabs"
+        (click)="switchTab(tab.id)"
+        class="py-4 px-1 border-b-2 font-medium text-sm"
+        [class.border-blue-500]="activeTab === tab.id"
+        [class.text-blue-600]="activeTab === tab.id"
+        [class.border-transparent]="activeTab !== tab.id"
+        [class.text-gray-500]="activeTab !== tab.id">
+        {{ tab.label }}
+      </button>
+    </nav>
+  </div>
+
+  <!-- Tab Content - SIMPLE CONDITIONS -->
+  <div>
+    <!-- Overview Tab -->
+    <div *ngIf="activeTab === 'overview'">
+      <app-icd-overview></app-icd-overview>
+    </div>
+
+    <!-- User Management Tab -->
+    <div *ngIf="activeTab === 'user-management'">
+      <app-icd-user-management></app-icd-user-management>
+    </div>
+
+    <!-- Document Management Tab -->
+    <div *ngIf="activeTab === 'document-management'">
+      <app-icd-document-management></app-icd-document-management>
+    </div>
+
+    <!-- Department Management Tab -->
+    <div *ngIf="activeTab === 'department-management'">
+      <app-icd-department-management></app-icd-department-management>
+    </div>
+  </div>
+</div>
