@@ -1,38 +1,37 @@
-<div class="p-6">
+<div class="p">
   
-  <!-- Filter Section -->
-  <div class="mb-6">
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-      <div class="flex items-center gap-4 mb-4">
-        <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8l6 6 6-6"></path>
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12l6 6 6-6"></path>
-        </svg>
-        <span class="font-medium text-gray-700">Filter by:</span>
-      </div>
-      <div class="flex flex-wrap gap-2">
-        <button 
-          *ngFor="let option of filterOptions"
-          class="px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
-          [class.bg-blue-500]="selectedFilter === option.value"
-          [class.text-white]="selectedFilter === option.value"
-          [class.bg-gray-100]="selectedFilter !== option.value"
-          [class.text-gray-700]="selectedFilter !== option.value"
-          [class.hover:bg-blue-600]="selectedFilter === option.value"
-          [class.hover:bg-gray-200]="selectedFilter !== option.value"
-          (click)="onFilterChange(option.value)">
-          {{ option.label }}
-        </button>
-      </div>
-    </div>
-  </div>
+  
 
   <!-- Archived List -->
   <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-    <!-- Header -->
-    <div class="border-b border-gray-200 px-6 py-4">
-      <h2 class="text-xl font-semibold text-gray-800">Archived Messages</h2>
-      <p class="text-sm text-gray-600 mt-1">{{ archivedItems.length }} archived messages</p>
+    <!-- category filter -->
+    <div class="px-4 py-3 border-b border-gray-100">
+      <div class="flex gap-2 overflow-x-auto scrollbar-hide">
+        <button
+          *ngFor="let category of mobileFilterCategories; let i = index"
+          (click)="onMobileFilterChange(category.id)"
+          class="flex-shrink-0 flex items-center gap-2 px-3 py-1.5 text-sm font-medium transition-all duration-200 rounded-full"
+          [class.bg-blue-500]="selectedMobileFilter === category.id"
+          [class.text-white]="selectedMobileFilter === category.id"
+          [class.shadow-sm]="selectedMobileFilter === category.id"
+          [class.bg-gray-100]="selectedMobileFilter !== category.id"
+          [class.text-gray-700]="selectedMobileFilter !== category.id"
+          [class.hover:bg-blue-600]="selectedMobileFilter === category.id"
+          [class.hover:bg-gray-200]="selectedMobileFilter !== category.id">
+          
+          <span>{{ category.label }}</span>
+          
+          <!-- Count badge -->
+          <span 
+            class="text-xs px-1.5 py-0.5 rounded-full font-medium"
+            [class.bg-white]="selectedMobileFilter === category.id"
+            [class.text-blue-500]="selectedMobileFilter === category.id"
+            [class.bg-blue-100]="selectedMobileFilter !== category.id"
+            [class.text-blue-700]="selectedMobileFilter !== category.id">
+            {{ category.count }}
+          </span>
+        </button>
+      </div>
     </div>
 
     <!-- Message List -->
@@ -96,14 +95,6 @@
       </div>
     </div>
 
-    <!-- Empty State -->
-    <div *ngIf="archivedItems.length === 0" class="px-6 py-12 text-center">
-      <svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8l6 6 6-6"></path>
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12l6 6 6-6"></path>
-      </svg>
-      <h3 class="text-lg font-medium text-gray-900 mb-2">No archived messages</h3>
-      <p class="text-gray-600">Messages you archive will appear here for future reference.</p>
-    </div>
+    
   </div>
 </div>

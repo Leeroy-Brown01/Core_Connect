@@ -115,6 +115,8 @@ export class IcdDocumentManagementComponent {
     console.log('View document:', docId);
   }
 
+  
+
   deleteDocument(docId: string): void {
     console.log('Delete document:', docId);
   }

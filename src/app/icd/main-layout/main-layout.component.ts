@@ -10,6 +10,7 @@ import { RecycleComponent } from '../recycle/recycle.component';
 import { ArchivedComponent } from '../archived/archived.component';
 import { ComposeComponent } from '../compose/compose.component';
 import { IcdDownloadsComponent } from '../icd-downloads/icd-downloads.component';
+import { IcdUserManagementComponent } from '../icd-user-management/icd-user-management.component';
 
 interface Tab {
   id: string;
@@ -25,7 +26,7 @@ interface Tab {
     , IcdDashboardComponent
     , InboxComponent
     , SentComponent
-    ,IcdUsersComponent
+    ,IcdUserManagementComponent
     ,IcdProfileSettingsComponent, 
     RecycleComponent,
     ArchivedComponent,
@@ -69,7 +70,7 @@ export class MainLayoutComponent {
       count: 8 
     },
     { 
-      id: 'active-users', 
+      id: 'icd-user-management', 
       label: 'Active Users',
       count: 24 
     },

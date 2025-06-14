@@ -34,6 +34,15 @@ export class ArchivedComponent {
     { value: 'attachments', label: 'With Attachments' }
   ];
 
+  // Mobile filter categories (for the rounded pills)
+  mobileFilterCategories = [
+    { id: 'all', label: 'All', count: 15 },
+    { id: 'unread', label: 'Unread', count: 4 },
+    { id: 'documents', label: 'Documents', count: 7 }
+  ];
+
+  selectedMobileFilter = 'all';
+
   archivedItems: ArchivedItem[] = [
     {
       id: 1,
@@ -69,6 +78,11 @@ export class ArchivedComponent {
 
   onFilterChange(filterValue: string): void {
     this.selectedFilter = filterValue;
+  }
+
+  onMobileFilterChange(filterId: string): void {
+    this.selectedMobileFilter = filterId;
+    console.log('Mobile filter changed to:', filterId);
   }
 
   trackByItemId(index: number, item: ArchivedItem): number {

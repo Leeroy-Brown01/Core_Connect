@@ -1,4 +1,4 @@
-<div class="p-6">
+<div class="p-2">
   
   <!-- Header Section -->
   <div class="mb-6">
@@ -19,13 +19,31 @@
   </div>
 
   <!-- Main Content -->
-  <div class="flex gap-6">
+  <div class="flex flex-col md:flex-row gap-6">
     
-    <!-- Sidebar -->
-    <div class="w-64">
+    <!-- Sidebar - Responsive Navigation -->
+    <div class="w-full md:w-64">
       <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-        <h3 class="text-sm font-semibold text-gray-900 mb-4">Settings</h3>
-        <nav class="space-y-2">
+        <h3 class="text-sm font-semibold text-gray-900 mb-4 hidden md:block">Settings</h3>
+        
+        <!-- Mobile/Small Screen - Horizontal Tabs -->
+        <nav class="sm:flex sm:space-x-4 md:hidden space-y-2 sm:space-y-0">
+          <button
+            *ngFor="let section of profileSections"
+            (click)="selectSection(section.id)"
+            [class.bg-blue-50]="activeSection === section.id"
+            [class.text-blue-700]="activeSection === section.id"
+            [class.border-blue-200]="activeSection === section.id"
+            class="w-full sm:flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium rounded-lg transition-colors hover:bg-gray-50 border border-transparent text-center">
+            <div>
+              <div class="font-medium">{{section.name}}</div>
+              <div class="text-xs text-gray-500 hidden sm:block">{{section.description}}</div>
+            </div>
+          </button>
+        </nav>
+
+        <!-- Desktop/Medium+ Screen - Vertical Tabs -->
+        <nav class="hidden md:block space-y-2">
           <button
             *ngFor="let section of profileSections"
             (click)="selectSection(section.id)"

@@ -3,7 +3,7 @@
   <!-- Top Panel -->
   <header class="bg-slate-200 px-6 py-4 w-full flex items-center sticky top-0 z-40">
     <!-- Left Section: Menu + Logo -->
-    <div class="md:w-3/12 w-8/12  flex items-center gap-4">
+    <div class="md:w-3/12 w-10/12  flex items-center gap-4">
       <!-- Menu Toggle Button -->
       <button 
         (click)="toggleSidenav()"
@@ -48,7 +48,7 @@
     </div>
 
     <!-- Right Section: Actions -->
-    <div class="md:w-3/12 4/12  flex items-center justify-end gap-4">
+    <div class="md:w-3/12 2/12  flex items-center justify-end gap-4">
       <!-- Search Icon -->
       <button 
         (click)="onSearch()"
@@ -57,6 +57,8 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
         </svg>
       </button>
+
+      <!--  -->
 
       <!-- Help Button -->
       <button 
@@ -68,23 +70,11 @@
         </svg>
       </button>
 
-      <!-- Dark/Light Mode Toggle -->
-      <button 
-        (click)="toggleDarkMode()"
-        class="p-2 hidden md:block rounded-lg hover:bg-slate-300 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        [title]="isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'">
-        <svg *ngIf="isDarkMode" class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
-        </svg>
-        <svg *ngIf="!isDarkMode" class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
-        </svg>
-      </button>
       
       <!-- User Avatar with Dropdown -->
       <div class="relative">
         <div 
-          class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium cursor-pointer hover:bg-blue-600 transition-colors"
+          class="w-8 h-8 md:block hidden bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium cursor-pointer hover:bg-blue-600 transition-colors"
           (mouseenter)="onMouseEnterDropdown()"
           (mouseleave)="onMouseLeaveDropdown()">
           A
@@ -127,7 +117,7 @@
     <!-- Side Navigation -->
     <nav 
       [class.w-64]="!isSidenavCollapsed"
-      [class.w-16]="isSidenavCollapsed"
+      [class.w-24]="isSidenavCollapsed"
       class="bg-slate-200 hidden md:flex border-r border-gray-300 p-4 transition-all duration-300 ease-in-out flex-col">
       
       <!-- Main Navigation Items - Takes available space -->
@@ -162,7 +152,7 @@
                 </svg>
                 
                 <svg *ngIf="tab.id === 'inbox'" class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                 </svg>
                 
                 <svg *ngIf="tab.id === 'sent'" class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -170,13 +160,11 @@
                 </svg>
                 
                 <svg *ngIf="tab.id === 'active-users'" class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                 </svg>
                 
                 <svg *ngIf="tab.id === 'archived'" class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8l6 6 6-6"></path>
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h18l-2 16H5L3 4z"></path>
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v2a4 4 0 01-8 0V8"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8l6 6m0 0l6-6m-6 6V3m-3 11h6a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v5a2 2 0 002 2z"></path>
                 </svg>
                 
                 <svg *ngIf="tab.id === 'recycle'" class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -258,8 +246,8 @@
         <app-sent></app-sent>
       </div>
 
-      <div *ngIf="activeTab === 'active-users'">
-        <app-icd-users></app-icd-users>
+      <div *ngIf="activeTab === 'icd-user-management'">
+        <app-icd-user-management></app-icd-user-management>
       </div>
 
       <div *ngIf="activeTab === 'account-settings'">
@@ -296,12 +284,12 @@
     <div class="flex items-center justify-around">
       <!-- Home -->
       <button 
-        (click)="switchTab('icd-dashboard')"
+        (click)="switchTab('inbox')"
         class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors duration-200 min-w-0"
-        [class.text-blue-600]="activeTab === 'icd-dashboard'"
-        [class.bg-blue-50]="activeTab === 'icd-dashboard'"
-        [class.text-gray-600]="activeTab !== 'icd-dashboard'"
-        [class.hover:bg-slate-300]="activeTab !== 'icd-dashboard'">
+        [class.text-blue-600]="activeTab === 'inbox'"
+        [class.bg-blue-50]="activeTab === 'inbox'"
+        [class.text-gray-600]="activeTab !== 'inbox'"
+        [class.hover:bg-slate-300]="activeTab !== 'inbox'">
         <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
         </svg>
@@ -320,6 +308,20 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
         </svg>
         <span class="text-xs font-medium">Downloads</span>
+      </button>
+
+      <!-- Compose -->
+      <button 
+        (click)="switchTab('compose')"
+        class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors duration-200 min-w-0"
+        [class.text-blue-600]="activeTab === 'compose'"
+        [class.bg-blue-50]="activeTab === 'compose'"
+        [class.text-gray-600]="activeTab !== 'compose'"
+        [class.hover:bg-slate-300]="activeTab !== 'compose'">
+        <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+        </svg>
+        <span class="text-xs font-medium">Compose</span>
       </button>
 
       <!-- Settings -->

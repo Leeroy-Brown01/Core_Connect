@@ -1,5 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
+import { ArchivedComponent } from '../archived/archived.component';
+import { SentComponent } from '../sent/sent.component';
+import { RecycleComponent } from '../recycle/recycle.component';
+import { IcdUserManagementComponent } from '../icd-user-management/icd-user-management.component';
 
 interface InboxItem {
   id: number;
@@ -13,21 +17,46 @@ interface InboxItem {
 
 @Component({
   selector: 'app-inbox',
-  imports: [CommonModule],
+  imports: [CommonModule, ArchivedComponent, SentComponent,RecycleComponent , IcdUserManagementComponent],
   templateUrl: './inbox.component.html',
   styleUrl: './inbox.component.scss'
 })
 export class InboxComponent {
+
+  // User information
+  currentUser = {
+    firstName: 'John',
+    lastName: 'Doe',
+    role: 'Medical Administrator'
+  };
+
+  // Tab management
+  activeTab: string = 'inbox';
+
+  tabs = [
+    { id: 'inbox', label: 'Inbox' },
+    { id: 'sent', label: 'Sent' },
+    { id: 'icd-user-management', label: 'Users' },
+    { id: 'archived', label: 'Archived' },
+    { id: 'recycled', label: 'Recycled' }
+  ];
 
   // Filter options
   selectedFilter = 'all';
   filterOptions = [
     { value: 'all', label: 'All Items' },
     { value: 'documents', label: 'Documents' },
-    { value: 'messages', label: 'Messages' },
-    { value: 'urgent', label: 'Urgent' },
-    { value: 'recent', label: 'Recent' }
+    { value: 'messages', label: 'Messages' }
   ];
+
+  // Mobile filter categories (for the rounded pills)
+  mobileFilterCategories = [
+    { id: 'all', label: 'All', count: 12 },
+    { id: 'unread', label: 'Unread', count: 3 },
+    { id: 'documents', label: 'Documents', count: 5 }
+  ];
+
+  selectedMobileFilter = 'all';
 
   inboxItems: InboxItem[] = [
     {
@@ -77,10 +106,19 @@ export class InboxComponent {
     }
   ];
 
+  switchTab(tabId: string): void {
+    this.activeTab = tabId;
+  }
+
   onFilterChange(filter: string): void {
     this.selectedFilter = filter;
     // Implement filter logic here
     console.log('Filter changed to:', filter);
+  }
+
+  onMobileFilterChange(filterId: string): void {
+    this.selectedMobileFilter = filterId;
+    console.log('Mobile filter changed to:', filterId);
   }
 
   trackByItemId(index: number, item: InboxItem): number {

@@ -35,6 +35,14 @@ export class RecycleComponent {
     { value: 'expiring', label: 'Expiring Soon' }
   ];
 
+  // Mobile filter categories (for the rounded pills) - Only Inbox and Sent
+  mobileFilterCategories = [
+    { id: 'inbox', label: 'Inbox', count: 8 },
+    { id: 'sent', label: 'Sent', count: 4 }
+  ];
+
+  selectedMobileFilter = 'inbox';
+
   recycledItems: RecycledItem[] = [
     {
       id: 1,
@@ -73,6 +81,11 @@ export class RecycleComponent {
 
   onFilterChange(filterValue: string): void {
     this.selectedFilter = filterValue;
+  }
+
+  onMobileFilterChange(filterId: string): void {
+    this.selectedMobileFilter = filterId;
+    console.log('Mobile filter changed to:', filterId);
   }
 
   trackByItemId(index: number, item: RecycledItem): number {

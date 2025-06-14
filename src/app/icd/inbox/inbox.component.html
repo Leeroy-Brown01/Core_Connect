@@ -1,92 +1,153 @@
-<div class="p-6">
+<div class="p-2 ">
   
-  <!-- Filter Section -->
-  <div class="mb-6">
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-      <div class="flex items-center gap-4 mb-4">
-        <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-        </svg>
-        <span class="font-medium text-gray-700">Filter by:</span>
+  <!-- Welcome Section - Sticky -->
+  <div class="sticky top-0 z-20 bg-gray-50 mb-2 py-3">
+    <div class="flex items-center gap-3">
+      <!-- User Avatar - Only visible on small screens -->
+      <div class="w-12 h-12 sm:block md:hidden bg-blue-500 rounded-full flex items-center justify-center text-white font-medium">
+        {{ currentUser.firstName.charAt(0).toUpperCase() }}{{ currentUser.lastName.charAt(0).toUpperCase() }}
       </div>
-      <div class="flex flex-wrap gap-2">
-        <button 
-          *ngFor="let option of filterOptions"
-          class="px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
-          [class.bg-blue-500]="selectedFilter === option.value"
-          [class.text-white]="selectedFilter === option.value"
-          [class.bg-gray-100]="selectedFilter !== option.value"
-          [class.text-gray-700]="selectedFilter !== option.value"
-          [class.hover:bg-blue-600]="selectedFilter === option.value"
-          [class.hover:bg-gray-200]="selectedFilter !== option.value"
-          (click)="onFilterChange(option.value)">
-          {{ option.label }}
-        </button>
+      
+      <!-- Welcome Text -->
+      <div class="flex-1">
+        <h1 class="text-xl font-semibold text-gray-900 mb-1">
+          Welcome back, {{ currentUser.firstName }} {{ currentUser.lastName }}!
+        </h1>
+        <p class="text-sm text-gray-600">
+          {{ currentUser.role }} 
+        </p>
       </div>
     </div>
   </div>
 
-  <!-- Inbox List -->
-  <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-    <!-- Header -->
-    <div class="border-b border-gray-200 px-6 py-4">
-      <h2 class="text-xl font-semibold text-gray-800">Inbox Messages</h2>
-      <p class="text-sm text-gray-600 mt-1">{{ inboxItems.length }} messages</p>
+  <!-- Tab Navigation for mobile screen - Sticky -->
+  <div class="sticky top-16 z-10 bg-gray-50 mb-2 md:hidden block">
+    <div class="border-b border-gray-200 mb-6">
+      <nav class="flex space-x-5">
+        <button
+          *ngFor="let tab of tabs"
+          (click)="switchTab(tab.id)"
+          class="py-4 px-1 border-b-2 font-medium text-sm"
+          [class.border-blue-500]="activeTab === tab.id"
+          [class.text-blue-600]="activeTab === tab.id"
+          [class.border-transparent]="activeTab !== tab.id"
+          [class.text-gray-500]="activeTab !== tab.id">
+          {{ tab.label }}
+        </button>
+      </nav>
     </div>
+  </div>
 
-    <!-- Message List -->
-    <div class="divide-y divide-gray-200">
-      <div 
-        *ngFor="let item of inboxItems; trackBy: trackByItemId"
-        class="px-6 py-4 hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
-        [class.bg-blue-50]="!item.isRead"
-        [class.border-l-4]="!item.isRead"
-        [class.border-blue-500]="!item.isRead">
-        
-        <div class="flex items-center justify-between">
-          <!-- Left Section: Sender Info and Content -->
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-3 mb-2">
-              <!-- Sender Avatar -->
-              <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
-                {{ item.senderName.charAt(0).toUpperCase() }}
-              </div>
+  <!-- Tab Content -->
+  <div>
+    <!-- Inbox Tab -->
+    <div *ngIf="activeTab === 'inbox'">
+      <!-- Inbox List -->
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+        <!-- filtering categories -->
+        <div class="px-4 py-3 border-b border-gray-100">
+          <div class="flex gap-2 overflow-x-auto scrollbar-hide">
+            <button
+              *ngFor="let category of mobileFilterCategories; let i = index"
+              (click)="onMobileFilterChange(category.id)"
+              class="flex-shrink-0 flex items-center gap-2 px-3 py-1.5 text-sm font-medium transition-all duration-200 rounded-full"
+              [class.bg-blue-500]="selectedMobileFilter === category.id"
+              [class.text-white]="selectedMobileFilter === category.id"
+              [class.shadow-sm]="selectedMobileFilter === category.id"
+              [class.bg-gray-100]="selectedMobileFilter !== category.id"
+              [class.text-gray-700]="selectedMobileFilter !== category.id"
+              [class.hover:bg-blue-600]="selectedMobileFilter === category.id"
+              [class.hover:bg-gray-200]="selectedMobileFilter !== category.id">
               
-              <!-- Sender Name and Subject -->
+              <span>{{ category.label }}</span>
+              
+              <!-- Count badge -->
+              <span 
+                class="text-xs px-1.5 py-0.5 rounded-full font-medium"
+                [class.bg-white]="selectedMobileFilter === category.id"
+                [class.text-blue-500]="selectedMobileFilter === category.id"
+                [class.bg-blue-100]="selectedMobileFilter !== category.id"
+                [class.text-blue-700]="selectedMobileFilter !== category.id">
+                {{ category.count }}
+              </span>
+            </button>
+          </div>
+        </div>
+        
+        
+        <!-- Message List -->
+        <div class="divide-y divide-gray-200">
+          <div 
+            *ngFor="let item of inboxItems; trackBy: trackByItemId"
+            class="px-6 py-4 hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
+            [class.bg-blue-50]="!item.isRead">
+            
+            <div class="flex items-center justify-between">
+              <!-- Left Section: Sender Info and Content -->
               <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2">
-                  <span class="font-semibold text-gray-900 truncate">{{ item.senderName }}</span>
-                  <span *ngIf="!item.isRead" class="w-2 h-2 bg-blue-500 rounded-full"></span>
+                <div class="flex items-center gap-3 mb-2">
+                  <!-- Sender Avatar -->
+                  <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
+                    {{ item.senderName.charAt(0).toUpperCase() }}
+                  </div>
+                  
+                  <!-- Sender Name and Subject -->
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2">
+                      <span class="font-semibold text-gray-900 truncate">{{ item.senderName }}</span>
+                      <span *ngIf="!item.isRead" class="w-2 h-2 bg-blue-500 rounded-full"></span>
+                    </div>
+                    <h3 class="font-medium text-gray-800 truncate">{{ item.subject }}</h3>
+                  </div>
                 </div>
-                <h3 class="font-medium text-gray-800 truncate">{{ item.subject }}</h3>
+                
+                <!-- Message Preview -->
+                <p class="text-gray-600 text-sm line-clamp-2 ml-13">{{ item.textContent }}</p>
+              </div>
+
+              <!-- Right Section: Time and Attachment -->
+              <div class="flex flex-col items-end gap-2 ml-4">
+                <span class="text-xs text-gray-500 whitespace-nowrap">{{ item.time }}</span>
+                <div *ngIf="item.hasAttachment" class="flex items-center gap-1">
+                  <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
+                  </svg>
+                  <span class="text-xs text-gray-500">Attachment</span>
+                </div>
               </div>
             </div>
-            
-            <!-- Message Preview -->
-            <p class="text-gray-600 text-sm line-clamp-2 ml-13">{{ item.textContent }}</p>
           </div>
+        </div>
 
-          <!-- Right Section: Time and Attachment -->
-          <div class="flex flex-col items-end gap-2 ml-4">
-            <span class="text-xs text-gray-500 whitespace-nowrap">{{ item.time }}</span>
-            <div *ngIf="item.hasAttachment" class="flex items-center gap-1">
-              <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
-              </svg>
-              <span class="text-xs text-gray-500">Attachment</span>
-            </div>
-          </div>
+        <!-- Empty State -->
+        <div *ngIf="inboxItems.length === 0" class="px-6 py-12 text-center">
+          <svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+          </svg>
+          <h3 class="text-lg font-medium text-gray-900 mb-2">No messages found</h3>
+          <p class="text-gray-600">Your inbox is empty or no messages match the current filter.</p>
         </div>
       </div>
     </div>
 
-    <!-- Empty State -->
-    <div *ngIf="inboxItems.length === 0" class="px-6 py-12 text-center">
-      <svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
-      </svg>
-      <h3 class="text-lg font-medium text-gray-900 mb-2">No messages found</h3>
-      <p class="text-gray-600">Your inbox is empty or no messages match the current filter.</p>
+    <!-- Sent Tab -->
+    <div *ngIf="activeTab === 'sent'">
+      <app-sent></app-sent>
+    </div>
+
+    <!-- Users Tab -->
+    <div *ngIf="activeTab === 'icd-user-management'">
+      <app-icd-user-management></app-icd-user-management>
+    </div>
+
+    <!-- Archived Tab -->
+    <div *ngIf="activeTab === 'archived'">
+      <app-archived></app-archived>
+    </div>
+
+    <!-- Recycled Tab -->
+    <div *ngIf="activeTab === 'recycled'">
+     <app-recycle></app-recycle>
     </div>
   </div>
 </div>

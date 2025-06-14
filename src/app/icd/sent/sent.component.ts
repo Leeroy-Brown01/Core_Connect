@@ -29,6 +29,15 @@ export class SentComponent {
     { value: 'recent', label: 'Recent' }
   ];
 
+  // Mobile filter categories (for the rounded pills)
+  mobileFilterCategories = [
+    { id: 'all', label: 'All', count: 8 },
+    { id: 'unread', label: 'Unread', count: 2 },
+    { id: 'documents', label: 'Documents', count: 3 }
+  ];
+
+  selectedMobileFilter = 'all';
+
   sentItems: SentItem[] = [
     {
       id: 1,
@@ -81,6 +90,11 @@ export class SentComponent {
     this.selectedFilter = filter;
     // Implement filter logic here
     console.log('Filter changed to:', filter);
+  }
+
+  onMobileFilterChange(filterId: string): void {
+    this.selectedMobileFilter = filterId;
+    console.log('Mobile filter changed to:', filterId);
   }
 
   trackByItemId(index: number, item: SentItem): number {
