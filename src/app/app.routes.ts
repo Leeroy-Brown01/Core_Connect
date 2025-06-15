@@ -49,6 +49,7 @@ import { IcdDocumentManagementComponent } from './icd/icd-document-management/ic
 import { IcdDepartmentManagementComponent } from './icd/icd-department-management/icd-department-management.component';
 import { IcdDraftComponent } from './icd/icd-draft/icd-draft.component';
 import { IcdDownloadsComponent } from './icd/icd-downloads/icd-downloads.component';
+import { IcdMessageDetailsComponent } from './icd/icd-message-details/icd-message-details.component';
 
 export const routes: Routes = [
   // Public routes (no authentication required)
@@ -317,6 +318,10 @@ export const routes: Routes = [
       {
         path: 'archived',
         component: ArchivedComponent
+      },
+      {
+        path: 'icd-message-details/:id',
+        component: IcdMessageDetailsComponent
       },
       {
         path: 'recycle',

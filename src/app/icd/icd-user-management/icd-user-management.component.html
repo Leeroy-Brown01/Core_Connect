@@ -1,3 +1,6 @@
+<!-- Toast Component -->
+<app-toast></app-toast>
+
 <div class="user-management-container space-y-8">
   <!-- User Management Table -->
   <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
@@ -38,7 +41,7 @@
               [(ngModel)]="searchQuery"
               (input)="onSearchChange()"
               class="block w-full pl-10 pr-3 py-3 border border-slate-300 rounded-xl leading-5 bg-white placeholder-slate-500 focus:outline-none focus:placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-              placeholder="Search by name or department...">
+              placeholder="Search by name, department, or email...">
           </div>
         </div>
         
@@ -71,7 +74,7 @@
               [(ngModel)]="searchQuery"
               (input)="onSearchChange()"
               class="block w-full pl-10 pr-3 py-3 border border-slate-300 rounded-xl leading-5 bg-white placeholder-slate-500 focus:outline-none focus:placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-              placeholder="Search by name or department...">
+              placeholder="Search by name, department, or email...">
           </div>
         </div>
 
@@ -83,7 +86,9 @@
             (change)="onSortChange()"
             class="block w-full px-3 py-3 border border-slate-300 rounded-xl bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
             <option value="name">Name</option>
+            <option value="email">Email</option>
             <option value="department">Department</option>
+            <option value="role">Role</option>
             <option value="documents">Documents</option>
             <option value="created">Created Date</option>
           </select>
@@ -96,10 +101,12 @@
       <table class="min-w-full">
         <thead class="bg-slate-50">
           <tr>
-            <th class="px-8 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Name</th>
+            <th class="px-8 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">User</th>
             <th class="px-8 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Department</th>
+            <th class="px-8 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Role</th>
             <th class="px-8 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Documents</th>
             <th class="px-8 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Created</th>
+            <th class="px-8 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Status</th>
             <th class="px-8 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Actions</th>
           </tr>
         </thead>
@@ -112,18 +119,31 @@
                 </div>
                 <div>
                   <div class="text-sm font-semibold text-slate-900">{{ user.name }}</div>
-                  <div class="text-sm text-slate-500">ID: {{ user.id }}</div>
+                  <div class="text-sm text-slate-500">{{ user.email }}</div>
                 </div>
               </div>
             </td>
             <td class="px-8 py-6 whitespace-nowrap">
               <div class="text-sm font-medium text-slate-900">{{ user.department }}</div>
+              <div class="text-sm text-slate-500">{{ user.phone }}</div>
+            </td>
+            <td class="px-8 py-6 whitespace-nowrap">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border"
+                    [class]="getRoleColor(user.role)">
+                {{ user.role | titlecase }}
+              </span>
             </td>
             <td class="px-8 py-6 whitespace-nowrap">
               <div class="text-sm font-bold text-slate-900">{{ user.documents }}</div>
             </td>
             <td class="px-8 py-6 whitespace-nowrap text-sm text-slate-500">
               {{ user.createdDate | date:'MMM d, y' }}
+            </td>
+            <td class="px-8 py-6 whitespace-nowrap">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border"
+                    [class]="getStatusColor(user.status)">
+                {{ user.status | titlecase }}
+              </span>
             </td>
             <td class="px-8 py-6 whitespace-nowrap text-sm font-medium">
               <div class="flex items-center space-x-3">
@@ -156,16 +176,16 @@
   <!-- Add User Modal -->
   <div 
     *ngIf="showAddUserModal" 
-    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
     (click)="closeAddUserModal()">
     
     <div 
-      class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto"
+      class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
       (click)="$event.stopPropagation()">
       
       <!-- Modal Header -->
       <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-        <h2 class="text-xl font-semibold text-gray-900">Add New User</h2>
+        <h2 class="text-xl font-semibold text-gray-900">Add New ICD User</h2>
         <button 
           (click)="closeAddUserModal()"
           class="text-gray-400 hover:text-gray-600 transition-colors">
@@ -176,7 +196,7 @@
       </div>
 
       <!-- Modal Body -->
-      <form (ngSubmit)="onSubmitUser()" #userForm="ngForm" class="p-6">
+      <form (ngSubmit)="onSubmitUser(userForm)" #userForm="ngForm" class="p-6">
         
         <!-- Personal Information Section -->
         <div class="mb-6">
@@ -187,64 +207,110 @@
             Personal Information
           </h3>
 
-          <!-- First Name -->
-          <div class="mb-4">
-            <label for="firstName" class="block text-sm font-medium text-gray-700 mb-2">
-              First Name <span class="text-red-500">*</span>
-            </label>
-            <input 
-              type="text" 
-              id="firstName"
-              name="firstName"
-              [(ngModel)]="newUserForm.firstName"
-              required
-              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              placeholder="Enter first name">
-          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Full Name -->
+            <div class="md:col-span-2">
+              <label for="fullName" class="block text-sm font-medium text-gray-700 mb-2">
+                Full Name <span class="text-red-500">*</span>
+              </label>
+              <input 
+                type="text" 
+                id="fullName"
+                name="fullName"
+                [(ngModel)]="newUserForm.fullName"
+                required
+                minlength="2"
+                [disabled]="isCreatingUser"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                [class.border-red-500]="isFieldInvalid(userForm, 'fullName')"
+                placeholder="Enter full name">
+              <div *ngIf="isFieldInvalid(userForm, 'fullName')" class="text-red-500 text-xs mt-1">
+                {{ getFieldError(userForm, 'fullName') }}
+              </div>
+            </div>
 
-          <!-- Last Name -->
-          <div class="mb-4">
-            <label for="lastName" class="block text-sm font-medium text-gray-700 mb-2">
-              Last Name <span class="text-red-500">*</span>
-            </label>
-            <input 
-              type="text" 
-              id="lastName"
-              name="lastName"
-              [(ngModel)]="newUserForm.lastName"
-              required
-              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              placeholder="Enter last name">
-          </div>
+            <!-- Email -->
+            <div>
+              <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+                Email Address <span class="text-red-500">*</span>
+              </label>
+              <input 
+                type="email" 
+                id="email"
+                name="email"
+                [(ngModel)]="newUserForm.email"
+                required
+                email
+                [disabled]="isCreatingUser"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                [class.border-red-500]="isFieldInvalid(userForm, 'email')"
+                placeholder="user@company.com">
+              <div *ngIf="isFieldInvalid(userForm, 'email')" class="text-red-500 text-xs mt-1">
+                {{ getFieldError(userForm, 'email') }}
+              </div>
+            </div>
 
-          <!-- Email -->
-          <div class="mb-4">
-            <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
-              Email Address <span class="text-red-500">*</span>
-            </label>
-            <input 
-              type="email" 
-              id="email"
-              name="email"
-              [(ngModel)]="newUserForm.email"
-              required
-              email
-              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              placeholder="Enter email address">
-          </div>
+            <!-- Phone -->
+            <div>
+              <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">
+                Phone Number <span class="text-red-500">*</span>
+              </label>
+              <input 
+                type="tel" 
+                id="phone"
+                name="phone"
+                [(ngModel)]="newUserForm.phone"
+                required
+                [disabled]="isCreatingUser"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                [class.border-red-500]="isFieldInvalid(userForm, 'phone')"
+                placeholder="+27 11 123 4567">
+              <div *ngIf="isFieldInvalid(userForm, 'phone')" class="text-red-500 text-xs mt-1">
+                {{ getFieldError(userForm, 'phone') }}
+              </div>
+            </div>
 
-          <!-- Phone -->
-          <div class="mb-4">
-            <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">
-              Phone Number
-            </label>
-            <input 
-              type="tel" 
-              id="phone"
-              name="phone"
-              [(ngModel)]="newUserForm.phone"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              placeholder="Enter phone number">
+            <!-- Department -->
+            <div>
+              <label for="department" class="block text-sm font-medium text-gray-700 mb-2">
+                Department <span class="text-red-500">*</span>
+              </label>
+              <select 
+                id="department"
+                name="department"
+                [(ngModel)]="newUserForm.department"
+                required
+                [disabled]="isCreatingUser"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                [class.border-red-500]="isFieldInvalid(userForm, 'department')">
+                <option value="">Select Department</option>
+                <option *ngFor="let dept of departments" [value]="dept">{{ dept }}</option>
+              </select>
+              <div *ngIf="isFieldInvalid(userForm, 'department')" class="text-red-500 text-xs mt-1">
+                {{ getFieldError(userForm, 'department') }}
+              </div>
+            </div>
+
+            <!-- Province -->
+            <div>
+              <label for="province" class="block text-sm font-medium text-gray-700 mb-2">
+                Province <span class="text-red-500">*</span>
+              </label>
+              <select 
+                id="province"
+                name="province"
+                [(ngModel)]="newUserForm.province"
+                required
+                [disabled]="isCreatingUser"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                [class.border-red-500]="isFieldInvalid(userForm, 'province')">
+                <option value="">Select Province</option>
+                <option *ngFor="let prov of provinces" [value]="prov">{{ prov }}</option>
+              </select>
+              <div *ngIf="isFieldInvalid(userForm, 'province')" class="text-red-500 text-xs mt-1">
+                {{ getFieldError(userForm, 'province') }}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -257,21 +323,6 @@
             Account Information
           </h3>
 
-          <!-- Username -->
-          <div class="mb-4">
-            <label for="username" class="block text-sm font-medium text-gray-700 mb-2">
-              Username <span class="text-red-500">*</span>
-            </label>
-            <input 
-              type="text" 
-              id="username"
-              name="username"
-              [(ngModel)]="newUserForm.username"
-              required
-              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              placeholder="Enter username">
-          </div>
-
           <!-- Role -->
           <div class="mb-4">
             <label for="role" class="block text-sm font-medium text-gray-700 mb-2">
@@ -282,44 +333,60 @@
               name="role"
               [(ngModel)]="newUserForm.role"
               required
-              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
-              <option value="">Select role</option>
-              <option value="admin">Administrator</option>
-              <option value="manager">Manager</option>
-              <option value="user">User</option>
-              <option value="viewer">Viewer</option>
+              [disabled]="isCreatingUser"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              [class.border-red-500]="isFieldInvalid(userForm, 'role')">
+              <option *ngFor="let role of roleOptions" [value]="role.value">{{ role.label }}</option>
             </select>
+            <div *ngIf="isFieldInvalid(userForm, 'role')" class="text-red-500 text-xs mt-1">
+              {{ getFieldError(userForm, 'role') }}
+            </div>
           </div>
 
-          <!-- Department -->
-          <div class="mb-4">
-            <label for="department" class="block text-sm font-medium text-gray-700 mb-2">
-              Department
-            </label>
-            <select 
-              id="department"
-              name="department"
-              [(ngModel)]="newUserForm.department"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
-              <option value="">Select department</option>
-              <option value="it">IT</option>
-              <option value="hr">Human Resources</option>
-              <option value="finance">Finance</option>
-              <option value="operations">Operations</option>
-              <option value="marketing">Marketing</option>
-            </select>
-          </div>
-
-          <!-- Status -->
-          <div class="mb-4">
-            <label class="flex items-center">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Password -->
+            <div>
+              <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
+                Password <span class="text-red-500">*</span>
+              </label>
               <input 
-                type="checkbox" 
-                name="isActive"
-                [(ngModel)]="newUserForm.isActive"
-                class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
-              <span class="ml-2 text-sm text-gray-700">Active User</span>
-            </label>
+                type="password" 
+                id="password"
+                name="password"
+                [(ngModel)]="newUserForm.password"
+                required
+                minlength="6"
+                [disabled]="isCreatingUser"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                [class.border-red-500]="isFieldInvalid(userForm, 'password')"
+                placeholder="Minimum 6 characters">
+              <div *ngIf="isFieldInvalid(userForm, 'password')" class="text-red-500 text-xs mt-1">
+                {{ getFieldError(userForm, 'password') }}
+              </div>
+            </div>
+
+            <!-- Confirm Password -->
+            <div>
+              <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-2">
+                Confirm Password <span class="text-red-500">*</span>
+              </label>
+              <input 
+                type="password" 
+                id="confirmPassword"
+                name="confirmPassword"
+                [(ngModel)]="newUserForm.confirmPassword"
+                required
+                [disabled]="isCreatingUser"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                [class.border-red-500]="isFieldInvalid(userForm, 'confirmPassword') || (hasPasswordContent() && !passwordsMatch())"
+                placeholder="Re-enter password">
+              <div *ngIf="isFieldInvalid(userForm, 'confirmPassword')" class="text-red-500 text-xs mt-1">
+                {{ getFieldError(userForm, 'confirmPassword') }}
+              </div>
+              <div *ngIf="hasPasswordContent() && !passwordsMatch()" class="text-red-500 text-xs mt-1">
+                Passwords do not match
+              </div>
+            </div>
           </div>
         </div>
 
@@ -328,14 +395,18 @@
           <button 
             type="button"
             (click)="closeAddUserModal()"
-            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+            [disabled]="isCreatingUser"
+            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
             Cancel
           </button>
           <button 
             type="submit"
-            [disabled]="!userForm.valid"
-            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-            Create User
+            [disabled]="!isFormValid(userForm) || isCreatingUser"
+            class="px-6 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2">
+            <svg *ngIf="isCreatingUser" class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+            </svg>
+            {{ isCreatingUser ? 'Creating User...' : 'Create User' }}
           </button>
         </div>
       </form>

@@ -1,79 +1,258 @@
 <div class="flex h-screen bg-gray-50">
-    <!-- Left Side (35% width) -->
-    <div 
-      style="background-image: url('');"
-      class="w-1/3 h-full bg-cover bg-black rounded-r-xl bg-center bg-no-repeat flex items-center justify-center">
-      <div class="text-center p-6 bg-black bg-opacity-50 rounded-lg">
-        <h2 class="text-3xl font-bold mb-2 text-white">Internal Document Circulator</h2>
-        <p class="text-lg text-white">Share data with your team by a click of a button</p>
-      </div>
+  <!-- Left Side (35% width) -->
+  <div 
+    style="background-image: url('');"
+    class="w-1/3 h-full bg-cover bg-black rounded-r-xl bg-center bg-no-repeat flex items-center justify-center">
+    <div class="text-center p-6 bg-black bg-opacity-50 rounded-lg">
+      <h2 class="text-3xl font-bold mb-2 text-white">Internal Document Circulator</h2>
+      <p class="text-lg text-white">Share data with your team by a click of a button</p>
     </div>
-  
-    <!-- Right Side (Form) -->
-    <div class="flex-1 p-8 flex flex-col items-center justify-center overflow-hidden">
-      <form class="w-full max-w-xl" >
-        <div class="mb-6 text-center">
-          <h1 class="text-md font-semibold text-[#4a5d23]">ICD</h1>
-          <h2 class="text-3xl font-bold text-gray-800 mt-1 mb-2">Sign Up to ICD</h2>
-          <p class="text-gray-600">Enter your credentials to create your account</p>
-        </div>
-  
-        <!-- Email and Password -->
-        <div class="space-y-4">
-          <div class="mb-4">
-            <label class="block text-gray-700 text-sm font-bold mb-2" for="email">
-              Email
-            </label>
-            <input 
-              class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-green-500" 
-              id="email" 
-              type="email" 
-              placeholder="Enter your email" 
-              name="email" 
-              required
-              autocomplete="email">
-            
+  </div>
+
+  <!-- Right Side (Form) -->
+  <div class="flex-1 p-8 flex flex-col items-center justify-center overflow-y-auto">
+    <!-- Toast Component -->
+    <app-toast></app-toast>
+
+    <form class="w-full max-w-xl" #signupForm="ngForm" (ngSubmit)="onSubmit(signupForm)">
+      <div class="mb-6 text-center">
+        <h1 class="text-md font-semibold text-[#4a5d23]">ICD</h1>
+        <h2 class="text-3xl font-bold text-gray-800 mt-1 mb-2">Sign Up to ICD</h2>
+        <p class="text-gray-600">Enter your details to create your account</p>
+      </div>
+
+      <!-- Error Message -->
+      <div *ngIf="errorMessage" class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+        {{ errorMessage }}
+      </div>
+
+      <!-- Form Fields -->
+      <div class="space-y-4">
+        <!-- Full Name -->
+        <div class="mb-4">
+          <label class="block text-gray-700 text-sm font-bold mb-2" for="fullName">
+            Full Name
+          </label>
+          <input 
+            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-green-500" 
+            [class.border-red-500]="isFieldInvalid(signupForm, 'fullName')"
+            id="fullName" 
+            type="text" 
+            placeholder="Enter your full name" 
+            name="fullName" 
+            [(ngModel)]="signupData.fullName"
+            required
+            minlength="2"
+            [disabled]="isLoading">
+          <div *ngIf="isFieldInvalid(signupForm, 'fullName')" class="text-red-500 text-xs mt-1">
+            {{ getFieldError(signupForm, 'fullName') }}
           </div>
-          <div class="mb-6">
-            <label class="block text-gray-700 text-sm font-bold mb-2" for="password">
-              Password
-            </label>
+        </div>
+
+        <!-- Email -->
+        <div class="mb-4">
+          <label class="block text-gray-700 text-sm font-bold mb-2" for="email">
+            Email
+          </label>
+          <input 
+            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-green-500" 
+            [class.border-red-500]="isFieldInvalid(signupForm, 'email')"
+            id="email" 
+            type="email" 
+            placeholder="Enter your email" 
+            name="email" 
+            [(ngModel)]="signupData.email"
+            required
+            email
+            autocomplete="email"
+            [disabled]="isLoading">
+          <div *ngIf="isFieldInvalid(signupForm, 'email')" class="text-red-500 text-xs mt-1">
+            {{ getFieldError(signupForm, 'email') }}
+          </div>
+        </div>
+
+        <!-- Phone -->
+        <div class="mb-4">
+          <label class="block text-gray-700 text-sm font-bold mb-2" for="phone">
+            Phone Number
+          </label>
+          <input 
+            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-green-500" 
+            [class.border-red-500]="isFieldInvalid(signupForm, 'phone')"
+            id="phone" 
+            type="tel" 
+            placeholder="Enter your phone number" 
+            name="phone" 
+            [(ngModel)]="signupData.phone"
+            required
+            [disabled]="isLoading">
+          <div *ngIf="isFieldInvalid(signupForm, 'phone')" class="text-red-500 text-xs mt-1">
+            {{ getFieldError(signupForm, 'phone') }}
+          </div>
+        </div>
+
+        <!-- Department -->
+        <div class="mb-4">
+          <label class="block text-gray-700 text-sm font-bold mb-2" for="department">
+            Department
+          </label>
+          <select 
+            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-green-500" 
+            [class.border-red-500]="isFieldInvalid(signupForm, 'department')"
+            id="department" 
+            name="department" 
+            [(ngModel)]="signupData.department"
+            required
+            [disabled]="isLoading">
+            <option value="">Select Department</option>
+            <option *ngFor="let dept of departments" [value]="dept">{{ dept }}</option>
+          </select>
+          <div *ngIf="isFieldInvalid(signupForm, 'department')" class="text-red-500 text-xs mt-1">
+            {{ getFieldError(signupForm, 'department') }}
+          </div>
+        </div>
+
+        <!-- Province -->
+        <div class="mb-4">
+          <label class="block text-gray-700 text-sm font-bold mb-2" for="province">
+            Province
+          </label>
+          <select 
+            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-green-500" 
+            [class.border-red-500]="isFieldInvalid(signupForm, 'province')"
+            id="province" 
+            name="province" 
+            [(ngModel)]="signupData.province"
+            required
+            [disabled]="isLoading">
+            <option value="">Select Province</option>
+            <option *ngFor="let prov of provinces" [value]="prov">{{ prov }}</option>
+          </select>
+          <div *ngIf="isFieldInvalid(signupForm, 'province')" class="text-red-500 text-xs mt-1">
+            {{ getFieldError(signupForm, 'province') }}
+          </div>
+        </div>
+
+        <!-- Role -->
+        <div class="mb-4">
+          <label class="block text-gray-700 text-sm font-bold mb-2" for="role">
+            Role
+          </label>
+          <select 
+            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-green-500" 
+            [class.border-red-500]="isFieldInvalid(signupForm, 'role')"
+            id="role" 
+            name="role" 
+            [(ngModel)]="signupData.role"
+            required
+            [disabled]="isLoading">
+            <option *ngFor="let role of roles" [value]="role.value">{{ role.label }}</option>
+          </select>
+          <div *ngIf="isFieldInvalid(signupForm, 'role')" class="text-red-500 text-xs mt-1">
+            {{ getFieldError(signupForm, 'role') }}
+          </div>
+        </div>
+
+        <!-- Password -->
+        <div class="mb-4">
+          <label class="block text-gray-700 text-sm font-bold mb-2" for="password">
+            Password
+          </label>
+          <div class="relative">
             <input 
-              class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-green-500" 
+              class="shadow appearance-none border rounded w-full py-2 px-3 pr-10 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-green-500" 
+              [class.border-red-500]="isFieldInvalid(signupForm, 'password')"
               id="password" 
-              type="password" 
+              [type]="showPassword ? 'text' : 'password'"
               placeholder="Enter your password" 
               name="password" 
+              [(ngModel)]="signupData.password"
               required
-              autocomplete="current-password">
+              minlength="6"
+              autocomplete="new-password"
+              [disabled]="isLoading">
+            <button 
+              type="button"
+              class="absolute inset-y-0 right-0 pr-3 flex items-center"
+              (click)="togglePasswordVisibility()"
+              [disabled]="isLoading">
+              <svg *ngIf="!showPassword" class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+              </svg>
+              <svg *ngIf="showPassword" class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"></path>
+              </svg>
+            </button>
+          </div>
+          <div *ngIf="isFieldInvalid(signupForm, 'password')" class="text-red-500 text-xs mt-1">
+            {{ getFieldError(signupForm, 'password') }}
           </div>
         </div>
-  
 
-        <!-- Submit Button -->
-        <div class="flex items-center mt-6 justify-between">
-          <button 
-            class="bg-[#4a5d23] hover:bg-[#43571d] disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold py-2 px-6 rounded focus:outline-none focus:shadow-outline transition duration-200" 
-            type="submit"
-            >
-            <span >Sign In</span>
-          </button>
-          <a 
-            
-            class="inline-block align-baseline font-bold text-sm text-[#4a5d23] hover:text-[#43571d] cursor-pointer">
-            Forgot Password?
-          </a>
+        <!-- Confirm Password -->
+        <div class="mb-6">
+          <label class="block text-gray-700 text-sm font-bold mb-2" for="confirmPassword">
+            Confirm Password
+          </label>
+          <div class="relative">
+            <input 
+              class="shadow appearance-none border rounded w-full py-2 px-3 pr-10 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-green-500" 
+              [class.border-red-500]="isFieldInvalid(signupForm, 'confirmPassword') || (signupData.password !== signupData.confirmPassword && signupData.confirmPassword.length > 0)"
+              id="confirmPassword" 
+              [type]="showConfirmPassword ? 'text' : 'password'"
+              placeholder="Confirm your password" 
+              name="confirmPassword" 
+              [(ngModel)]="signupData.confirmPassword"
+              required
+              autocomplete="new-password"
+              [disabled]="isLoading">
+            <button 
+              type="button"
+              class="absolute inset-y-0 right-0 pr-3 flex items-center"
+              (click)="toggleConfirmPasswordVisibility()"
+              [disabled]="isLoading">
+              <svg *ngIf="!showConfirmPassword" class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+              </svg>
+              <svg *ngIf="showConfirmPassword" class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"></path>
+              </svg>
+            </button>
+          </div>
+          <div *ngIf="isFieldInvalid(signupForm, 'confirmPassword')" class="text-red-500 text-xs mt-1">
+            {{ getFieldError(signupForm, 'confirmPassword') }}
+          </div>
+          <div *ngIf="signupData.password !== signupData.confirmPassword && signupData.confirmPassword.length > 0" class="text-red-500 text-xs mt-1">
+            Passwords do not match
+          </div>
         </div>
-      </form>
-      <div class="mt-4 text-center">
-        <span 
-          class="text-gray-600">Already have an account?</span>
-        <a 
-          (click)="navigateTo('icd-log-in')"
-          class="ml-1 text-[#4a5d23] hover:text-[#43571d] cursor-pointer underline font-semibold">
-          Log In
-        </a>
       </div>
+
+      <!-- Submit Button -->
+      <div class="flex items-center mt-6 justify-center">
+        <button 
+          class="bg-[#4a5d23] hover:bg-[#43571d] disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold py-2 px-8 rounded focus:outline-none focus:shadow-outline transition duration-200 flex items-center" 
+          type="submit"
+          [disabled]="isLoading || signupForm.invalid">
+          <svg *ngIf="isLoading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span>{{ isLoading ? 'Creating Account...' : 'Create Account' }}</span>
+        </button>
+      </div>
+    </form>
+    
+    <div class="mt-4 text-center">
+      <span class="text-gray-600">Already have an account?</span>
+      <a 
+        (click)="navigateTo('icd-log-in')"
+        class="ml-1 text-[#4a5d23] hover:text-[#43571d] cursor-pointer underline font-semibold">
+        Log In
+      </a>
     </div>
+  </div>
 </div>
 

@@ -31,9 +31,9 @@ export class AuthService {
   public authInitialized$ = this.authInitialized.asObservable();
 
   constructor(
-    private auth: Auth,
-    private firestore: Firestore,
-    private router: Router
+    public auth: Auth,
+    public firestore: Firestore,
+    public router: Router
   ) {
     console.log('AuthService initialized with Firebase Auth and Firestore');
     this.initializeAuth();
@@ -75,7 +75,7 @@ export class AuthService {
     }
   }
 
-  private async fetchUserData(uid: string): Promise<UserData> {
+  protected async fetchUserData(uid: string): Promise<UserData> {
     try {
       const userDocRef = doc(this.firestore, `users/${uid}`);
       const userDoc = await getDoc(userDocRef);
@@ -167,7 +167,7 @@ export class AuthService {
     }
   }
 
-  private async saveUserData(uid: string, userData: UserData): Promise<void> {
+  protected async saveUserData(uid: string, userData: UserData): Promise<void> {
     try {
       const userDocRef = doc(this.firestore, `users/${uid}`);
       console.log('Saving user data to Firestore...');
@@ -226,7 +226,7 @@ export class AuthService {
     }
   }
 
-  private async updateLastLogin(uid: string): Promise<void> {
+  protected async updateLastLogin(uid: string): Promise<void> {
     try {
       const userDocRef = doc(this.firestore, `users/${uid}`);
       await updateDoc(userDocRef, { 
