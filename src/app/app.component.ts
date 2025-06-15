@@ -12,11 +12,9 @@ import { AuthService } from './services/auth.service';
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, NavBarComponent, RouterOutlet, FormsModule, ToastComponent],
+  imports: [CommonModule, RouterOutlet, FormsModule],
   template: `
-    <app-nav-bar *ngIf="showNavbar"></app-nav-bar>
     <router-outlet></router-outlet>
-    <app-toast></app-toast>
   `,
   styleUrls: ['./app.component.scss'],
   providers: [AuthGuard],

@@ -36,7 +36,6 @@ interface Tab {
     ArchivedComponent,
     ComposeComponent,
     IcdDownloadsComponent,
-    ToastComponent
   ],
   templateUrl: './main-layout.component.html',
   styleUrls: ['./main-layout.component.scss']
