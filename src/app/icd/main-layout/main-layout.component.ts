@@ -13,6 +13,7 @@ import { ComposeComponent } from '../compose/compose.component';
 import { IcdDownloadsComponent } from '../icd-downloads/icd-downloads.component';
 import { IcdUserManagementComponent } from '../icd-user-management/icd-user-management.component';
 import { ICDAuthService } from '../../services/icd-auth.service';
+import { ICDUserService, FirebaseICDUser } from '../../services/icd-user.service';
 import { ToastService } from '../../services/toast.service';
 import { ToastComponent } from '../../components/toast/toast.component';
 
@@ -20,7 +21,6 @@ interface Tab {
   id: string;
   label: string;
   icon?: string;
-  count?: number;
 }
 
 @Component({
@@ -49,13 +49,16 @@ export class MainLayoutComponent {
   private dropdownTimeout: any;
   isDarkMode: boolean = false;
   currentUser: any = null;
+  currentICDUser: FirebaseICDUser | null = null;
+  isLoadingUser: boolean = true;
 
   constructor(
     private icdAuthService: ICDAuthService,
+    private icdUserService: ICDUserService,
     private router: Router,
     private toastService: ToastService
   ) {
-    console.log('MainLayoutComponent initialized with ICDAuthService');
+    console.log('MainLayoutComponent initialized with ICDAuthService and ICDUserService');
   }
 
   tabs: Tab[] = [
@@ -69,33 +72,27 @@ export class MainLayoutComponent {
     },
     { 
       id: 'downloads', 
-      label: 'Downloads',
-      count: 5 
+      label: 'Downloads'
     },
     { 
       id: 'inbox', 
-      label: 'Inbox',
-      count: 12 
+      label: 'Inbox'
     },
     { 
       id: 'sent', 
-      label: 'Sent',
-      count: 8 
+      label: 'Sent'
     },
     { 
       id: 'icd-user-management', 
-      label: 'Active Users',
-      count: 24 
+      label: 'Active Users'
     },
     { 
       id: 'archived', 
-      label: 'Archived',
-      count: 12 
+      label: 'Archived'
     },
     { 
       id: 'recycle', 
-      label: 'Recycled',
-      count: 10 
+      label: 'Recycled'
     }
   ];
 
@@ -180,19 +177,85 @@ export class MainLayoutComponent {
     
     if (this.isDarkMode) {
       document.documentElement.classList.add('dark');
+      document.body.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
+      document.body.classList.remove('dark');
     }
     
     localStorage.setItem('darkMode', this.isDarkMode.toString());
+    this.toastService.success(`${this.isDarkMode ? 'Dark' : 'Light'} mode activated`);
+  }
+
+  private async loadCurrentICDUser(): Promise<void> {
+    try {
+      this.isLoadingUser = true;
+      
+      const authUser = this.icdAuthService.getCurrentUser();
+      if (!authUser?.email) {
+        console.warn('No authenticated user email found');
+        this.isLoadingUser = false;
+        return;
+      }
+
+      console.log('🔍 Loading ICD user data for:', authUser.email);
+      
+      // Get all users and find current user by email
+      const allUsers = await this.icdUserService.getUsers();
+      this.currentICDUser = allUsers.find(user => user.email === authUser.email) || null;
+      
+      if (this.currentICDUser) {
+        console.log('✅ ICD User data loaded:', this.currentICDUser);
+      } else {
+        console.warn('⚠️ ICD User not found in database');
+      }
+      
+      this.isLoadingUser = false;
+    } catch (error) {
+      console.error('❌ Error loading ICD user data:', error);
+      this.isLoadingUser = false;
+    }
+  }
+
+  getUserInitials(): string {
+    if (this.currentICDUser?.fullName) {
+      const names = this.currentICDUser.fullName.split(' ');
+      return names.length >= 2 
+        ? `${names[0][0]}${names[1][0]}`.toUpperCase()
+        : names[0][0].toUpperCase();
+    }
+    
+    if (this.currentUser?.email) {
+      return this.currentUser.email[0].toUpperCase();
+    }
+    
+    return 'U';
+  }
+
+  getUserDisplayName(): string {
+    return this.currentICDUser?.fullName || this.currentUser?.email || 'User';
+  }
+
+  getUserRole(): string {
+    return this.currentICDUser?.role || 'User';
+  }
+
+  getUserDepartment(): string {
+    return this.currentICDUser?.department || '';
+  }
+
+  getUserProfileImage(): string | null {
+    return this.currentICDUser?.profilePhoto || null;
   }
 
   async ngOnInit(): Promise<void> {
+    // Initialize dark mode from localStorage
     const savedDarkMode = localStorage.getItem('darkMode');
     if (savedDarkMode) {
       this.isDarkMode = savedDarkMode === 'true';
       if (this.isDarkMode) {
         document.documentElement.classList.add('dark');
+        document.body.classList.add('dark');
       }
     }
 
@@ -200,6 +263,11 @@ export class MainLayoutComponent {
     this.icdAuthService.currentUser$.subscribe(user => {
       this.currentUser = user;
       console.log('Current ICD user:', user?.email || 'None');
+      
+      // Load ICD user data when auth user changes
+      if (user) {
+        this.loadCurrentICDUser();
+      }
     });
 
     // Check authentication
@@ -210,6 +278,9 @@ export class MainLayoutComponent {
       if (!user) {
         console.log('No authenticated user found, redirecting to login');
         this.router.navigate(['/icd/log-in']);
+      } else {
+        // Load ICD user data
+        await this.loadCurrentICDUser();
       }
     } catch (error) {
       console.error('Error checking authentication:', error);

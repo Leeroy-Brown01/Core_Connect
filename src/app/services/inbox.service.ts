@@ -1,146 +1,397 @@
-import { Injectable } from '@angular/core';
-import { Firestore, collection, getDocs, query, where, orderBy } from '@angular/fire/firestore';
-import { Observable, from } from 'rxjs';
+import { Injectable, inject } from '@angular/core';
+import { Firestore, collection, query, where, orderBy, getDocs, onSnapshot } from '@angular/fire/firestore';
+import { Observable, BehaviorSubject, combineLatest } from 'rxjs';
+import { map, distinctUntilChanged } from 'rxjs/operators';
+import { MessageService, MessageData } from './message.service';
+import { ICDAuthService } from './icd-auth.service';
 
-export interface InboxMessage {
-  id?: string;
-  from: string;
-  fromName: string;
-  to: string;
-  subject: string;
-  message: string;
-  timestamp: any;
+export interface InboxMessage extends MessageData {
   isRead?: boolean;
-  hasAttachment?: boolean;
-  attachmentName?: string;
-  priority?: string;
-  category?: string;
+  deliveredAt?: any;
+  readAt?: any;
+  messageType?: 'direct' | 'department' | 'broadcast';
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class InboxService {
+  private firestore = inject(Firestore);
+  private messageService = inject(MessageService);
+  private icdAuthService = inject(ICDAuthService);
+
+  // Real-time message streams
+  private userMessagesSubject = new BehaviorSubject<InboxMessage[]>([]);
+  private departmentMessagesSubject = new BehaviorSubject<InboxMessage[]>([]);
+  private allInboxMessagesSubject = new BehaviorSubject<InboxMessage[]>([]);
+
+  // Public observables
+  public userMessages$ = this.userMessagesSubject.asObservable();
+  public departmentMessages$ = this.departmentMessagesSubject.asObservable();
+  public allInboxMessages$ = this.allInboxMessagesSubject.asObservable();
+
   private readonly MESSAGES_COLLECTION = 'messages';
+  private activeListeners: (() => void)[] = [];
 
-  constructor(private firestore: Firestore) {
-    console.log('InboxService initialized');
+  constructor() {
+    console.log('InboxService initialized with real-time message fetching');
+    this.initializeInboxStreams();
   }
 
-  // Get inbox messages for a specific user
-  getInboxMessages(userEmail: string): Observable<InboxMessage[]> {
-    return from(this.fetchInboxMessages(userEmail));
+  /**
+   * Get inbox messages for a specific user and department
+   * @param userId - The user's ID
+   * @param userEmail - The user's email address
+   * @param department - The user's department
+   * @returns Observable of combined inbox messages
+   */
+  getUserInboxMessages(userId: string, userEmail: string, department: string): Observable<InboxMessage[]> {
+    const userMessages$ = this.getUserDirectMessages(userEmail);
+    const deptMessages$ = this.getDepartmentMessages(department);
+
+    return combineLatest([userMessages$, deptMessages$]).pipe(
+      map(([userMsgs, deptMsgs]) => {
+        // Combine both message arrays
+        const allMessages = [...userMsgs, ...deptMsgs];
+        
+        // Remove duplicates based on message ID
+        const uniqueMessages = allMessages.filter((message, index, array) => 
+          array.findIndex(msg => msg.id === message.id) === index
+        );
+        
+        // Filter out messages sent by the current user (they should appear in sent folder)
+        const inboxMessages = uniqueMessages.filter(msg => msg.senderId !== userId);
+        
+        // Sort by timestamp (newest first)
+        return inboxMessages.sort((a, b) => {
+          const aTime = a.timestamp?.toDate ? a.timestamp.toDate().getTime() : 0;
+          const bTime = b.timestamp?.toDate ? b.timestamp.toDate().getTime() : 0;
+          return bTime - aTime;
+        });
+      }),
+      distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr))
+    );
   }
 
-  private async fetchInboxMessages(userEmail: string): Promise<InboxMessage[]> {
-    try {
-      console.log('Fetching inbox messages for:', userEmail);
-      
+  /**
+   * Get messages sent directly to a user's email
+   * @param userEmail - The user's email address
+   * @returns Observable of direct messages
+   */
+  private getUserDirectMessages(userEmail: string): Observable<InboxMessage[]> {
+    return new Observable<InboxMessage[]>(observer => {
       const messagesCollection = collection(this.firestore, this.MESSAGES_COLLECTION);
       const q = query(
         messagesCollection,
         where('to', '==', userEmail),
+        where('status', '==', 'sent'),
         orderBy('timestamp', 'desc')
       );
+
+      // Set up real-time listener
+      const unsubscribe = onSnapshot(q, 
+        (snapshot) => {
+          const messages: InboxMessage[] = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            messageType: 'direct'
+          })) as InboxMessage[];
+          
+          console.log(`📧 Fetched ${messages.length} direct messages for ${userEmail}`);
+          observer.next(messages);
+        },
+        (error) => {
+          console.error('❌ Error fetching direct messages:', error);
+          
+          // Fallback to regular query if real-time fails
+          this.fallbackGetDirectMessages(userEmail).then(messages => {
+            observer.next(messages);
+          }).catch(fallbackError => {
+            console.error('❌ Fallback query also failed:', fallbackError);
+            observer.error(fallbackError);
+          });
+        }
+      );
+
+      // Store the unsubscribe function
+      this.activeListeners.push(unsubscribe);
+
+      // Return cleanup function
+      return () => {
+        unsubscribe();
+        this.activeListeners = this.activeListeners.filter(fn => fn !== unsubscribe);
+      };
+    });
+  }
+
+  /**
+   * Get messages sent to a user's department
+   * @param department - The department name
+   * @returns Observable of department messages
+   */
+  private getDepartmentMessages(department: string): Observable<InboxMessage[]> {
+    return new Observable<InboxMessage[]>(observer => {
+      const messagesCollection = collection(this.firestore, this.MESSAGES_COLLECTION);
+      const q = query(
+        messagesCollection,
+        where('recipientDepartments', 'array-contains', department),
+        where('status', '==', 'sent'),
+        orderBy('timestamp', 'desc')
+      );
+
+      // Set up real-time listener
+      const unsubscribe = onSnapshot(q,
+        (snapshot) => {
+          const messages: InboxMessage[] = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            messageType: 'department'
+          })) as InboxMessage[];
+          
+          console.log(`🏢 Fetched ${messages.length} department messages for ${department}`);
+          observer.next(messages);
+        },
+        (error) => {
+          console.error('❌ Error fetching department messages:', error);
+          
+          // Fallback to regular query if real-time fails
+          this.fallbackGetDepartmentMessages(department).then(messages => {
+            observer.next(messages);
+          }).catch(fallbackError => {
+            console.error('❌ Fallback query also failed:', fallbackError);
+            observer.error(fallbackError);
+          });
+        }
+      );
+
+      // Store the unsubscribe function
+      this.activeListeners.push(unsubscribe);
+
+      // Return cleanup function
+      return () => {
+        unsubscribe();
+        this.activeListeners = this.activeListeners.filter(fn => fn !== unsubscribe);
+      };
+    });
+  }
+
+  /**
+   * Fallback method for direct messages (without real-time)
+   */
+  private async fallbackGetDirectMessages(userEmail: string): Promise<InboxMessage[]> {
+    try {
+      const messagesCollection = collection(this.firestore, this.MESSAGES_COLLECTION);
       
-      const querySnapshot = await getDocs(q);
-      const messages = querySnapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
+      // Try with ordering first
+      try {
+        const q = query(
+          messagesCollection,
+          where('to', '==', userEmail),
+          where('status', '==', 'sent'),
+          orderBy('timestamp', 'desc')
+        );
+        
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({
           id: doc.id,
-          from: data['from'] || '',
-          fromName: data['fromName'] || data['senderName'] || data['from'] || 'Unknown Sender',
-          to: data['to'] || '',
-          subject: data['subject'] || 'No Subject',
-          message: data['message'] || data['textContent'] || '',
-          timestamp: data['timestamp'],
-          isRead: data['isRead'] || false,
-          hasAttachment: !!(data['attachment'] || data['attachedFile']),
-          attachmentName: data['attachment']?.name || data['attachedFile']?.name || '',
-          priority: data['priority'] || 'normal',
-          category: data['category'] || 'general'
-        } as InboxMessage;
-      });
-      
-      console.log(`✅ Fetched ${messages.length} inbox messages`);
-      return messages;
+          ...doc.data(),
+          messageType: 'direct'
+        })) as InboxMessage[];
+      } catch (indexError) {
+        console.warn('⚠️ Index not available for direct messages, using simple query');
+        
+        // Simple query without ordering
+        const fallbackQuery = query(
+          messagesCollection,
+          where('to', '==', userEmail),
+          where('status', '==', 'sent')
+        );
+        
+        const fallbackSnapshot = await getDocs(fallbackQuery);
+        const messages = fallbackSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          messageType: 'direct'
+        })) as InboxMessage[];
+        
+        // Sort in memory
+        return messages.sort((a, b) => {
+          const aTime = a.timestamp?.toDate ? a.timestamp.toDate().getTime() : 0;
+          const bTime = b.timestamp?.toDate ? b.timestamp.toDate().getTime() : 0;
+          return bTime - aTime;
+        });
+      }
     } catch (error) {
-      console.error('❌ Error fetching inbox messages:', error);
+      console.error('❌ Error in fallback direct messages query:', error);
       return [];
     }
   }
 
-  // Helper method to format timestamp
-  formatTime(timestamp: any): string {
-    if (!timestamp) return '';
-    
+  /**
+   * Fallback method for department messages (without real-time)
+   */
+  private async fallbackGetDepartmentMessages(department: string): Promise<InboxMessage[]> {
     try {
-      let date: Date;
+      const messagesCollection = collection(this.firestore, this.MESSAGES_COLLECTION);
       
-      if (timestamp.toDate) {
-        // Firestore Timestamp
-        date = timestamp.toDate();
-      } else if (timestamp instanceof Date) {
-        date = timestamp;
-      } else if (typeof timestamp === 'string') {
-        date = new Date(timestamp);
-      } else if (timestamp.seconds) {
-        // Firestore timestamp object
-        date = new Date(timestamp.seconds * 1000);
-      } else {
-        date = new Date(timestamp);
-      }
-
-      const now = new Date();
-      const diffInHours = Math.abs(now.getTime() - date.getTime()) / (1000 * 60 * 60);
-      
-      if (diffInHours < 1) {
-        const diffInMinutes = Math.floor(diffInHours * 60);
-        return `${diffInMinutes} min${diffInMinutes !== 1 ? 's' : ''} ago`;
-      } else if (diffInHours < 24) {
-        return date.toLocaleTimeString('en-US', { 
-          hour: 'numeric', 
-          minute: '2-digit',
-          hour12: true 
-        });
-      } else if (diffInHours < 48) {
-        return 'Yesterday';
-      } else if (diffInHours < 168) { // Less than a week
-        const days = Math.floor(diffInHours / 24);
-        return `${days} day${days !== 1 ? 's' : ''} ago`;
-      } else {
-        return date.toLocaleDateString('en-US', { 
-          month: 'short', 
-          day: 'numeric',
-          year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+      // Try with ordering first
+      try {
+        const q = query(
+          messagesCollection,
+          where('recipientDepartments', 'array-contains', department),
+          where('status', '==', 'sent'),
+          orderBy('timestamp', 'desc')
+        );
+        
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          messageType: 'department'
+        })) as InboxMessage[];
+      } catch (indexError) {
+        console.warn('⚠️ Index not available for department messages, using simple query');
+        
+        // Simple query without ordering
+        const fallbackQuery = query(
+          messagesCollection,
+          where('recipientDepartments', 'array-contains', department),
+          where('status', '==', 'sent')
+        );
+        
+        const fallbackSnapshot = await getDocs(fallbackQuery);
+        const messages = fallbackSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          messageType: 'department'
+        })) as InboxMessage[];
+        
+        // Sort in memory
+        return messages.sort((a, b) => {
+          const aTime = a.timestamp?.toDate ? a.timestamp.toDate().getTime() : 0;
+          const bTime = b.timestamp?.toDate ? b.timestamp.toDate().getTime() : 0;
+          return bTime - aTime;
         });
       }
     } catch (error) {
-      console.error('Error formatting timestamp:', error);
-      return 'Unknown time';
+      console.error('❌ Error in fallback department messages query:', error);
+      return [];
     }
   }
 
-  // Get message counts for filters
-  getMessageCounts(messages: InboxMessage[]): { all: number; unread: number; documents: number } {
-    return {
-      all: messages.length,
-      unread: messages.filter(msg => !msg.isRead).length,
-      documents: messages.filter(msg => msg.hasAttachment).length
-    };
+  /**
+   * Initialize inbox streams for the current user
+   */
+  private initializeInboxStreams(): void {
+    // Subscribe to authentication changes
+    this.icdAuthService.currentUser$.subscribe(authUser => {
+      if (authUser?.email && authUser?.department) {
+        console.log('🔄 Initializing inbox streams for:', authUser.email);
+        this.startInboxStreams(authUser.uid, authUser.email, authUser.department);
+      } else {
+        console.log('👤 No authenticated user, stopping inbox streams');
+        this.stopInboxStreams();
+      }
+    });
   }
 
-  // Filter messages based on criteria
-  filterMessages(messages: InboxMessage[], filterType: string): InboxMessage[] {
-    switch (filterType) {
-      case 'unread':
-        return messages.filter(msg => !msg.isRead);
-      case 'documents':
-        return messages.filter(msg => msg.hasAttachment);
-      case 'priority':
-        return messages.filter(msg => msg.priority === 'high');
-      default:
-        return messages;
+  /**
+   * Start real-time inbox streams
+   */
+  private startInboxStreams(userId: string, userEmail: string, department: string): void {
+    // Stop existing streams
+    this.stopInboxStreams();
+
+    // Start new streams
+    const inboxSubscription = this.getUserInboxMessages(userId, userEmail, department).subscribe(
+      messages => {
+        this.allInboxMessagesSubject.next(messages);
+        console.log(`✅ Updated inbox with ${messages.length} messages`);
+      },
+      error => {
+        console.error('❌ Error in inbox stream:', error);
+      }
+    );
+
+    // Note: We don't need to manually manage this subscription since 
+    // the observables handle their own cleanup
+  }
+
+  /**
+   * Stop all real-time streams
+   */
+  private stopInboxStreams(): void {
+    // Unsubscribe from all Firestore listeners
+    this.activeListeners.forEach(unsubscribe => unsubscribe());
+    this.activeListeners = [];
+    
+    // Clear subjects
+    this.userMessagesSubject.next([]);
+    this.departmentMessagesSubject.next([]);
+    this.allInboxMessagesSubject.next([]);
+    
+    console.log('🛑 Stopped all inbox streams');
+  }
+
+  /**
+   * Get unread message count
+   */
+  getUnreadCount(): Observable<number> {
+    return this.allInboxMessages$.pipe(
+      map(messages => {
+        const currentUser = this.icdAuthService.getCurrentUser();
+        if (!currentUser) return 0;
+        
+        return messages.filter(msg => 
+          !msg.readBy || !msg.readBy.includes(currentUser.uid)
+        ).length;
+      })
+    );
+  }
+
+  /**
+   * Mark message as read
+   */
+  async markAsRead(messageId: string): Promise<void> {
+    try {
+      await this.messageService.markAsRead(messageId);
+      console.log('✅ Message marked as read via InboxService');
+    } catch (error) {
+      console.error('❌ Error marking message as read via InboxService:', error);
+      throw error;
     }
+  }
+
+  /**
+   * Get messages by type (direct, department, broadcast)
+   */
+  getMessagesByType(messageType: 'direct' | 'department' | 'broadcast'): Observable<InboxMessage[]> {
+    return this.allInboxMessages$.pipe(
+      map(messages => messages.filter(msg => msg.messageType === messageType))
+    );
+  }
+
+  /**
+   * Get messages by read status
+   */
+  getMessagesByReadStatus(isRead: boolean): Observable<InboxMessage[]> {
+    return this.allInboxMessages$.pipe(
+      map(messages => {
+        const currentUser = this.icdAuthService.getCurrentUser();
+        if (!currentUser) return [];
+        
+        return messages.filter(msg => {
+          const messageIsRead = msg.readBy && msg.readBy.includes(currentUser.uid);
+          return messageIsRead === isRead;
+        });
+      })
+    );
+  }
+
+  /**
+   * Cleanup method
+   */
+  ngOnDestroy(): void {
+    this.stopInboxStreams();
   }
 }

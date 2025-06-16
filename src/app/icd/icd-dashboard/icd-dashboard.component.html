@@ -1,115 +1,149 @@
-<div class="p-2 bg-white rounded-lg shadow-sm">
-  <!-- Header - Sticky -->
-  <div class="sticky top-0 z-20 bg-white mb-6 py-3">
-    <div class="flex items-center gap-3">
-      <!-- User Avatar - Only visible on small screens -->
-      <div class="w-12 h-12 sm:block md:hidden bg-blue-500 rounded-full flex items-center justify-center text-white font-medium">
-        {{ currentUser.firstName.charAt(0).toUpperCase() }}{{ currentUser.lastName.charAt(0).toUpperCase() }}
-      </div>
-      
-      <!-- Header Content -->
-      <div class="flex-1">
-        <h1 class="text-2xl font-bold text-gray-900">ICD Dashboard</h1>
-        <p class="text-gray-600">Monitor and manage document circulation</p>
+<div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+  <!-- Header Section -->
+  <div class="bg-white shadow-sm border-b border-gray-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between py-6">
+        <div class="flex items-center space-x-4">
+          <!-- User Avatar -->
+          <div class="w-16 h-16 rounded-xl flex items-center justify-center text-white text-xl font-bold overflow-hidden shadow-lg"
+               [class.bg-gradient-to-r]="!getUserProfileImage()"
+               [class.from-blue-600]="!getUserProfileImage()"
+               [class.to-indigo-600]="!getUserProfileImage()">
+            
+            <!-- Profile Image -->
+            <img 
+              *ngIf="getUserProfileImage()" 
+              [src]="getUserProfileImage()"
+              [alt]="getUserDisplayName()"
+              class="w-full h-full object-cover">
+            
+            <!-- Initials Fallback -->
+            <span *ngIf="!getUserProfileImage()">{{ getUserInitials() }}</span>
+          </div>
+          
+          <!-- User Info -->
+          <div>
+            <!-- Loading State -->
+            <div *ngIf="isLoadingUser" class="animate-pulse">
+              <div class="h-7 bg-gray-200 rounded w-48 mb-2"></div>
+              <div class="h-4 bg-gray-200 rounded w-32"></div>
+            </div>
+            
+            <!-- User Data -->
+            <div *ngIf="!isLoadingUser">
+              <h1 class="text-2xl font-bold text-gray-900">
+                Welcome back, {{ getUserFirstName() }}!
+              </h1>
+              <div class="flex items-center gap-3 mt-1">
+                <p class="text-sm text-gray-600">{{ getUserRole() }}</p>
+                <span class="w-1 h-1 bg-gray-300 rounded-full"></span>
+                <p class="text-sm text-gray-500">{{ getUserDepartment() }} Department</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Quick Stats or Actions -->
+        <div class="hidden md:flex items-center gap-4">
+          <div class="text-right">
+            <p class="text-sm text-gray-500">Status</p>
+            <div class="flex items-center gap-1">
+              <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+              <span class="text-sm font-medium text-green-700">Active</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Scrollable Tab Navigation with Arrows - Sticky -->
-  <div class="sticky top-20 z-10 bg-white border-b border-gray-200 mb-6">
-    <div class="relative flex items-center">
-      <!-- Left Arrow -->
-      <button 
-        *ngIf="canScrollLeft()"
-        (click)="scrollLeft()"
-        class="absolute left-0 z-30 p-2 bg-white shadow-md rounded-full border border-gray-200 hover:bg-gray-50 transition-colors">
-        <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-        </svg>
-      </button>
+  <!-- Navigation Tabs -->
+  <div class="bg-white border-b border-gray-200 sticky top-0 z-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between">
+        <!-- Desktop Tab Navigation -->
+        <div class="hidden md:flex space-x-8 overflow-x-auto" #tabContainer>
+          <button 
+            *ngFor="let tab of tabs"
+            (click)="switchTab(tab.id)"
+            class="py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors duration-200"
+            [class]="activeTab === tab.id 
+              ? 'border-blue-500 text-blue-600' 
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'">
+            {{ tab.label }}
+          </button>
+        </div>
 
-      <!-- Tab Container with Overflow Hidden -->
-      <div class="overflow-hidden mx-8">
-        <div 
-          #tabContainer
-          class="overflow-x-auto"
-          style="scrollbar-width: none; -ms-overflow-style: none;"
-          (scroll)="$event">
-          <nav class="flex space-x-6 px-4" style="-webkit-scrollbar: none;">
-            <button
-              *ngFor="let tab of tabs"
-              (click)="switchTab(tab.id)"
-              class="flex-shrink-0 py-4 px-2 border-b-2 font-medium text-sm whitespace-nowrap transition-all duration-200"
-              [class.border-blue-500]="activeTab === tab.id"
-              [class.text-blue-600]="activeTab === tab.id"
-              [class.bg-blue-50]="activeTab === tab.id"
-              [class.border-transparent]="activeTab !== tab.id"
-              [class.text-gray-500]="activeTab !== tab.id"
-              [class.hover:text-gray-700]="activeTab !== tab.id"
-              [class.hover:bg-gray-50]="activeTab !== tab.id"
-              [class.hidden]="(tab.id === 'inbox' || tab.id === 'sent' || tab.id === 'archived' || tab.id === 'recycled')"
-              [class.md:hidden]="(tab.id === 'inbox' || tab.id === 'sent' || tab.id === 'archived' || tab.id === 'recycled')"
-              [class.sm:block]="(tab.id === 'inbox' || tab.id === 'sent' || tab.id === 'archived' || tab.id === 'recycled')">
-              {{ tab.label }}
-            </button>
-          </nav>
+        <!-- Mobile Tab Dropdown -->
+        <div class="md:hidden w-full">
+          <select 
+            [(ngModel)]="activeTab" 
+            (change)="switchTab(activeTab)"
+            class="w-full py-2 px-3 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            <option *ngFor="let tab of tabs" [value]="tab.id">{{ tab.label }}</option>
+          </select>
+        </div>
+
+        <!-- Scroll Buttons for Desktop -->
+        <div class="hidden md:flex items-center space-x-2">
+          <button 
+            (click)="scrollLeft()"
+            [disabled]="!canScrollLeft()"
+            class="p-2 text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+          </button>
+          <button 
+            (click)="scrollRight()"
+            [disabled]="!canScrollRight()"
+            class="p-2 text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+          </button>
         </div>
       </div>
-
-      <!-- Right Arrow -->
-      <button 
-        *ngIf="canScrollRight()"
-        (click)="scrollRight()"
-        class="absolute right-0 z-30 p-2 bg-white shadow-md rounded-full border border-gray-200 hover:bg-gray-50 transition-colors">
-        <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-        </svg>
-      </button>
     </div>
   </div>
 
   <!-- Tab Content -->
-  <div>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- Overview Tab -->
-    <div *ngIf="activeTab === 'overview'">
+    <div *ngIf="activeTab === 'overview'" class="animate-fade-in">
       <app-icd-overview></app-icd-overview>
     </div>
 
     <!-- User Management Tab -->
-    <div *ngIf="activeTab === 'icd-user-management'">
+    <div *ngIf="activeTab === 'icd-user-management'" class="animate-fade-in">
       <app-icd-user-management></app-icd-user-management>
     </div>
 
     <!-- Document Management Tab -->
-    <div *ngIf="activeTab === 'icd-document-management'">
+    <div *ngIf="activeTab === 'icd-document-management'" class="animate-fade-in">
       <app-icd-document-management></app-icd-document-management>
     </div>
 
     <!-- Department Management Tab -->
-    <div *ngIf="activeTab === 'icd-department-management'">
+    <div *ngIf="activeTab === 'icd-department-management'" class="animate-fade-in">
       <app-icd-department-management></app-icd-department-management>
-    </div>
-
-    <!-- Inbox Tab -->
-    <div 
-      class=""
-      *ngIf="activeTab === 'inbox'">
-      <app-inbox></app-inbox>
-    </div>
-
-    <!-- Sent Tab -->
-    <div *ngIf="activeTab === 'sent'">
-      <app-sent></app-sent>
-    </div>
-
-    <!-- Archived Tab -->
-    <div *ngIf="activeTab === 'archived'">
-      <app-archived></app-archived>
-    </div>
-
-    <!-- Recycled Tab -->
-    <div *ngIf="activeTab === 'recycled'">
-      <app-recycle></app-recycle>
     </div>
   </div>
 </div>
+
+<style>
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+</style>

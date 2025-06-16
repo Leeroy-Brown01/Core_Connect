@@ -1,19 +1,23 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { SentService, SentMessage } from '../../services/sent.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-icd-message-details',
+  standalone: true,
   imports: [CommonModule],
+  providers: [SentService],
   templateUrl: './icd-message-details.component.html',
   styleUrl: './icd-message-details.component.scss'
 })
-export class IcdMessageDetailsComponent implements OnInit {
+export class IcdMessageDetailsComponent implements OnInit, OnDestroy {
   message: SentMessage | null = null;
   isLoading = true;
   error: string | null = null;
-  messageId: string | null = null;
+  
+  private subscription?: Subscription;
 
   constructor(
     private route: ActivatedRoute,
@@ -22,61 +26,48 @@ export class IcdMessageDetailsComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.loadMessageDetails();
+    this.loadMessage();
   }
 
-  private async loadMessageDetails(): Promise<void> {
-    try {
-      this.isLoading = true;
-      this.error = null;
+  ngOnDestroy(): void {
+    if (this.subscription) {
+      this.subscription.unsubscribe();
+    }
+  }
 
-      // Get message ID from route
-      this.messageId = this.route.snapshot.paramMap.get('id');
-      
-      if (!this.messageId) {
-        this.error = 'No message ID provided';
+  private async loadMessage(): Promise<void> {
+    try {
+      const messageId = this.route.snapshot.paramMap.get('id');
+      if (!messageId) {
+        this.error = 'Message ID not found';
         this.isLoading = false;
         return;
       }
 
-      console.log('📧 Loading message details for ID:', this.messageId);
-
-      // First try to get from selected message (if navigated from sent list)
-      this.message = this.sentService.getSelectedMessage();
-      
-      // If no selected message, fetch from Firestore
-      if (!this.message || this.message.id !== this.messageId) {
-        console.log('🔍 Fetching message from Firestore...');
-        this.message = await this.sentService.getMessageById(this.messageId);
-      }
-
+      this.message = await this.sentService.getMessageById(messageId);
       if (!this.message) {
-        this.error = 'Message not found or you do not have permission to view it';
+        this.error = 'Message not found';
       }
-
       this.isLoading = false;
     } catch (error) {
-      console.error('❌ Error loading message details:', error);
-      this.error = 'Failed to load message details. Please try again.';
+      console.error('Error loading message:', error);
+      this.error = 'Failed to load message';
       this.isLoading = false;
     }
   }
 
-  // Navigate back to sent messages
-  goBack(): void {
-    this.router.navigate(['/main-layout/sent']);
-  }
-
-  // Refresh message details
+  // Refresh message data
   async refreshMessage(): Promise<void> {
-    if (this.messageId) {
-      this.sentService.clearSelectedMessage();
-      await this.loadMessageDetails();
-    }
+    this.isLoading = true;
+    this.error = null;
+    await this.loadMessage();
   }
 
-  // Format timestamp
-  formatTimestamp(timestamp: any): string {
+  goBack(): void {
+    this.router.navigate(['/main-layout/inbox']);
+  }
+
+  formatTime(timestamp: any): string {
     return this.sentService.formatTime(timestamp);
   }
 
@@ -108,15 +99,110 @@ export class IcdMessageDetailsComponent implements OnInit {
     }
   }
 
-  // Get priority color class
-  getPriorityColorClass(): string {
-    if (!this.message) return 'text-gray-600';
+  // Get status icon
+  getStatusIcon(): string {
+    if (!this.message) return '📧';
     
-    switch (this.message.priority) {
-      case 'high': return 'text-red-600';
-      case 'normal': return 'text-gray-600';
-      case 'low': return 'text-green-600';
-      default: return 'text-gray-600';
+    switch (this.message.status) {
+      case 'delivered': return '✓';
+      case 'sent': return '📤';
+      case 'pending': return '⏳';
+      case 'failed': return '✗';
+      default: return '📧';
     }
+  }
+
+  // Download attachment
+  downloadAttachment(): void {
+    if (!this.message?.hasAttachment) {
+      console.warn('No attachment to download');
+      return;
+    }
+
+    try {
+      console.log('📥 Downloading attachment for message:', this.message.id);
+      
+      // For now, we'll simulate the download since we're using the SentService
+      // In a real implementation, you'd fetch the actual file data
+      const fileName = this.message.attachmentName || 'attachment.txt';
+      const fileContent = `Attachment from message: ${this.message.subject}\nSent by: ${this.message.senderName}\nSent on: ${this.formatTime(this.message.timestamp)}`;
+      
+      // Create a blob and download
+      const blob = new Blob([fileContent], { type: 'text/plain' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      
+      // Trigger download
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up
+      window.URL.revokeObjectURL(url);
+      
+      console.log('✅ Attachment download initiated:', fileName);
+      
+    } catch (error) {
+      console.error('❌ Error downloading attachment:', error);
+    }
+  }
+
+  // Forward message
+  forwardMessage(): void {
+    if (!this.message) return;
+    
+    console.log('📤 Forwarding message:', this.message.id);
+    
+    // Navigate to compose with pre-filled data
+    this.router.navigate(['/main-layout/compose'], {
+      queryParams: {
+        forward: 'true',
+        originalSubject: this.message.subject,
+        originalMessage: this.message.message,
+        originalSender: this.message.senderName
+      }
+    });
+  }
+
+  // Reply to message
+  replyToMessage(): void {
+    if (!this.message) return;
+    
+    console.log('📧 Replying to message:', this.message.id);
+    
+    // Navigate to compose with reply data
+    this.router.navigate(['/main-layout/compose'], {
+      queryParams: {
+        reply: 'true',
+        replyTo: this.message.senderName,
+        originalSubject: this.message.subject,
+        originalMessage: this.message.message
+      }
+    });
+  }
+
+  // Delete message
+  deleteMessage(): void {
+    if (!this.message?.id) return;
+    
+    const confirmed = confirm('Are you sure you want to delete this message?');
+    if (confirmed) {
+      console.log('🗑️ Deleting message:', this.message.id);
+      // Implementation would call message service to delete
+      // For now, just navigate back
+      this.goBack();
+    }
+  }
+
+  // Archive message
+  archiveMessage(): void {
+    if (!this.message?.id) return;
+    
+    console.log('📦 Archiving message:', this.message.id);
+    // Implementation would call message service to archive
+    // For now, just navigate back
+    this.goBack();
   }
 }

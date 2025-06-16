@@ -1,7 +1,7 @@
-import { Injectable } from '@angular/core';
-import { Firestore, collection, getDocs, query, where, orderBy } from '@angular/fire/firestore';
+import { Injectable, inject } from '@angular/core';
 import { Observable, from } from 'rxjs';
-import { AuthService } from './auth.service';
+import { MessageService, MessageData } from './message.service';
+import { ICDAuthService } from './icd-auth.service';
 
 export interface SentMessage {
   id?: string;
@@ -15,6 +15,12 @@ export interface SentMessage {
   status: 'sent' | 'delivered' | 'pending' | 'failed';
   hasAttachment?: boolean;
   attachmentName?: string;
+  attachedFile?: {
+    name: string;
+    size: number;
+    type: string;
+    base64Content: string;
+  };
   priority?: string;
   category?: string;
 }
@@ -23,14 +29,12 @@ export interface SentMessage {
   providedIn: 'root'
 })
 export class SentService {
-  private readonly MESSAGES_COLLECTION = 'messages';
   private selectedMessage: SentMessage | null = null;
+  private messageService = inject(MessageService);
+  private icdAuthService = inject(ICDAuthService);
 
-  constructor(
-    private firestore: Firestore,
-    private authService: AuthService
-  ) {
-    console.log('SentService initialized');
+  constructor() {
+    console.log('SentService initialized with MessageService integration');
   }
 
   // Get sent messages for current user
@@ -40,48 +44,46 @@ export class SentService {
 
   private async fetchSentMessages(): Promise<SentMessage[]> {
     try {
-      const currentUser = this.authService.getCurrentUser();
+      const currentUser = this.icdAuthService.getCurrentUser();
       if (!currentUser) {
         console.warn('No authenticated user found');
         return [];
       }
 
-      console.log('Fetching sent messages for user:', currentUser.email);
+      console.log('🔍 Fetching sent messages for user:', currentUser.email);
       
-      const messagesCollection = collection(this.firestore, this.MESSAGES_COLLECTION);
-      const q = query(
-        messagesCollection,
-        where('senderId', '==', currentUser.uid),
-        where('status', '==', 'sent'),
-        orderBy('timestamp', 'desc')
-      );
+      // Use the message service to get sent messages
+      const messages = await this.messageService.getSentMessages();
+      console.log(`📤 Received ${messages.length} sent messages from MessageService`);
+
+      // Transform MessageData to SentMessage format
+      const sentMessages = messages.map(msg => this.transformToSentMessage(msg));
       
-      const querySnapshot = await getDocs(q);
-      const messages = querySnapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          senderId: data['senderId'] || '',
-          senderName: data['senderName'] || currentUser.fullName,
-          to: data['to'] || '',
-          recipientDepartments: data['recipientDepartments'] || [],
-          subject: data['subject'] || 'No Subject',
-          message: data['message'] || '',
-          timestamp: data['timestamp'],
-          status: data['status'] || 'sent',
-          hasAttachment: !!(data['attachedFile'] || data['attachment']),
-          attachmentName: data['attachedFile']?.name || data['attachment']?.name || '',
-          priority: data['priority'] || 'normal',
-          category: data['category'] || 'general'
-        } as SentMessage;
-      });
-      
-      console.log(`✅ Fetched ${messages.length} sent messages`);
-      return messages;
+      console.log(`✅ Transformed ${sentMessages.length} sent messages`);
+      return sentMessages;
     } catch (error) {
       console.error('❌ Error fetching sent messages:', error);
       return [];
     }
+  }
+
+  private transformToSentMessage(msg: MessageData): SentMessage {
+    return {
+      id: msg.id,
+      senderId: msg.senderId,
+      senderName: msg.senderName,
+      to: msg.to,
+      recipientDepartments: msg.recipientDepartments || [],
+      subject: msg.subject,
+      message: msg.message,
+      timestamp: msg.timestamp,
+      status: 'sent', // Default to sent since we're fetching sent messages
+      hasAttachment: !!(msg.attachedFile),
+      attachmentName: msg.attachedFile?.name || '',
+      attachedFile: msg.attachedFile,
+      priority: msg.priority || 'normal',
+      category: msg.category || 'general'
+    };
   }
 
   // Set selected message for details view
@@ -98,7 +100,7 @@ export class SentService {
   // Get message by ID (for direct URL access)
   async getMessageById(messageId: string): Promise<SentMessage | null> {
     try {
-      const currentUser = this.authService.getCurrentUser();
+      const currentUser = this.icdAuthService.getCurrentUser();
       if (!currentUser) {
         console.warn('No authenticated user found');
         return null;
@@ -106,35 +108,13 @@ export class SentService {
 
       console.log('🔍 Fetching message by ID:', messageId);
       
-      const messagesCollection = collection(this.firestore, this.MESSAGES_COLLECTION);
-      const q = query(
-        messagesCollection,
-        where('senderId', '==', currentUser.uid)
-      );
-      
-      const querySnapshot = await getDocs(q);
-      const message = querySnapshot.docs.find(doc => doc.id === messageId);
+      // Get all sent messages and find the specific one
+      const sentMessages = await this.fetchSentMessages();
+      const message = sentMessages.find(msg => msg.id === messageId);
       
       if (message) {
-        const data = message.data();
-        const sentMessage = {
-          id: message.id,
-          senderId: data['senderId'] || '',
-          senderName: data['senderName'] || currentUser.fullName,
-          to: data['to'] || '',
-          recipientDepartments: data['recipientDepartments'] || [],
-          subject: data['subject'] || 'No Subject',
-          message: data['message'] || '',
-          timestamp: data['timestamp'],
-          status: data['status'] || 'sent',
-          hasAttachment: !!(data['attachedFile'] || data['attachment']),
-          attachmentName: data['attachedFile']?.name || data['attachment']?.name || '',
-          priority: data['priority'] || 'normal',
-          category: data['category'] || 'general'
-        } as SentMessage;
-        
-        console.log('✅ Message found:', sentMessage);
-        return sentMessage;
+        console.log('✅ Message found:', message);
+        return message;
       }
       
       console.log('❌ Message not found');
@@ -230,6 +210,21 @@ export class SentService {
         });
       default:
         return messages;
+    }
+  }
+
+  // Download attachment from sent message
+  downloadAttachment(message: SentMessage): void {
+    if (!message.hasAttachment || !message.attachedFile) {
+      console.warn('No attachment to download');
+      return;
+    }
+
+    try {
+      this.messageService.downloadFileFromBase64(message.attachedFile);
+      console.log('✅ Attachment download initiated from sent message');
+    } catch (error) {
+      console.error('❌ Error downloading attachment from sent message:', error);
     }
   }
 }

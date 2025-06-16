@@ -98,7 +98,16 @@
 
     <!-- Users Table -->
     <div class="overflow-x-auto">
-      <table class="min-w-full">
+      <!-- Loading State -->
+      <div *ngIf="isLoadingUsers" class="text-center py-12">
+        <svg class="animate-spin mx-auto h-12 w-12 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+        </svg>
+        <h3 class="mt-2 text-sm font-medium text-slate-900">Loading users...</h3>
+      </div>
+
+      <!-- Users Table -->
+      <table *ngIf="!isLoadingUsers" class="min-w-full">
         <thead class="bg-slate-50">
           <tr>
             <th class="px-8 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">User</th>
@@ -140,10 +149,12 @@
               {{ user.createdDate | date:'MMM d, y' }}
             </td>
             <td class="px-8 py-6 whitespace-nowrap">
-              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border"
-                    [class]="getStatusColor(user.status)">
+              <button 
+                (click)="toggleUserStatus(user.id)"
+                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border transition-colors cursor-pointer hover:shadow-sm"
+                [class]="getStatusColor(user.status)">
                 {{ user.status | titlecase }}
-              </span>
+              </button>
             </td>
             <td class="px-8 py-6 whitespace-nowrap text-sm font-medium">
               <div class="flex items-center space-x-3">
@@ -164,7 +175,7 @@
     </div>
 
     <!-- Empty State -->
-    <div *ngIf="filteredUsers.length === 0" class="text-center py-12">
+    <div *ngIf="!isLoadingUsers && filteredUsers.length === 0" class="text-center py-12">
       <svg class="mx-auto h-12 w-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a4 4 0 11-8 0 4 4 0 018 0z"></path>
       </svg>

@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Firestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, Timestamp, query, where, orderBy, getDoc } from '@angular/fire/firestore';
 import { BehaviorSubject } from 'rxjs';
 import { AuthService } from './auth.service';
@@ -30,12 +30,11 @@ export interface MessageData {
 })
 export class MessageService {
   private readonly MESSAGES_COLLECTION = 'messages';
+  private firestore = inject(Firestore);
+  private authService = inject(AuthService);
 
-  constructor(
-    private firestore: Firestore,
-    private authService: AuthService
-  ) {
-    console.log('MessageService initialized with Base64 file storage');
+  constructor() {
+    console.log('MessageService initialized with Base64 file storage and proper injection context');
   }
 
   // Create a new message
@@ -206,28 +205,58 @@ export class MessageService {
     }
   }
 
-  // Get messages by status
+  // Get messages by status (updated method)
   async getMessagesByStatus(status: string): Promise<MessageData[]> {
     try {
       const messagesCollection = collection(this.firestore, this.MESSAGES_COLLECTION);
-      const q = query(
-        messagesCollection, 
-        where('status', '==', status),
-        orderBy('timestamp', 'desc')
-      );
       
-      const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as MessageData[];
+      let messages: MessageData[] = [];
+
+      try {
+        // Try the optimized query first (requires index)
+        const q = query(
+          messagesCollection, 
+          where('status', '==', status),
+          orderBy('timestamp', 'desc')
+        );
+        
+        const querySnapshot = await getDocs(q);
+        messages = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as MessageData[];
+
+      } catch (indexError) {
+        console.warn('⚠️ Index not available for status query, falling back to simple query:', indexError);
+        
+        // Fallback: Query by status only, then sort in memory
+        const fallbackQuery = query(
+          messagesCollection,
+          where('status', '==', status)
+        );
+
+        const fallbackSnapshot = await getDocs(fallbackQuery);
+        messages = fallbackSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as MessageData[];
+
+        // Sort in memory by timestamp (descending)
+        messages.sort((a, b) => {
+          const aTime = a.timestamp?.toDate ? a.timestamp.toDate().getTime() : 0;
+          const bTime = b.timestamp?.toDate ? b.timestamp.toDate().getTime() : 0;
+          return bTime - aTime;
+        });
+      }
+
+      return messages;
     } catch (error) {
-      console.error('❌ Error fetching messages:', error);
+      console.error('❌ Error fetching messages by status:', error);
       throw error;
     }
   }
 
-  // Get messages sent by current user
+  // Get messages sent by current user (updated method)
   async getSentMessages(): Promise<MessageData[]> {
     try {
       const currentUser = this.authService.getCurrentUser();
@@ -236,25 +265,57 @@ export class MessageService {
       }
 
       const messagesCollection = collection(this.firestore, this.MESSAGES_COLLECTION);
-      const q = query(
-        messagesCollection,
-        where('senderId', '==', currentUser.uid),
-        where('status', '==', 'sent'),
-        orderBy('timestamp', 'desc')
-      );
+      
+      let messages: MessageData[] = [];
 
-      const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as MessageData[];
+      try {
+        // Try the optimized query first (requires index)
+        const q = query(
+          messagesCollection,
+          where('senderId', '==', currentUser.uid),
+          where('status', '==', 'sent'),
+          orderBy('timestamp', 'desc')
+        );
+
+        const querySnapshot = await getDocs(q);
+        messages = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as MessageData[];
+
+      } catch (indexError) {
+        console.warn('⚠️ Index not available for sent messages, falling back to simple query:', indexError);
+        
+        // Fallback: Query by senderId only, then filter and sort in memory
+        const fallbackQuery = query(
+          messagesCollection,
+          where('senderId', '==', currentUser.uid)
+        );
+
+        const fallbackSnapshot = await getDocs(fallbackQuery);
+        const allUserMessages = fallbackSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as MessageData[];
+
+        // Filter for sent status and sort in memory
+        messages = allUserMessages
+          .filter(msg => msg.status === 'sent')
+          .sort((a, b) => {
+            const aTime = a.timestamp?.toDate ? a.timestamp.toDate().getTime() : 0;
+            const bTime = b.timestamp?.toDate ? b.timestamp.toDate().getTime() : 0;
+            return bTime - aTime;
+          });
+      }
+
+      return messages;
     } catch (error) {
       console.error('❌ Error fetching sent messages:', error);
       throw error;
     }
   }
 
-  // Get inbox messages for current user
+  // Get inbox messages for current user (updated method)
   async getInboxMessages(): Promise<MessageData[]> {
     try {
       const currentUser = this.authService.getCurrentUser();
@@ -262,25 +323,69 @@ export class MessageService {
         throw new Error('User must be authenticated');
       }
 
+      console.log('🔍 Fetching inbox messages for user:', currentUser.email);
+
       const messagesCollection = collection(this.firestore, this.MESSAGES_COLLECTION);
       
-      const q = query(
-        messagesCollection,
-        where('status', '==', 'sent'),
-        orderBy('timestamp', 'desc')
-      );
+      let allMessages: MessageData[] = [];
 
-      const querySnapshot = await getDocs(q);
-      const allMessages = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as MessageData[];
+      try {
+        // Try the optimized query first (requires index)
+        const q = query(
+          messagesCollection,
+          where('status', '==', 'sent'),
+          orderBy('timestamp', 'desc')
+        );
+
+        const querySnapshot = await getDocs(q);
+        allMessages = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as MessageData[];
+
+      } catch (indexError) {
+        console.warn('⚠️ Index not available, falling back to simple query:', indexError);
+        
+        // Fallback: Query without ordering, then sort in memory
+        const fallbackQuery = query(
+          messagesCollection,
+          where('status', '==', 'sent')
+        );
+
+        const fallbackSnapshot = await getDocs(fallbackQuery);
+        allMessages = fallbackSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as MessageData[];
+
+        // Sort in memory by timestamp (descending)
+        allMessages.sort((a, b) => {
+          const aTime = a.timestamp?.toDate ? a.timestamp.toDate().getTime() : 0;
+          const bTime = b.timestamp?.toDate ? b.timestamp.toDate().getTime() : 0;
+          return bTime - aTime;
+        });
+      }
+
+      console.log(`📨 Found ${allMessages.length} total sent messages`);
 
       // Filter messages for current user's department or direct email
-      return allMessages.filter(message => 
-        message.to === currentUser.email || 
-        message.recipientDepartments.includes(currentUser.department)
-      );
+      const userInboxMessages = allMessages.filter(message => {
+        // Check if message is directly addressed to user's email
+        const isDirectMessage = message.to === currentUser.email;
+        
+        // Check if message is sent to user's department
+        const isDepartmentMessage = message.recipientDepartments && 
+          message.recipientDepartments.includes(currentUser.department);
+        
+        // Exclude messages sent by the current user (they appear in sent folder)
+        const isNotSentByUser = message.senderId !== currentUser.uid;
+        
+        return (isDirectMessage || isDepartmentMessage) && isNotSentByUser;
+      });
+
+      console.log(`✅ Filtered to ${userInboxMessages.length} inbox messages for user`);
+      
+      return userInboxMessages;
     } catch (error) {
       console.error('❌ Error fetching inbox messages:', error);
       throw error;
@@ -314,7 +419,7 @@ export class MessageService {
     }
   }
 
-  // Mark message as read
+  // Mark message as read (updated method)
   async markAsRead(messageId: string): Promise<void> {
     try {
       const currentUser = this.authService.getCurrentUser();
@@ -322,11 +427,30 @@ export class MessageService {
 
       const messageDoc = doc(this.firestore, `${this.MESSAGES_COLLECTION}/${messageId}`);
       
-      await updateDoc(messageDoc, {
-        [`readBy.${currentUser.uid}`]: Timestamp.now()
-      });
+      // Get current message to update readBy array
+      const messageSnapshot = await getDoc(messageDoc);
+      if (!messageSnapshot.exists()) {
+        console.error('Message not found for marking as read');
+        return;
+      }
       
-      console.log('✅ Message marked as read');
+      const currentData = messageSnapshot.data();
+      const currentReadBy = currentData['readBy'] || [];
+      
+      // Add user to readBy array if not already present
+      if (!currentReadBy.includes(currentUser.uid)) {
+        const updatedReadBy = [...currentReadBy, currentUser.uid];
+        
+        await updateDoc(messageDoc, {
+          readBy: updatedReadBy,
+          readAt: Timestamp.now()
+        });
+        
+        console.log('✅ Message marked as read');
+      } else {
+        console.log('ℹ️ Message already marked as read by this user');
+      }
+      
     } catch (error) {
       console.error('❌ Error marking message as read:', error);
       throw error;

@@ -1,6 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, NgForm } from '@angular/forms';
+import { DocumentService, FirebaseDocument } from '../../services/document.service';
+import { AuthService } from '../../services/auth.service';
 
 interface Document {
   id: string;
@@ -11,6 +13,13 @@ interface Document {
   uploadedDate: Date;
 }
 
+interface NewDocumentForm {
+  name: string;
+  description: string;
+  department: string;
+  file: File | null;
+}
+
 @Component({
   selector: 'app-icd-document-management',
   standalone: true,
@@ -18,65 +27,71 @@ interface Document {
   templateUrl: './icd-document-management.component.html',
   styleUrl: './icd-document-management.component.scss'
 })
-export class IcdDocumentManagementComponent {
+export class IcdDocumentManagementComponent implements OnInit {
   searchQuery: string = '';
   sortBy: string = 'title';
+  showUploadModal = false;
+  isUploadingDocument = false;
+  isLoadingDocuments = false;
 
-  documents: Document[] = [
-    {
-      id: '1',
-      title: 'Budget Report Q4 2024',
-      department: 'Finance',
-      size: '2.5 MB',
-      uploadedBy: 'John Smith',
-      uploadedDate: new Date(2024, 11, 15)
-    },
-    {
-      id: '2',
-      title: 'IT Security Policy',
-      department: 'IT Department',
-      size: '1.8 MB',
-      uploadedBy: 'Sarah Johnson',
-      uploadedDate: new Date(2024, 11, 14)
-    },
-    {
-      id: '3',
-      title: 'Employee Handbook',
-      department: 'Human Resources',
-      size: '5.2 MB',
-      uploadedBy: 'Michael Chen',
-      uploadedDate: new Date(2024, 11, 13)
-    },
-    {
-      id: '4',
-      title: 'Legal Compliance Guide',
-      department: 'Legal',
-      size: '3.1 MB',
-      uploadedBy: 'Emma Wilson',
-      uploadedDate: new Date(2024, 11, 12)
-    },
-    {
-      id: '5',
-      title: 'Operations Manual',
-      department: 'Operations',
-      size: '4.7 MB',
-      uploadedBy: 'David Brown',
-      uploadedDate: new Date(2024, 11, 11)
-    },
-    {
-      id: '6',
-      title: 'Marketing Strategy 2025',
-      department: 'Marketing',
-      size: '2.9 MB',
-      uploadedBy: 'Lisa Davis',
-      uploadedDate: new Date(2024, 11, 10)
-    }
+  // Available departments
+  departments = [
+    'Human Resources',
+    'Finance',
+    'Information Technology',
+    'Operations',
+    'Marketing',
+    'Legal',
+    'Administration',
+    'Communications',
+    'Engineering',
+    'Sales',
+    'Customer Service',
+    'Other'
   ];
 
-  filteredDocuments: Document[] = [];
+  newDocumentForm: NewDocumentForm = {
+    name: '',
+    description: '',
+    department: '',
+    file: null
+  };
 
-  ngOnInit(): void {
-    this.filterDocuments();
+  documents: Document[] = [];
+  filteredDocuments: Document[] = [];
+  firebaseDocuments: FirebaseDocument[] = []; // Store original Firebase documents
+
+  constructor(
+    private documentService: DocumentService,
+    private authService: AuthService
+  ) {}
+
+  async ngOnInit(): Promise<void> {
+    await this.loadDocuments();
+  }
+
+  async loadDocuments(): Promise<void> {
+    this.isLoadingDocuments = true;
+    try {
+      this.firebaseDocuments = await this.documentService.getDocuments();
+      
+      // Convert Firebase documents to local format
+      this.documents = this.firebaseDocuments.map(doc => ({
+        id: doc.id || '',
+        title: doc.name,
+        department: doc.department,
+        size: this.documentService.formatFileSize(doc.fileSize),
+        uploadedBy: doc.uploadedBy,
+        uploadedDate: doc.uploadedAt instanceof Date ? doc.uploadedAt : new Date(doc.uploadedAt)
+      }));
+
+      this.filterDocuments();
+      console.log(`📄 Loaded ${this.documents.length} documents from Firebase`);
+    } catch (error) {
+      console.error('Error loading documents:', error);
+    } finally {
+      this.isLoadingDocuments = false;
+    }
   }
 
   filterDocuments(): void {
@@ -112,16 +127,175 @@ export class IcdDocumentManagementComponent {
   }
 
   viewDocument(docId: string): void {
-    console.log('View document:', docId);
+    const firebaseDoc = this.firebaseDocuments.find(doc => doc.id === docId);
+    if (firebaseDoc) {
+      this.documentService.viewDocument(firebaseDoc);
+    } else {
+      console.error('Document not found for viewing');
+    }
   }
 
-  
-
-  deleteDocument(docId: string): void {
-    console.log('Delete document:', docId);
+  async deleteDocument(docId: string): Promise<void> {
+    const doc = this.documents.find(d => d.id === docId);
+    if (doc && confirm(`Are you sure you want to delete "${doc.title}"?`)) {
+      try {
+        const success = await this.documentService.deleteDocument(docId);
+        if (success) {
+          console.log('✅ Document deleted successfully');
+          await this.loadDocuments(); // Reload documents
+          alert('Document deleted successfully!');
+        } else {
+          alert('Failed to delete document');
+        }
+      } catch (error) {
+        console.error('Error deleting document:', error);
+        alert('Error deleting document');
+      }
+    }
   }
 
   downloadDocument(docId: string): void {
-    console.log('Download document:', docId);
+    const firebaseDoc = this.firebaseDocuments.find(doc => doc.id === docId);
+    if (firebaseDoc) {
+      console.log('FirebaseDocument being passed to download service:', JSON.stringify(firebaseDoc, null, 2));
+      this.documentService.downloadDocument(firebaseDoc);
+    } else {
+      console.error('Document not found for download');
+    }
+  }
+
+  // Modal methods
+  openUploadModal(): void {
+    this.showUploadModal = true;
+    this.resetForm();
+  }
+
+  closeUploadModal(): void {
+    this.showUploadModal = false;
+    this.resetForm();
+  }
+
+  onFileSelected(event: any): void {
+    const file = event.target.files[0];
+    if (file) {
+      this.newDocumentForm.file = file;
+      // Auto-fill name if not already filled
+      if (!this.newDocumentForm.name) {
+        this.newDocumentForm.name = file.name.split('.')[0];
+      }
+    }
+  }
+
+  async onSubmitDocument(form: NgForm): Promise<void> {
+    if (form.invalid || !this.newDocumentForm.file) {
+      console.log('Form is invalid or no file selected');
+      this.markFormGroupTouched(form);
+      return;
+    }
+
+    this.isUploadingDocument = true;
+    
+    try {
+      console.log('📄 Uploading document to Firebase:', this.newDocumentForm.name);
+      
+      // Get current user info
+      const currentUser = await this.authService.getCurrentUser();
+      const userName = currentUser?.fullName || 'Unknown User';
+      
+      // Upload to Firebase
+      const result = await this.documentService.uploadDocument(
+        this.newDocumentForm.file!,
+        {
+          name: this.newDocumentForm.name,
+          description: this.newDocumentForm.description,
+          department: this.newDocumentForm.department,
+          uploadedBy: userName,
+          createdBy: userName
+        }
+      );
+      
+      if (result.success) {
+        console.log('✅ Document uploaded successfully to Firebase');
+        
+        // Reload documents from Firebase
+        await this.loadDocuments();
+        
+        // Close modal and reset form
+        this.closeUploadModal();
+        
+        // Show success message (you can add toast notification here)
+        alert('Document uploaded successfully!');
+      } else {
+        console.error('❌ Upload failed:', result.error);
+        alert(`Upload failed: ${result.error}`);
+      }
+      
+    } catch (error: any) {
+      console.error('❌ Error uploading document:', error);
+      alert(`Error uploading document: ${error.message}`);
+    } finally {
+      this.isUploadingDocument = false;
+    }
+  }
+
+  public formatFileSize(bytes: number): string {
+    return this.documentService.formatFileSize(bytes);
+  }
+
+  private markFormGroupTouched(form: NgForm): void {
+    Object.keys(form.controls).forEach(key => {
+      const control = form.controls[key];
+      control.markAsTouched();
+    });
+  }
+
+  private resetForm(): void {
+    this.newDocumentForm = {
+      name: '',
+      description: '',
+      department: '',
+      file: null
+    };
+    this.isUploadingDocument = false;
+    
+    // Reset file input
+    const fileInput = document.getElementById('documentFile') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
+    }
+  }
+
+  // Validation helpers
+  isFieldInvalid(form: NgForm, fieldName: string): boolean {
+    const field = form.controls[fieldName];
+    return field && field.invalid && (field.dirty || field.touched || form.submitted);
+  }
+
+  getFieldError(form: NgForm, fieldName: string): string {
+    const field = form.controls[fieldName];
+    if (field && field.errors) {
+      if (field.errors['required']) {
+        return `${this.getFieldLabel(fieldName)} is required`;
+      }
+    }
+    return '';
+  }
+
+  private getFieldLabel(fieldName: string): string {
+    const labels: { [key: string]: string } = {
+      name: 'Document Name',
+      description: 'Description',
+      department: 'Department'
+    };
+    return labels[fieldName] || fieldName;
+  }
+
+  isFormValid(form: NgForm): boolean {
+    return form.valid && this.newDocumentForm.file !== null;
+  }
+
+  // Add getter for current date
+  get currentDate(): Date {
+    return new Date();
   }
 }
