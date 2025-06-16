@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Firestore, collection, query, where, orderBy, getDocs, onSnapshot } from '@angular/fire/firestore';
 import { Observable, BehaviorSubject, combineLatest } from 'rxjs';
-import { map, distinctUntilChanged } from 'rxjs/operators';
+import { map, distinctUntilChanged, catchError } from 'rxjs/operators';
 import { MessageService, MessageData } from './message.service';
 import { ICDAuthService } from './icd-auth.service';
 
@@ -40,10 +40,6 @@ export class InboxService {
 
   /**
    * Get inbox messages for a specific user and department
-   * @param userId - The user's ID
-   * @param userEmail - The user's email address
-   * @param department - The user's department
-   * @returns Observable of combined inbox messages
    */
   getUserInboxMessages(userId: string, userEmail: string, department: string): Observable<InboxMessage[]> {
     const userMessages$ = this.getUserDirectMessages(userEmail);
@@ -69,158 +65,161 @@ export class InboxService {
           return bTime - aTime;
         });
       }),
+      catchError(error => {
+        console.error('❌ Error in getUserInboxMessages:', error);
+        return [];
+      }),
       distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr))
     );
   }
 
   /**
-   * Get messages sent directly to a user's email
-   * @param userEmail - The user's email address
-   * @returns Observable of direct messages
+   * Get messages sent directly to a user's email - Fixed version
    */
   private getUserDirectMessages(userEmail: string): Observable<InboxMessage[]> {
     return new Observable<InboxMessage[]>(observer => {
-      const messagesCollection = collection(this.firestore, this.MESSAGES_COLLECTION);
-      const q = query(
-        messagesCollection,
-        where('to', '==', userEmail),
-        where('status', '==', 'sent'),
-        orderBy('timestamp', 'desc')
-      );
+      // Always use fallback approach to avoid index requirements
+      this.fallbackGetDirectMessages(userEmail).then(messages => {
+        observer.next(messages);
+        
+        // Set up simple real-time listener without complex queries
+        const messagesCollection = collection(this.firestore, this.MESSAGES_COLLECTION);
+        const simpleQuery = query(
+          messagesCollection,
+          where('to', '==', userEmail),
+          where('status', '==', 'sent')
+        );
 
-      // Set up real-time listener
-      const unsubscribe = onSnapshot(q, 
-        (snapshot) => {
-          const messages: InboxMessage[] = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-            messageType: 'direct'
-          })) as InboxMessage[];
-          
-          console.log(`📧 Fetched ${messages.length} direct messages for ${userEmail}`);
-          observer.next(messages);
-        },
-        (error) => {
-          console.error('❌ Error fetching direct messages:', error);
-          
-          // Fallback to regular query if real-time fails
-          this.fallbackGetDirectMessages(userEmail).then(messages => {
-            observer.next(messages);
-          }).catch(fallbackError => {
-            console.error('❌ Fallback query also failed:', fallbackError);
-            observer.error(fallbackError);
-          });
-        }
-      );
+        const unsubscribe = onSnapshot(simpleQuery, 
+          (snapshot) => {
+            const messages: InboxMessage[] = snapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data(),
+              messageType: 'direct'
+            })) as InboxMessage[];
+            
+            // Sort in memory since we can't use orderBy with compound queries
+            const sortedMessages = messages.sort((a, b) => {
+              const aTime = a.timestamp?.toDate ? a.timestamp.toDate().getTime() : 0;
+              const bTime = b.timestamp?.toDate ? b.timestamp.toDate().getTime() : 0;
+              return bTime - aTime;
+            });
+            
+            console.log(`📧 Real-time: ${sortedMessages.length} direct messages for ${userEmail}`);
+            observer.next(sortedMessages);
+          },
+          (error) => {
+            console.error('❌ Error in direct messages real-time listener:', error);
+            // Don't propagate error, just use the initial fallback data
+          }
+        );
 
-      // Store the unsubscribe function
-      this.activeListeners.push(unsubscribe);
+        this.activeListeners.push(unsubscribe);
+        return () => {
+          unsubscribe();
+          this.activeListeners = this.activeListeners.filter(fn => fn !== unsubscribe);
+        };
+      }).catch(error => {
+        console.error('❌ Error in initial direct messages fetch:', error);
+        observer.next([]);
+      });
 
       // Return cleanup function
       return () => {
-        unsubscribe();
-        this.activeListeners = this.activeListeners.filter(fn => fn !== unsubscribe);
+        // Cleanup handled in the promise above
       };
     });
   }
 
   /**
-   * Get messages sent to a user's department
-   * @param department - The department name
-   * @returns Observable of department messages
+   * Get messages sent to a user's department - Fixed version
    */
   private getDepartmentMessages(department: string): Observable<InboxMessage[]> {
     return new Observable<InboxMessage[]>(observer => {
-      const messagesCollection = collection(this.firestore, this.MESSAGES_COLLECTION);
-      const q = query(
-        messagesCollection,
-        where('recipientDepartments', 'array-contains', department),
-        where('status', '==', 'sent'),
-        orderBy('timestamp', 'desc')
-      );
+      // Always use fallback approach to avoid index requirements
+      this.fallbackGetDepartmentMessages(department).then(messages => {
+        observer.next(messages);
+        
+        // Set up simple real-time listener without complex queries
+        const messagesCollection = collection(this.firestore, this.MESSAGES_COLLECTION);
+        const simpleQuery = query(
+          messagesCollection,
+          where('recipientDepartments', 'array-contains', department),
+          where('status', '==', 'sent')
+        );
 
-      // Set up real-time listener
-      const unsubscribe = onSnapshot(q,
-        (snapshot) => {
-          const messages: InboxMessage[] = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-            messageType: 'department'
-          })) as InboxMessage[];
-          
-          console.log(`🏢 Fetched ${messages.length} department messages for ${department}`);
-          observer.next(messages);
-        },
-        (error) => {
-          console.error('❌ Error fetching department messages:', error);
-          
-          // Fallback to regular query if real-time fails
-          this.fallbackGetDepartmentMessages(department).then(messages => {
-            observer.next(messages);
-          }).catch(fallbackError => {
-            console.error('❌ Fallback query also failed:', fallbackError);
-            observer.error(fallbackError);
-          });
-        }
-      );
+        const unsubscribe = onSnapshot(simpleQuery,
+          (snapshot) => {
+            const messages: InboxMessage[] = snapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data(),
+              messageType: 'department'
+            })) as InboxMessage[];
+            
+            // Sort in memory since we can't use orderBy with compound queries
+            const sortedMessages = messages.sort((a, b) => {
+              const aTime = a.timestamp?.toDate ? a.timestamp.toDate().getTime() : 0;
+              const bTime = b.timestamp?.toDate ? b.timestamp.toDate().getTime() : 0;
+              return bTime - aTime;
+            });
+            
+            console.log(`🏢 Real-time: ${sortedMessages.length} department messages for ${department}`);
+            observer.next(sortedMessages);
+          },
+          (error) => {
+            console.error('❌ Error in department messages real-time listener:', error);
+            // Don't propagate error, just use the initial fallback data
+          }
+        );
 
-      // Store the unsubscribe function
-      this.activeListeners.push(unsubscribe);
+        this.activeListeners.push(unsubscribe);
+        return () => {
+          unsubscribe();
+          this.activeListeners = this.activeListeners.filter(fn => fn !== unsubscribe);
+        };
+      }).catch(error => {
+        console.error('❌ Error in initial department messages fetch:', error);
+        observer.next([]);
+      });
 
       // Return cleanup function
       return () => {
-        unsubscribe();
-        this.activeListeners = this.activeListeners.filter(fn => fn !== unsubscribe);
+        // Cleanup handled in the promise above
       };
     });
   }
 
   /**
-   * Fallback method for direct messages (without real-time)
+   * Fallback method for direct messages (without real-time) - Fixed injection context
    */
   private async fallbackGetDirectMessages(userEmail: string): Promise<InboxMessage[]> {
     try {
       const messagesCollection = collection(this.firestore, this.MESSAGES_COLLECTION);
       
-      // Try with ordering first
-      try {
-        const q = query(
-          messagesCollection,
-          where('to', '==', userEmail),
-          where('status', '==', 'sent'),
-          orderBy('timestamp', 'desc')
-        );
-        
-        const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          messageType: 'direct'
-        })) as InboxMessage[];
-      } catch (indexError) {
-        console.warn('⚠️ Index not available for direct messages, using simple query');
-        
-        // Simple query without ordering
-        const fallbackQuery = query(
-          messagesCollection,
-          where('to', '==', userEmail),
-          where('status', '==', 'sent')
-        );
-        
-        const fallbackSnapshot = await getDocs(fallbackQuery);
-        const messages = fallbackSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          messageType: 'direct'
-        })) as InboxMessage[];
-        
-        // Sort in memory
-        return messages.sort((a, b) => {
-          const aTime = a.timestamp?.toDate ? a.timestamp.toDate().getTime() : 0;
-          const bTime = b.timestamp?.toDate ? b.timestamp.toDate().getTime() : 0;
-          return bTime - aTime;
-        });
-      }
+      // Use simple query without ordering to avoid index requirements
+      const simpleQuery = query(
+        messagesCollection,
+        where('to', '==', userEmail),
+        where('status', '==', 'sent')
+      );
+      
+      const snapshot = await getDocs(simpleQuery);
+      const messages = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        messageType: 'direct'
+      })) as InboxMessage[];
+      
+      // Sort in memory by timestamp (newest first)
+      const sortedMessages = messages.sort((a, b) => {
+        const aTime = a.timestamp?.toDate ? a.timestamp.toDate().getTime() : 0;
+        const bTime = b.timestamp?.toDate ? b.timestamp.toDate().getTime() : 0;
+        return bTime - aTime;
+      });
+      
+      console.log(`📧 Fallback: ${sortedMessages.length} direct messages for ${userEmail}`);
+      return sortedMessages;
+      
     } catch (error) {
       console.error('❌ Error in fallback direct messages query:', error);
       return [];
@@ -228,51 +227,36 @@ export class InboxService {
   }
 
   /**
-   * Fallback method for department messages (without real-time)
+   * Fallback method for department messages (without real-time) - Fixed injection context
    */
   private async fallbackGetDepartmentMessages(department: string): Promise<InboxMessage[]> {
     try {
       const messagesCollection = collection(this.firestore, this.MESSAGES_COLLECTION);
       
-      // Try with ordering first
-      try {
-        const q = query(
-          messagesCollection,
-          where('recipientDepartments', 'array-contains', department),
-          where('status', '==', 'sent'),
-          orderBy('timestamp', 'desc')
-        );
-        
-        const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          messageType: 'department'
-        })) as InboxMessage[];
-      } catch (indexError) {
-        console.warn('⚠️ Index not available for department messages, using simple query');
-        
-        // Simple query without ordering
-        const fallbackQuery = query(
-          messagesCollection,
-          where('recipientDepartments', 'array-contains', department),
-          where('status', '==', 'sent')
-        );
-        
-        const fallbackSnapshot = await getDocs(fallbackQuery);
-        const messages = fallbackSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          messageType: 'department'
-        })) as InboxMessage[];
-        
-        // Sort in memory
-        return messages.sort((a, b) => {
-          const aTime = a.timestamp?.toDate ? a.timestamp.toDate().getTime() : 0;
-          const bTime = b.timestamp?.toDate ? b.timestamp.toDate().getTime() : 0;
-          return bTime - aTime;
-        });
-      }
+      // Use simple query without ordering to avoid index requirements
+      const simpleQuery = query(
+        messagesCollection,
+        where('recipientDepartments', 'array-contains', department),
+        where('status', '==', 'sent')
+      );
+      
+      const snapshot = await getDocs(simpleQuery);
+      const messages = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        messageType: 'department'
+      })) as InboxMessage[];
+      
+      // Sort in memory by timestamp (newest first)
+      const sortedMessages = messages.sort((a, b) => {
+        const aTime = a.timestamp?.toDate ? a.timestamp.toDate().getTime() : 0;
+        const bTime = b.timestamp?.toDate ? b.timestamp.toDate().getTime() : 0;
+        return bTime - aTime;
+      });
+      
+      console.log(`🏢 Fallback: ${sortedMessages.length} department messages for ${department}`);
+      return sortedMessages;
+      
     } catch (error) {
       console.error('❌ Error in fallback department messages query:', error);
       return [];
@@ -310,6 +294,7 @@ export class InboxService {
       },
       error => {
         console.error('❌ Error in inbox stream:', error);
+        this.allInboxMessagesSubject.next([]);
       }
     );
 

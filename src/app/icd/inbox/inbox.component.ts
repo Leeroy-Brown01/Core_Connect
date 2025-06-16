@@ -7,7 +7,7 @@ import { IcdUserManagementComponent } from '../icd-user-management/icd-user-mana
 import { MessageService, MessageData } from '../../services/message.service';
 import { ICDAuthService } from '../../services/icd-auth.service';
 import { ICDUserService, FirebaseICDUser } from '../../services/icd-user.service';
-import { InboxService, InboxMessage as ServiceInboxMessage } from '../../services/inbox.service';
+import { InboxService } from '../../services/inbox.service';
 import { Subscription } from 'rxjs';
 
 interface InboxMessage {
@@ -88,7 +88,12 @@ export class InboxComponent implements OnInit, OnDestroy {
   // Message data
   inboxMessages: InboxMessage[] = [];
   filteredMessages: InboxMessage[] = [];
-  allMessages: ServiceInboxMessage[] = [];
+  allMessages: MessageData[] = [];
+
+  // Modal state
+  showMessageModal = false;
+  selectedModalMessage: InboxMessage | null = null;
+  isMarkingAsRead = false;
 
   private subscriptions: Subscription[] = [];
 
@@ -162,9 +167,6 @@ export class InboxComponent implements OnInit, OnDestroy {
       next: (messages) => {
         console.log('✅ Received inbox messages via InboxService:', messages);
         
-        // Store original messages for attachment access
-        this.allMessages = messages;
-        
         // Transform messages to inbox format
         this.inboxMessages = messages.map(msg => this.transformMessageToInbox(msg));
         
@@ -186,7 +188,7 @@ export class InboxComponent implements OnInit, OnDestroy {
     this.subscriptions.push(inboxSub);
   }
 
-  private transformMessageToInbox(msg: ServiceInboxMessage): InboxMessage {
+  private transformMessageToInbox(msg: any): InboxMessage {
     return {
       id: msg.id,
       senderId: msg.senderId,
@@ -211,7 +213,7 @@ export class InboxComponent implements OnInit, OnDestroy {
     };
   }
 
-  private isMessageRead(msg: ServiceInboxMessage): boolean {
+  private isMessageRead(msg: any): boolean {
     const currentUser = this.icdAuthService.getCurrentUser();
     if (!currentUser || !msg.readBy) return false;
     
@@ -373,26 +375,48 @@ export class InboxComponent implements OnInit, OnDestroy {
     if (!message.id || message.isRead) return;
     
     try {
+      this.isMarkingAsRead = true;
       await this.inboxService.markAsRead(message.id);
       message.isRead = true;
+      
+      // Update the selected modal message if it's the same
+      if (this.selectedModalMessage?.id === message.id) {
+        this.selectedModalMessage.isRead = true;
+      }
+      
       this.updateFilterCounts();
       console.log('✅ Message marked as read:', message.id);
     } catch (error) {
       console.error('❌ Error marking message as read:', error);
+    } finally {
+      this.isMarkingAsRead = false;
     }
   }
 
   viewMessage(message: InboxMessage): void {
-    console.log('📧 Viewing message:', message.id);
+    console.log('📧 Opening message modal for:', message.id);
+    
+    // Set the selected message for the modal
+    this.selectedModalMessage = { ...message };
+    this.showMessageModal = true;
     
     // Mark as read if not already read
     if (!message.isRead) {
       this.markAsRead(message);
     }
-    
-    // Here you can implement message detail view
-    // For now, just log the message
-    console.log('Message details:', message);
+  }
+
+  closeMessageModal(): void {
+    this.showMessageModal = false;
+    this.selectedModalMessage = null;
+    console.log('📧 Message modal closed');
+  }
+
+  onModalBackgroundClick(event: MouseEvent): void {
+    // Close modal only if clicking on the background (not the modal content)
+    if (event.target === event.currentTarget) {
+      this.closeMessageModal();
+    }
   }
 
   downloadAttachment(message: InboxMessage): void {
@@ -409,23 +433,124 @@ export class InboxComponent implements OnInit, OnDestroy {
       }
     }
     
-    // Fallback: find the original message from allMessages
+    // Fallback: find the original message from allMessages if needed
     const originalMessage = this.allMessages.find(msg => msg.id === message.id);
     if (originalMessage?.attachedFile) {
       try {
         this.messageService.downloadFileFromBase64(originalMessage.attachedFile);
-        console.log('✅ Attachment download initiated from original message');
+        console.log('✅ Attachment download initiated from fallback');
       } catch (error) {
-        console.error('❌ Error downloading attachment from original:', error);
+        console.error('❌ Error downloading attachment from fallback:', error);
       }
     } else {
       console.warn('⚠️ No attachment found for message:', message.id);
     }
   }
 
+  // Modal-specific methods
+  getModalRecipientDisplay(): string {
+    if (!this.selectedModalMessage) return 'Unknown';
+    
+    if (this.selectedModalMessage.to && this.selectedModalMessage.to !== '') {
+      return this.selectedModalMessage.to;
+    }
+    
+    if (this.selectedModalMessage.recipientDepartments && this.selectedModalMessage.recipientDepartments.length > 0) {
+      return this.selectedModalMessage.recipientDepartments.join(', ');
+    }
+    
+    return 'Unknown Recipient';
+  }
+
+  getModalStatusColor(): string {
+    if (!this.selectedModalMessage) return 'bg-gray-100 text-gray-700';
+    
+    switch (this.selectedModalMessage.status) {
+      case 'sent': return 'bg-blue-100 text-blue-700 border-blue-200';
+      case 'delivered': return 'bg-green-100 text-green-700 border-green-200';
+      case 'pending': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+      case 'failed': return 'bg-red-100 text-red-700 border-red-200';
+      default: return 'bg-gray-100 text-gray-700 border-gray-200';
+    }
+  }
+
+  getModalStatusIcon(): string {
+    if (!this.selectedModalMessage) return '📧';
+    
+    switch (this.selectedModalMessage.status) {
+      case 'sent': return '📧';
+      case 'delivered': return '✓';
+      case 'pending': return '⏳';
+      case 'failed': return '✗';
+      default: return '📧';
+    }
+  }
+
+  replyToMessage(): void {
+    if (!this.selectedModalMessage) return;
+    
+    console.log('📧 Replying to message:', this.selectedModalMessage.id);
+    
+    // Close modal and navigate to compose with reply data
+    this.closeMessageModal();
+    
+    // Switch to compose tab (you might want to implement this navigation)
+    // For now, just log the action
+    console.log('Navigate to compose with reply data:', {
+      replyTo: this.selectedModalMessage.senderName,
+      originalSubject: this.selectedModalMessage.subject,
+      originalMessage: this.selectedModalMessage.message
+    });
+  }
+
+  forwardMessage(): void {
+    if (!this.selectedModalMessage) return;
+    
+    console.log('📤 Forwarding message:', this.selectedModalMessage.id);
+    
+    // Close modal and navigate to compose with forward data
+    this.closeMessageModal();
+    
+    // Switch to compose tab (you might want to implement this navigation)
+    // For now, just log the action
+    console.log('Navigate to compose with forward data:', {
+      forward: true,
+      originalSubject: this.selectedModalMessage.subject,
+      originalMessage: this.selectedModalMessage.message,
+      originalSender: this.selectedModalMessage.senderName
+    });
+  }
+
+  archiveMessage(): void {
+    if (!this.selectedModalMessage?.id) return;
+    
+    console.log('📦 Archiving message:', this.selectedModalMessage.id);
+    
+    // Here you would implement the archive functionality
+    // For now, just close the modal
+    this.closeMessageModal();
+  }
+
+  deleteMessage(): void {
+    if (!this.selectedModalMessage?.id) return;
+    
+    const confirmed = confirm('Are you sure you want to delete this message?');
+    if (confirmed) {
+      console.log('🗑️ Deleting message:', this.selectedModalMessage.id);
+      
+      // Here you would implement the delete functionality
+      // For now, just close the modal
+      this.closeMessageModal();
+    }
+  }
+
+  formatTimestamp(timestamp: any): string {
+    return this.formatTime(timestamp);
+  }
+
   // Refresh data
   async refreshMessages(): Promise<void> {
-    this.setupInboxStreams();
+    await this.setupInboxStreams();
   }
 
   // Utility methods
