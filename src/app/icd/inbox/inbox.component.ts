@@ -8,6 +8,8 @@ import { MessageService, MessageData } from '../../services/message.service';
 import { ICDAuthService } from '../../services/icd-auth.service';
 import { ICDUserService, FirebaseICDUser } from '../../services/icd-user.service';
 import { InboxService } from '../../services/inbox.service';
+import { ICDDownloadsService } from '../../services/icd-downloads.service';
+import { ToastService } from '../../services/toast.service';
 import { Subscription } from 'rxjs';
 
 interface InboxMessage {
@@ -101,7 +103,9 @@ export class InboxComponent implements OnInit, OnDestroy {
     private messageService: MessageService,
     private icdAuthService: ICDAuthService,
     private icdUserService: ICDUserService,
-    private inboxService: InboxService
+    private inboxService: InboxService,
+    private icdDownloadsService: ICDDownloadsService,
+    private toastService: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -419,31 +423,100 @@ export class InboxComponent implements OnInit, OnDestroy {
     }
   }
 
-  downloadAttachment(message: InboxMessage): void {
-    if (!message.hasAttachment || !message.id) return;
-    
-    // Try to get attachment from the message itself first
-    if (message.attachedFile) {
-      try {
-        this.messageService.downloadFileFromBase64(message.attachedFile);
-        console.log('✅ Attachment download initiated');
-        return;
-      } catch (error) {
-        console.error('❌ Error downloading attachment directly:', error);
-      }
+  async downloadAttachment(message: InboxMessage): Promise<void> {
+    if (!message.hasAttachment || !message.id) {
+      this.toastService?.warning('No attachment available');
+      return;
     }
     
-    // Fallback: find the original message from allMessages if needed
-    const originalMessage = this.allMessages.find(msg => msg.id === message.id);
-    if (originalMessage?.attachedFile) {
-      try {
-        this.messageService.downloadFileFromBase64(originalMessage.attachedFile);
-        console.log('✅ Attachment download initiated from fallback');
-      } catch (error) {
-        console.error('❌ Error downloading attachment from fallback:', error);
+    try {
+      console.log('📥 Downloading attachment from inbox message:', message.id);
+      
+      const currentUser = this.icdAuthService.getCurrentUser();
+      if (!currentUser) {
+        this.toastService?.error('User not authenticated');
+        return;
       }
-    } else {
-      console.warn('⚠️ No attachment found for message:', message.id);
+
+      const userId = currentUser.uid || currentUser.email;
+
+      // Try to get attachment from the message itself first
+      if (message.attachedFile) {
+        try {
+          // Download the file using message service
+          this.messageService.downloadFileFromBase64(message.attachedFile);
+          
+          // Log the download to icd-downloads collection with proper data handling
+          const downloadLogData: any = {
+            fileName: message.attachedFile.name || 'unknown-file',
+            fileSize: message.attachedFile.size || 0,
+            fileType: message.attachedFile.type || 'application/octet-stream',
+            category: 'Inbox Messages',
+            subject: message.subject || 'No Subject',
+            senderName: message.senderName || 'Unknown Sender',
+            messageId: message.id
+          };
+
+          // Only add optional fields if they exist
+          if (message.senderEmail) {
+            downloadLogData.senderEmail = message.senderEmail;
+          }
+
+          if (message.attachedFile.base64Content) {
+            downloadLogData.fileData = message.attachedFile.base64Content;
+          }
+
+          await this.icdDownloadsService.logDownload(userId, downloadLogData);
+
+          this.toastService?.success(`Downloaded: ${message.attachedFile.name}`);
+          console.log('✅ Attachment downloaded and logged from inbox');
+          return;
+        } catch (error) {
+          console.error('❌ Error downloading attachment directly:', error);
+        }
+      }
+      
+      // Fallback: find the original message from allMessages if needed
+      const originalMessage = this.allMessages.find(msg => msg.id === message.id);
+      if (originalMessage?.attachedFile) {
+        try {
+          this.messageService.downloadFileFromBase64(originalMessage.attachedFile);
+          
+          // Log the download with proper data handling
+          const downloadLogData: any = {
+            fileName: originalMessage.attachedFile.name || 'unknown-file',
+            fileSize: originalMessage.attachedFile.size || 0,
+            fileType: originalMessage.attachedFile.type || 'application/octet-stream',
+            category: 'Inbox Messages',
+            subject: message.subject || 'No Subject',
+            senderName: message.senderName || 'Unknown Sender',
+            messageId: message.id
+          };
+
+          // Only add optional fields if they exist
+          if (message.senderEmail) {
+            downloadLogData.senderEmail = message.senderEmail;
+          }
+
+          if (originalMessage.attachedFile.base64Content) {
+            downloadLogData.fileData = originalMessage.attachedFile.base64Content;
+          }
+
+          await this.icdDownloadsService.logDownload(userId, downloadLogData);
+
+          this.toastService?.success(`Downloaded: ${originalMessage.attachedFile.name}`);
+          console.log('✅ Attachment downloaded and logged from fallback');
+        } catch (error) {
+          console.error('❌ Error downloading attachment from fallback:', error);
+          this.toastService?.error('Failed to download attachment');
+        }
+      } else {
+        console.warn('⚠️ No attachment found for message:', message.id);
+        this.toastService?.warning('Attachment not found');
+      }
+    } catch (error) {
+      console.error('❌ Error in downloadAttachment:', error);
+      this.toastService?.error('Failed to download attachment');
     }
   }
 

@@ -36,6 +36,7 @@ interface Tab {
     ArchivedComponent,
     ComposeComponent,
     IcdDownloadsComponent,
+    ToastComponent
   ],
   templateUrl: './main-layout.component.html',
   styleUrls: ['./main-layout.component.scss']
@@ -85,10 +86,6 @@ export class MainLayoutComponent {
     { 
       id: 'icd-user-management', 
       label: 'Active Users'
-    },
-    { 
-      id: 'archived', 
-      label: 'Archived'
     },
     { 
       id: 'recycle', 

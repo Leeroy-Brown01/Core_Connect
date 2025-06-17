@@ -1,1 +1,153 @@
-<p>icd-downloads works!</p>
+<div class="downloads-container">
+  <!-- Header Section -->
+  <div class="downloads-header">
+    <div class="header-content">
+      <h2 class="downloads-title">
+        <span class="title-icon">📥</span>
+        My Downloads
+      </h2>
+      <p class="downloads-subtitle">View and manage your downloaded files from messages</p>
+    </div>
+  </div>
+
+  <!-- Search and Filter Section -->
+  <div class="search-filter-section">
+    <div class="search-container">
+      <div class="search-input-wrapper">
+        <input
+          type="text"
+          [(ngModel)]="searchQuery"
+          (input)="onSearch()"
+          placeholder="Search downloads..."
+          class="search-input"
+        >
+        <span class="search-icon">🔍</span>
+      </div>
+    </div>
+
+    <div class="filter-container">
+      <select
+        [(ngModel)]="selectedFilter"
+        (change)="onFilterChange()"
+        class="filter-select"
+      >
+        <option *ngFor="let option of filterOptions" [value]="option.value">
+          {{ option.label }}
+        </option>
+      </select>
+    </div>
+
+    <!-- Temporary test button - remove in production -->
+    <div class="test-container" *ngIf="filteredDownloads.length === 0 && !isLoading">
+      <button 
+        class="test-btn"
+        (click)="createTestDownloads()"
+        title="Create test downloads for development"
+      >
+        🧪 Create Test Downloads
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="loading-spinner"></div>
+    <p class="loading-text">Loading your downloads...</p>
+  </div>
+
+  <!-- Downloads List -->
+  <div *ngIf="!isLoading" class="downloads-content">
+    
+    <!-- Empty State -->
+    <div *ngIf="filteredDownloads.length === 0" class="empty-state">
+      <div class="empty-icon">📭</div>
+      <h3 class="empty-title">No downloads found</h3>
+      <p class="empty-message">
+        <span *ngIf="searchQuery || selectedFilter !== 'all'">
+          Try adjusting your search or filter criteria.
+        </span>
+        <span *ngIf="!searchQuery && selectedFilter === 'all'">
+          You haven't downloaded any files yet. Downloaded files from messages will appear here.
+        </span>
+      </p>
+    </div>
+
+    <!-- Downloads Grid -->
+    <div *ngIf="filteredDownloads.length > 0" class="downloads-grid">
+      <div 
+        *ngFor="let download of filteredDownloads; trackBy: trackByDownloadId" 
+        class="download-card"
+        [class]="getFileTypeClass(download.fileType)"
+      >
+        
+        <!-- File Info Header -->
+        <div class="download-header">
+          <div class="file-icon">
+            {{ getFileIcon(download.fileType) }}
+          </div>
+          <div class="file-info">
+            <h4 class="file-name" [title]="download.fileName">
+              {{ download.fileName }}
+            </h4>
+            <p class="file-size">{{ formatFileSize(download.fileSize) }}</p>
+          </div>
+        </div>
+
+        <!-- Message Info -->
+        <div class="message-info">
+          <div class="message-subject">
+            <strong>From Message:</strong> {{ download.subject }}
+          </div>
+          <div class="sender-info">
+            <strong>Sender:</strong> {{ download.senderName }}
+            <span class="sender-email" *ngIf="download.senderEmail">({{ download.senderEmail }})</span>
+          </div>
+          <div class="category-info" *ngIf="download.category">
+            <strong>Category:</strong> 
+            <span class="category-badge" [class]="getCategoryClass(download.category)">
+              {{ download.category }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Download Info -->
+        <div class="download-info">
+          <div class="download-date">
+            <span class="date-icon">📅</span>
+            Downloaded: {{ formatDate(download.downloadedAt) }}
+          </div>
+          <div class="file-style-info" *ngIf="download.fileStyle">
+            <span class="style-icon">📂</span>
+            Type: {{ download.fileStyle | titlecase }}
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="download-actions">
+          <button 
+            class="download-btn"
+            (click)="onDownloadFile(download)"
+            title="Download file again"
+            [disabled]="!download.attachmentData"
+          >
+            <span class="btn-icon">⬇️</span>
+            <span *ngIf="download.attachmentData">Download Again</span>
+            <span *ngIf="!download.attachmentData">File Not Available</span>
+          </button>
+        </div>
+
+        <!-- File Type Badge -->
+        <div class="file-type-badge">
+          {{ getFileTypeBadge(download.fileType) }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Results Summary -->
+    <div *ngIf="filteredDownloads.length > 0" class="results-summary">
+      <p class="summary-text">
+        Showing {{ filteredDownloads.length }} of {{ downloads.length }} downloads
+      </p>
+    </div>
+  </div>
+</div>

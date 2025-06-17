@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { SentService, SentMessage } from '../../services/sent.service';
 import { ICDAuthService } from '../../services/icd-auth.service';
 import { ICDUserService, FirebaseICDUser } from '../../services/icd-user.service';
+import { ICDDownloadsService } from '../../services/icd-downloads.service';
+import { ToastService } from '../../services/toast.service';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -44,7 +46,9 @@ export class SentComponent implements OnInit, OnDestroy {
   constructor(
     private sentService: SentService,
     private icdAuthService: ICDAuthService,
-    private icdUserService: ICDUserService
+    private icdUserService: ICDUserService,
+    private icdDownloadsService: ICDDownloadsService,
+    private toastService: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -175,25 +179,98 @@ export class SentComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Download attachment
-  downloadAttachment(message: SentMessage): void {
+  // Download attachment with logging
+  async downloadAttachment(message: SentMessage): Promise<void> {
     if (!message.hasAttachment) {
       console.warn('No attachment to download');
+      this.toastService.warning('No attachment available');
       return;
     }
 
     try {
-      this.sentService.downloadAttachment(message);
-      console.log('✅ Attachment download initiated');
+      console.log('📥 Downloading attachment from sent message:', message.id);
+      
+      const currentUser = this.icdAuthService.getCurrentUser();
+      if (!currentUser) {
+        this.toastService.error('User not authenticated');
+        return;
+      }
+
+      const userId = currentUser.uid || currentUser.email;
+
+      // Check if message has attachedFile property (the correct property name)
+      if (message.attachedFile) {
+        // Download the file using the attachedFile structure
+        this.downloadFromBase64({
+          fileName: message.attachedFile.name || 'attachment',
+          fileType: message.attachedFile.type || 'application/octet-stream',
+          attachmentData: message.attachedFile.base64Content
+        });
+
+        // Log the download to icd-downloads collection with proper data handling
+        const downloadLogData: any = {
+          fileName: message.attachedFile.name || 'attachment',
+          fileSize: message.attachedFile.size || 0,
+          fileType: message.attachedFile.type || 'application/octet-stream',
+          category: 'Sent Messages',
+          subject: message.subject || 'No Subject',
+          senderName: currentUser.fullName || currentUser.email || 'Unknown',
+          messageId: message.id || ''
+        };
+
+        // Only add optional fields if they exist
+        if (currentUser.email) {
+          downloadLogData.senderEmail = currentUser.email;
+        }
+
+        if (message.attachedFile.base64Content) {
+          downloadLogData.fileData = message.attachedFile.base64Content;
+        }
+
+        await this.icdDownloadsService.logDownload(userId, downloadLogData);
+
+        this.toastService.success(`Downloaded: ${message.attachedFile.name || 'attachment'}`);
+        console.log('✅ Attachment downloaded and logged from sent messages');
+      } else {
+        console.warn('⚠️ No attachment file data available');
+        this.toastService.warning('Attachment data not available');
+      }
     } catch (error) {
       console.error('❌ Error downloading attachment:', error);
+      this.toastService.error('Failed to download attachment');
     }
   }
 
-  // Forward message
-  forwardMessage(message: SentMessage): void {
-    console.log('📤 Forwarding message:', message.id);
-    // Implementation for forwarding message
+  private downloadFromBase64(attachment: { fileName: string; fileType: string; attachmentData: string }): void {
+    try {
+      // Convert base64 to blob
+      const byteCharacters = atob(attachment.attachmentData.split(',')[1]);
+      const byteNumbers = new Array(byteCharacters.length);
+      
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: attachment.fileType });
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = attachment.fileName;
+      document.body.appendChild(link);
+      link.click();
+      
+      // Cleanup
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(link);
+      
+      console.log('✅ File downloaded from base64 successfully');
+    } catch (error) {
+      console.error('❌ Error in downloadFromBase64:', error);
+      throw error;
+    }
   }
 
   // Refresh data
