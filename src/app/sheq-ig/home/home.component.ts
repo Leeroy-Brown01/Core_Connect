@@ -3,6 +3,8 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService, UserData } from '../../services/auth.service';
+import { CourseService, Course } from '../../services/course.service';
+import { Subscription } from 'rxjs';
 
 interface User {
   name: string;
@@ -13,37 +15,6 @@ interface User {
   initials?: string;
 }
 
-interface Course {
-  id: number;
-  title: string;
-  category: string;
-  progress?: number;
-}
-
-interface Category {
-  id: number;
-  name: string;
-  coursesCount?: number;     // Make this optional
-  popularTopics?: string[];  // Add this if you want to show popular topics
-  description?: string;      // Optional description
-  icon?: string;             // Icon name for the category
-  count?: number;            // Alternative to coursesCount
-  imageUrl?: string;         // URL for category image
-  subitems?: any[];          // Array of subcategories or related items
-}
-
-// Add new interface for course recommendations
-interface RecommendedCourse {
-  id: number;
-  title: string;
-  instructor: string;
-  imageUrl: string;
-  rating: number;
-  price: number;
-  participants: number;
-}
-
-// Interface for Continue Learning courses
 interface ContinueLearningCourse {
   id: number;
   title: string;
@@ -53,61 +24,12 @@ interface ContinueLearningCourse {
   remainingTime: string;
 }
 
-// Interface for Popular Courses
-interface PopularCourse {
+interface WasteManagementCourse {
   id: number;
   title: string;
-  instructor: string;
   imageUrl: string;
-  rating: number;
-  price: number;
-  enrolledLastMonth: number;
-}
-
-// Interface for Short Courses
-interface ShortCourse {
-  id: number;
-  title: string;
-  instructor: string;
-  imageUrl: string;
-  duration: string;
-  price: number;
-  skills: string[];
-}
-
-// Interface for Student Achievements
-interface StudentAchievement {
-  id: number;
-  studentName: string;
-  studentImage: string;
-  location: string;
-  certificateTitle: string;
-  courseTitle: string;
-  completedDate: string;
-}
-
-interface Notification {
-  id: number;
-  message: string;
-  type: 'info' | 'success' | 'warning' | 'error';
-  read: boolean;
-  date: Date;
-}
-
-interface CartItem {
-  id: number;
-  courseId: number;
-  title: string;
-  price: number;
-  quantity: number;
-}
-
-interface CourseDetails {
-  id: number;
-  title: string;
-  summary: string;
-  keyPoints: string[];
-  outcomes: string[];
+  lastWatched: string;
+  remainingTime: string;
 }
 
 @Component({
@@ -118,8 +40,14 @@ interface CourseDetails {
   styleUrls: ['./home.component.scss']
 })
 export class HomeComponent implements OnInit, OnDestroy {
+encodeURIComponent(arg0: string) {
+throw new Error('Method not implemented.');
+}
   currentUser: UserData | null = null;
   loading = true;
+  coursesLoading = true;
+  coursesError: string | null = null;
+  
   user: User | null = {
     name: '',
     email: '',
@@ -128,615 +56,387 @@ export class HomeComponent implements OnInit, OnDestroy {
     wishlist: 0,
     initials: ''
   };
-  showNotifications = false;
-  showWishlist = false;
-  showUserMenu = false;
-  searchQuery = '';
+  
   currentSlide = 0;
   sliderInterval: any;
-  isNavOpen = false;
-  isSidenavOpen = false;
-  currentRoute: string = '';
-  isAdmin: boolean = false; // This should be set based on user role
-  private hideTooltipTimeout: any = null;
+  isAdmin: boolean = false;
+
+  // Course data from CourseService
+  recommendedCourses: Course[] = [];
+  allCourses: Course[] = [];
+  publishedCourses: Course[] = [];
   
-  notifications: Notification[] = [];
-  cartItems: CartItem[] = [];
-  hoveredCourse: CourseDetails | null = null;
-  tooltipPosition = { x: 0, y: 0 };
-  
-  hoveredCategory: any = null;
-categoryTooltipPosition = { x: 0, y: 0 };
+  // Subscriptions for cleanup
+  private subscriptions: Subscription[] = [];
 
-// Add these methods
-showCategoryTooltip(event: MouseEvent, category: any): void {
-  // Clear any pending hide operations
-  if (this.hideTooltipTimeout) {
-    clearTimeout(this.hideTooltipTimeout);
-    this.hideTooltipTimeout = null;
-  }
-   
-  this.hoveredCategory = {
-    ...category,
-    popularTopics: category.popularTopics || ['JavaScript', 'HTML', 'CSS', 'React']
-  };
-  
-   // Position tooltip near the mouse but with some offset
-   const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-
- // Calculate position - center below the category card
- this.categoryTooltipPosition = {
-  x: rect.left + (rect.width / 2) - 128, // 128 is half of tooltip width (256px)
-  y: rect.bottom + window.scrollY + 10 // Add window.scrollY to account for page scroll
-};
-  
-// Ensure tooltip stays within viewport
-const viewportWidth = window.innerWidth;
-const viewportHeight = window.innerHeight;
-
-  // Adjust X if too close to right edge
-  if (this.categoryTooltipPosition.x + 256 > viewportWidth) {
-    this.categoryTooltipPosition.x = viewportWidth - 256 - 20;
-  }
-  
-  // Adjust X if too close to left edge
-  if (this.categoryTooltipPosition.x < 20) {
-    this.categoryTooltipPosition.x = 20;
-  }
-  
-  // Adjust Y if too close to bottom edge
-  if (this.categoryTooltipPosition.y + 200 > window.scrollY + viewportHeight) { // Assuming tooltip height ~200px
-    this.categoryTooltipPosition.y = rect.top + window.scrollY - 210; // Position above instead
-  }
-}
-
-// Updated method for when mouse leaves the tooltip itself
-hideCategoryTooltip(): void {
-  this.hoveredCategory = null;
-  if (this.hideTooltipTimeout) {
-    clearTimeout(this.hideTooltipTimeout);
-    this.hideTooltipTimeout = null;
-  }
-}
-
-// New method to start the hiding process with a delay
-startHideCategoryTooltip(): void {
-  this.hideTooltipTimeout = setTimeout(() => {
-    this.hoveredCategory = null;
-    this.hideTooltipTimeout = null;
-  }, 300); // Small delay to allow mouse to move to tooltip
-}
-
-// New method to cancel hiding when mouse enters the tooltip
-cancelHideCategoryTooltip(): void {
-  if (this.hideTooltipTimeout) {
-    clearTimeout(this.hideTooltipTimeout);
-    this.hideTooltipTimeout = null;
-  }
-}
-
-// Single navigateTo method implementation
-navigateTo(url: string): void {
-  this.router.navigate([url]);
-}
-
-exploreCategoryDetails(categoryId: number): void {
-  // Navigate to the category courses component with the category ID
-  this.router.navigate(['/dashboard/courses/category', categoryId]);
-}
-
-  // Dummy data
-  currentCourses: Course[] = [
-    { id: 1, title: 'Introduction to Angular', category: 'Web Development', progress: 45 },
-    { id: 2, title: 'Advanced JavaScript Patterns', category: 'Programming', progress: 72 },
-    { id: 3, title: 'UI/UX Design Fundamentals', category: 'Design', progress: 30 },
-    { id: 4, title: 'Database Design and Optimization', category: 'Database', progress: 15 },
-    { id: 5, title: 'Full Stack Development', category: 'Web Development', progress: 60 }
-  ];
-  
-  categories: Category[] = [
-    {
-      id: 1,
-      name: 'Web Development',
-      icon: 'code',
-      count: 150,
-      imageUrl: 'https://images.unsplash.com/photo-1593720213428-28a5b9e94613?w=800&h=600&fit=crop',
-      subitems: [
-        { name: 'React', count: 45, link: '/courses/react', imageUrl: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&h=600&fit=crop' },
-        { name: 'Angular', count: 38, link: '/courses/angular', imageUrl: 'https://images.unsplash.com/photo-1634926878768-2a5b3c42f139?w=800&h=600&fit=crop' },
-        { name: 'Vue.js', count: 27, link: '/courses/vue', imageUrl: 'https://images.unsplash.com/photo-1615751072497-5f5169febe17?w=800&h=600&fit=crop' },
-        { name: 'HTML & CSS', count: 25, link: '/courses/html-css', imageUrl: 'https://images.unsplash.com/photo-1621839673705-6617adf9e890?w=800&h=600&fit=crop' },
-        { name: 'JavaScript', count: 15, link: '/courses/javascript', imageUrl: 'https://images.unsplash.com/photo-1632882765546-1ee75f53becb?w=800&h=600&fit=crop' }
-      ]
-    },
-    {
-      id: 2,
-      name: 'Mobile Development',
-      icon: 'smartphone',
-      count: 120,
-      imageUrl: 'https://source.unsplash.com/800x600/?mobileapp',
-      subitems: [
-        { name: 'React Native', count: 30, link: '/courses/react-native', imageUrl: 'https://source.unsplash.com/800x600/?mobile' },
-        { name: 'Flutter', count: 35, link: '/courses/flutter', imageUrl: 'https://source.unsplash.com/800x600/?flutter' },
-        { name: 'iOS Development', count: 28, link: '/courses/ios', imageUrl: 'https://source.unsplash.com/800x600/?ios' },
-        { name: 'Android Development', count: 27, link: '/courses/android', imageUrl: 'https://source.unsplash.com/800x600/?android' }
-      ]
-    },
-    {
-      id: 3,
-      name: 'Data Science',
-      icon: 'data_usage',
-      count: 90,
-      imageUrl: 'https://source.unsplash.com/800x600/?datascience',
-      subitems: [
-        { name: 'Python', count: 40, link: '/courses/python', imageUrl: 'https://source.unsplash.com/800x600/?python' },
-        { name: 'Machine Learning', count: 25, link: '/courses/ml', imageUrl: 'https://source.unsplash.com/800x600/?machinelearning' },
-        { name: 'Deep Learning', count: 15, link: '/courses/deep-learning', imageUrl: 'https://source.unsplash.com/800x600/?deeplearning' },
-        { name: 'Statistics', count: 10, link: '/courses/statistics', imageUrl: 'https://source.unsplash.com/800x600/?statistics' }
-      ]
-    },
-    {
-      id: 4,
-      name: 'Physics',
-      icon: 'data_usage',
-      count: 90,
-      imageUrl: 'https://source.unsplash.com/800x600/?datascience',
-      subitems: [
-        { name: 'Python', count: 40, link: '/courses/python', imageUrl: 'https://source.unsplash.com/800x600/?python' },
-        { name: 'Machine Learning', count: 25, link: '/courses/ml', imageUrl: 'https://source.unsplash.com/800x600/?machinelearning' },
-        { name: 'Deep Learning', count: 15, link: '/courses/deep-learning', imageUrl: 'https://source.unsplash.com/800x600/?deeplearning' },
-        { name: 'Statistics', count: 10, link: '/courses/statistics', imageUrl: 'https://source.unsplash.com/800x600/?statistics' }
-      ]
-    },
-    {
-      id: 5,
-      name: 'Animation',
-      icon: 'data_usage',
-      count: 90,
-      imageUrl: 'https://source.unsplash.com/800x600/?datascience',
-      subitems: [
-        { name: 'Python', count: 40, link: '/courses/python', imageUrl: 'https://source.unsplash.com/800x600/?python' },
-        { name: 'Machine Learning', count: 25, link: '/courses/ml', imageUrl: 'https://source.unsplash.com/800x600/?machinelearning' },
-        { name: 'Deep Learning', count: 15, link: '/courses/deep-learning', imageUrl: 'https://source.unsplash.com/800x600/?deeplearning' },
-        { name: 'Statistics', count: 10, link: '/courses/statistics', imageUrl: 'https://source.unsplash.com/800x600/?statistics' }
-      ]
-    },
-    {
-      id: 6,
-      name: 'Mathmatics',
-      icon: 'data_usage',
-      count: 90,
-      imageUrl: 'https://source.unsplash.com/800x600/?datascience',
-      subitems: [
-        { name: 'Python', count: 40, link: '/courses/python', imageUrl: 'https://source.unsplash.com/800x600/?python' },
-        { name: 'Machine Learning', count: 25, link: '/courses/ml', imageUrl: 'https://source.unsplash.com/800x600/?machinelearning' },
-        { name: 'Deep Learning', count: 15, link: '/courses/deep-learning', imageUrl: 'https://source.unsplash.com/800x600/?deeplearning' },
-        { name: 'Statistics', count: 10, link: '/courses/statistics', imageUrl: 'https://source.unsplash.com/800x600/?statistics' }
-      ]
-    },
-    { id: 7, 
-      name: 'Photography', 
-      coursesCount: 55, 
-      popularTopics: 
-      ['Portrait', 'Landscape', 'Editing'] },
-    { id: 8,
-       name: 'Languages', 
-       coursesCount: 80, 
-       popularTopics: ['English', 'Spanish', 'French'] },
-    { id: 9, 
-      name: 'Data Science', 
-      coursesCount: 100, 
-      popularTopics: ['Machine Learning', 'Python', 'R'] },
-    { id: 10, 
-      name: 'Arts & Crafts', 
-      coursesCount: 45, 
-      popularTopics: ['Painting', 'Drawing', 'Sculpting'] }
-  ];
-
-  recommendedCourses: RecommendedCourse[] = [
-    {
-      id: 101,
-      title: 'Industrial Facility Cleaning Certification',
-      instructor: 'Sarah Johnson, ISSA Certified',
-      imageUrl: 'https://images.unsplash.com/photo-1628177142898-93e36e4e3a50?w=800&h=600&fit=crop',
-      rating: 4.8,
-      price: 149.99,
-      participants: 2453
-    },
-    {
-      id: 102,
-      title: 'Urban Street Cleaning Operations',
-      instructor: 'Michael Chen, City Operations',
-      imageUrl: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=800&h=600&fit=crop',
-      rating: 4.5,
-      price: 89.99,
-      participants: 1876
-    },
-    {
-      id: 103,
-      title: 'Chemical Safety & Handling',
-      instructor: 'Dr. Emma Wilson, ChemSafe',
-      imageUrl: 'https://images.unsplash.com/photo-1584464491033-06628f3a6b7b?w=800&h=600&fit=crop',
-      rating: 4.9,
-      price: 199.99,
-      participants: 3289
-    },
-    {
-      id: 104,
-      title: 'Commercial Kitchen Deep Cleaning',
-      instructor: 'Chef Roberto Martinez',
-      imageUrl: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&h=600&fit=crop',
-      rating: 4.7,
-      price: 124.99,
-      participants: 1574
-    },
-    {
-      id: 105,
-      title: 'Hospital & Healthcare Sanitization',
-      instructor: 'Nurse Patricia Adams, RN',
-      imageUrl: 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=800&h=600&fit=crop',
-      rating: 4.8,
-      price: 179.99,
-      participants: 2832
-    },
-    {
-      id: 106,
-      title: 'High-Rise Window Cleaning Safety',
-      instructor: 'James Rodriguez, Safety Expert',
-      imageUrl: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=800&h=600&fit=crop',
-      rating: 4.6,
-      price: 249.99,
-      participants: 945
-    },
-    {
-      id: 107,
-      title: 'Carpet & Upholstery Professional Care',
-      instructor: 'Linda Thompson, IICRC',
-      imageUrl: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=600&fit=crop',
-      rating: 4.4,
-      price: 95.99,
-      participants: 2189
-    },
-    {
-      id: 108,
-      title: 'Green Cleaning Solutions & Sustainability',
-      instructor: 'Dr. Mark Green, EcoClean',
-      imageUrl: 'https://images.unsplash.com/photo-1563453392212-326d32d2d69f?w=800&h=600&fit=crop',
-      rating: 4.7,
-      price: 0,
-      participants: 4631
-    },
-    {
-      id: 109,
-      title: 'Warehouse & Logistics Cleaning',
-      instructor: 'Tom Anderson, Logistics Pro',
-      imageUrl: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=800&h=600&fit=crop',
-      rating: 4.5,
-      price: 134.99,
-      participants: 1823
-    },
-    {
-      id: 110,
-      title: 'Biohazard & Crime Scene Cleanup',
-      instructor: 'Officer David Smith, Specialist',
-      imageUrl: 'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=800&h=600&fit=crop',
-      rating: 4.8,
-      price: 299.99,
-      participants: 567
-    },
-    {
-      id: 111,
-      title: 'Fleet Vehicle Interior Cleaning',
-      instructor: 'Maria Gonzalez, Auto Detail',
-      imageUrl: 'https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?w=800&h=600&fit=crop',
-      rating: 4.3,
-      price: 79.99,
-      participants: 1456
-    },
-    {
-      id: 112,
-      title: 'Public Transportation Sanitization',
-      instructor: 'Robert Kim, Transit Authority',
-      imageUrl: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&h=600&fit=crop',
-      rating: 4.6,
-      price: 159.99,
-      participants: 2145
-    },
-    {
-      id: 113,
-      title: 'Swimming Pool & Aquatic Facility Maintenance',
-      instructor: 'Jennifer Lee, Pool Tech',
-      imageUrl: 'https://images.unsplash.com/photo-1530549387789-4c1017266635?w=800&h=600&fit=crop',
-      rating: 4.4,
-      price: 189.99,
-      participants: 1278
-    },
-    {
-      id: 114,
-      title: 'Emergency Spill Response & Cleanup',
-      instructor: 'Captain Steve Wilson, HazMat',
-      imageUrl: 'https://images.unsplash.com/photo-1559757175-0eb30cd718ea?w=800&h=600&fit=crop',
-      rating: 4.9,
-      price: 349.99,
-      participants: 892
-    }
-  ];
-  
+  // Carousel navigation
   currentRecommendedIndex = 0;
-  visibleRecommendedCount = 4; // Number of cards visible at once
+  visibleRecommendedCount = 4;
 
   // Continue Learning
-  continueLearningCourses: ContinueLearningCourse[] = [
-    {
-      id: 201,
-      title: 'Advanced Industrial Equipment Cleaning',
-      imageUrl: 'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=800&h=600&fit=crop',
-      progress: 65,
-      lastWatched: 'Module 4: Heavy Machinery Decontamination',
-      remainingTime: '2h 15m'
-    },
-    {
-      id: 202,
-      title: 'Municipal Waste Management Systems',
-      imageUrl: 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=800&h=600&fit=crop',
-      progress: 32,
-      lastWatched: 'Module 2: Collection Route Optimization',
-      remainingTime: '4h 45m'
-    },
-    {
-      id: 203,
-      title: 'OSHA Safety Protocols for Cleaning',
-      imageUrl: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=800&h=600&fit=crop',
-      progress: 78,
-      lastWatched: 'Module 6: Personal Protective Equipment',
-      remainingTime: '1h 20m'
-    },
-    {
-      id: 204,
-      title: 'Pressure Washing Certification',
-      imageUrl: 'https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=800&h=600&fit=crop',
-      progress: 45,
-      lastWatched: 'Module 3: Surface-Specific Techniques',
-      remainingTime: '3h 30m'
-    },
-    {
-      id: 205,
-      title: 'Contamination Control in Clean Rooms',
-      imageUrl: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800&h=600&fit=crop',
-      progress: 52,
-      lastWatched: 'Module 5: Air Filtration Systems',
-      remainingTime: '2h 40m'
-    }
-  ];
-  
+  continueLearningCourses: ContinueLearningCourse[] = [];
   currentContinueLearningIndex = 0;
   visibleContinueLearningCount = 4;
-  
-  // Popular Courses
-  popularCourses: PopularCourse[] = [
-    {
-      id: 301,
-      title: 'Complete Python Developer in 2023',
-      instructor: 'Mark Johnson',
-      imageUrl: 'https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=800&h=600&fit=crop',
-      rating: 4.9,
-      price: 84.99,
-      enrolledLastMonth: 3250
-    },
-    {
-      id: 302,
-      title: 'The Ultimate AWS Certification Guide',
-      instructor: 'Jessica Parker',
-      imageUrl: 'assets/images/courses/aws-cert.jpg',
-      rating: 4.8,
-      price: 74.99,
-      enrolledLastMonth: 2890
-    },
-    {
-      id: 303,
-      title: 'Mastering TypeScript',
-      instructor: 'David Lee',
-      imageUrl: 'assets/images/courses/typescript.jpg',
-      rating: 4.7,
-      price: 64.99,
-      enrolledLastMonth: 3120
-    },
-    {
-      id: 304,
-      title: 'JavaScript Algorithms and Data Structures',
-      instructor: 'Emily Davis',
-      imageUrl: 'assets/images/courses/js-algorithms.jpg',
-      rating: 4.6,
-      price: 59.99,
-      enrolledLastMonth: 2780
-    },
-    {
-      id: 305,
-      title: 'Machine Learning A-Z',
-      instructor: 'Michael Brown',
-      imageUrl: 'assets/images/courses/ml-az.jpg',
-      rating: 4.5,
-      price: 89.99,
-      enrolledLastMonth: 3450
-    }
-  ];
-  
-  currentPopularCoursesIndex = 0;
-  visiblePopularCoursesCount = 4;
 
-  // Short Courses section
-  shortCourses: ShortCourse[] = [
-    {
-      id: 401,
-      title: 'Git & GitHub Crash Course',
-      instructor: 'Tom Wilson',
-      imageUrl: 'https://images.unsplash.com/photo-1618401471353-b98afee0b2eb?w=800&h=600&fit=crop',
-      duration: '1h 45m',
-      price: 19.99,
-      skills: ['Version Control', 'Git', 'GitHub', 'Collaboration']
-    },
-    {
-      id: 402,
-      title: 'Docker Fundamentals',
-      instructor: 'Lisa Johnson',
-      imageUrl: 'assets/images/courses/docker-short.jpg',
-      duration: '2h 30m',
-      price: 24.99,
-      skills: ['Docker', 'Containers', 'DevOps']
-    },
-    {
-      id: 403,
-      title: 'CSS Flexbox Mastery',
-      instructor: 'Rachel Kim',
-      imageUrl: 'assets/images/courses/flexbox.jpg',
-      duration: '1h 15m',
-      price: 14.99,
-      skills: ['CSS', 'Flexbox', 'Responsive Design']
-    },
-    {
-      id: 404,
-      title: 'JavaScript ES6 Features',
-      instructor: 'Michael Brown',
-      imageUrl: 'assets/images/courses/es6.jpg',
-      duration: '2h 10m',
-      price: 29.99,
-      skills: ['JavaScript', 'ES6', 'Web Development']
-    },
-    {
-      id: 405,
-      title: 'Intro to GraphQL',
-      instructor: 'Sarah Davis',
-      imageUrl: 'assets/images/courses/graphql-short.jpg',
-      duration: '1h 30m',
-      price: 19.99,
-      skills: ['GraphQL', 'API', 'Web Development']
-    }
-  ];
-  
-  currentShortCoursesIndex = 0;
-  visibleShortCoursesCount = 4;
-  
-  // Student Achievements section
-  studentAchievements: StudentAchievement[] = [
-    {
-      id: 501,
-      studentName: 'Alex Johnson',
-      studentImage: 'assets/images/students/alex.jpg',
-      location: 'New York, USA',
-      certificateTitle: 'Full Stack Developer Certificate',
-      courseTitle: 'MERN Stack Development',
-      completedDate: '2 days ago'
-    },
-    {
-      id: 502,
-      studentName: 'Maria Garcia',
-      studentImage: 'assets/images/students/maria.jpg',
-      location: 'Barcelona, Spain',
-      certificateTitle: 'Data Science Certificate',
-      courseTitle: 'Python for Data Analysis',
-      completedDate: '1 week ago'
-    },
-    {
-      id: 503,
-      studentName: 'David Kim',
-      studentImage: 'assets/images/students/david.jpg',
-      location: 'Seoul, South Korea',
-      certificateTitle: 'UI/UX Design Certificate',
-      courseTitle: 'Advanced User Interface Design',
-      completedDate: '3 days ago'
-    },
-    {
-      id: 504,
-      studentName: 'Sophie Martin',
-      studentImage: 'assets/images/students/sophie.jpg',
-      location: 'Paris, France',
-      certificateTitle: 'Cloud Computing Certificate',
-      courseTitle: 'AWS Solutions Architect',
-      completedDate: '5 days ago'
-    },
-    {
-      id: 505,
-      studentName: 'James Wilson',
-      studentImage: 'assets/images/students/james.jpg',
-      location: 'London, UK',
-      certificateTitle: 'Mobile Development Certificate',
-      courseTitle: 'Flutter Mobile App Development',
-      completedDate: '1 day ago'
-    }
-  ];
-  
-  currentAchievementsIndex = 0;
-  visibleAchievementsCount = 4;
+  // Waste Management (New Section)
+  wasteManagementCourses: WasteManagementCourse[] = [];
+  currentWasteManagementIndex = 0;
+  visibleWasteManagementCount = 4;
 
   constructor(
     private authService: AuthService,
+    private courseService: CourseService,
     private router: Router
-  ) {
-    // Get current route
-    this.currentRoute = this.router.url.split('/')[1] || 'home';
-    
-    // Initialize user initials if no profile image
-    if (this.user && !this.user.profileImage) {
-      this.user.initials = this.getInitials(this.user.name);
-    }
-  }
+  ) {}
 
   ngOnInit(): void {
-    // Check authentication state first
-    if (!this.authService.isAuthenticated()) {
+    if (!this.authService.isAuthenticatedSync()) {
       console.log('User not authenticated, redirecting to login');
       this.router.navigate(['/log-in'], { replaceUrl: true });
       return;
     }
 
-    // Subscribe to current user from Firestore
-    this.authService.currentUser$.subscribe(user => {
+    const userSub = this.authService.currentUser$.subscribe(user => {
       if (user) {
         this.currentUser = user;
         
-        // Map Firestore user data to local user interface
         this.user = {
           name: user.fullName,
           email: user.email,
           profileImage: user.profilePhoto || '',
-          notifications: 0, // This would come from a separate notifications collection
-          wishlist: 0, // This would come from a separate wishlist collection
+          notifications: 0,
+          wishlist: 0,
           initials: this.getInitials(user.fullName)
         };
         
-        // Check if user is admin
         this.isAdmin = user.role === 'admin';
-        
         this.loading = false;
         console.log('User data loaded from Firestore:', user);
+        
+        this.loadCourses();
       } else {
-        // User signed out or auth state changed
         console.log('No user data, redirecting to login');
         this.router.navigate(['/log-in'], { replaceUrl: true });
       }
     });
     
-    // Start the slider autoplay
+    this.subscriptions.push(userSub);
     this.startSliderAutoplay();
   }
   
   ngOnDestroy(): void {
-    // Clear the slider interval when component is destroyed
     this.stopSliderAutoplay();
+    this.subscriptions.forEach(sub => sub.unsubscribe());
   }
 
-  getInitials(name: string): string {
-    return name.split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase();
+  // Make this method public so it can be called from the template
+  loadCourses(): void {
+    this.coursesLoading = true;
+    this.coursesError = null;
+    
+    console.log('🔄 Loading courses from CourseService...');
+    console.log('🔍 CourseService instance:', this.courseService);
+    
+    // First, let's test with getAllCourses to see if we can fetch any data
+    const allCoursesSub = this.courseService.getAllCourses().subscribe({
+      next: (courses) => {
+        console.log('✅ All courses fetched successfully:', courses.length);
+        console.log('📊 All courses data:', courses);
+        
+        this.allCourses = courses;
+        
+        // Use all courses for recommended if we have them
+        if (courses && courses.length > 0) {
+          console.log('📋 Using all courses for sections');
+        } else {
+          console.log('⚠️ No courses found, loading fallback');
+          this.loadFallbackCourses();
+        }
+        
+        // Update both sections with the same data
+        this.updateContinueLearningSection(courses);
+        this.updateWasteManagementSection(courses);
+        this.coursesLoading = false;
+      },
+      error: (error) => {
+        console.error('❌ Error fetching all courses:', error);
+        console.error('❌ Error details:', error.message || error);
+        
+        // Try to get published courses as fallback
+        this.tryPublishedCoursesAsBackup();
+      }
+    });
+    
+    this.subscriptions.push(allCoursesSub);
   }
 
+  private tryPublishedCoursesAsBackup(): void {
+    console.log('🔄 Trying published courses as backup...');
+    
+    const publishedSub = this.courseService.getPublishedCourses().subscribe({
+      next: (courses) => {
+        console.log('✅ Published courses fetched successfully:', courses.length);
+        console.log('📊 Published courses data:', courses);
+        
+        this.publishedCourses = courses;
+        
+        if (courses && courses.length > 0) {
+          // Update both sections
+          this.updateContinueLearningSection(courses);
+          this.updateWasteManagementSection(courses);
+          console.log('🎯 Updated both sections from published courses');
+        } else {
+          console.log('⚠️ No published courses found, loading fallback');
+          this.loadFallbackCourses();
+        }
+        
+        this.coursesLoading = false;
+      },
+      error: (error) => {
+        console.error('❌ Error fetching published courses:', error);
+        console.error('❌ Error details:', error.message || error);
+        
+        this.coursesError = 'Failed to load courses. Please try again later.';
+        this.coursesLoading = false;
+        this.loadFallbackCourses();
+      }
+    });
+    
+    this.subscriptions.push(publishedSub);
+  }
 
+  private transformCoursesForRecommended(courses: Course[]): Course[] {
+    console.log('🔄 Transforming courses for recommended section...');
+    console.log('📥 Input courses:', courses);
+    
+    if (!courses || courses.length === 0) {
+      console.log('⚠️ No courses to transform');
+      return [];
+    }
+    
+    const transformedCourses = courses.map((course, index) => {
+      console.log(`🔄 Transforming course ${index + 1}:`, course);
+      
+      const transformedCourse: Course = {
+        ...course,
+        // Ensure instructor property exists for the UI
+        instructor: course.instructors && course.instructors.length > 0 
+          ? course.instructors[0].name 
+          : course.instructorName || course.createdBy || 'Professional Instructor',
+        // Ensure course content is properly formatted
+        courseContent: this.formatCourseContent(course.courseContent || [])
+      };
+      
+      console.log(`✅ Transformed course ${index + 1}:`, {
+        id: transformedCourse.id,
+        title: transformedCourse.title,
+        instructor: transformedCourse.instructor,
+        status: transformedCourse.status,
+        category: transformedCourse.category,
+        courseContentCount: transformedCourse.courseContent?.length || 0
+      });
+      
+      return transformedCourse;
+    });
+    
+    console.log('🎯 Final transformed courses:', transformedCourses);
+    return transformedCourses;
+  }
+
+  // Format course content to ensure consistent structure
+  private formatCourseContent(courseContent: any[]): any[] {
+    if (!courseContent || !Array.isArray(courseContent)) {
+      return [];
+    }
+    
+    return courseContent.map(content => ({
+      title: content.title || 'Module',
+      description: content.description || '',
+      duration: content.duration || '30 minutes'
+    }));
+  }
+  
+  private updateContinueLearningSection(courses: Course[]): void {
+    console.log('🔄 Updating Continue Learning section with courses:', courses.length);
+    
+    // Takes the first 5 courses from the fetched data
+    const continueCourses = courses.slice(0, 5).map((course, index) => {
+      console.log(`📚 Processing course ${index + 1} for Continue Learning:`, course.title);
+      
+      return {
+        id: parseInt(course.id || '0'),
+        title: course.title,
+        imageUrl: course.imageUrl || 'https://via.placeholder.com/800x600?text=' + encodeURIComponent(course.title),
+        progress: Math.floor(Math.random() * 80) + 10, // 🎲 Random progress between 10-89%
+        lastWatched: this.getLastWatchedContent(course),
+        remainingTime: this.calculateEstimatedTime(course)
+      };
+    });
+    
+    this.continueLearningCourses = continueCourses;
+    console.log('✅ Continue Learning courses updated:', this.continueLearningCourses);
+  }
+  
+  private updateWasteManagementSection(courses: Course[]): void {
+    console.log('🔄 Updating Waste Management section with courses:', courses.length);
+    
+    // Takes the first 5 courses from the fetched data (same as continue learning)
+    const wasteManagementCourses = courses.slice(0, 5).map((course, index) => {
+      console.log(`♻️ Processing course ${index + 1} for Waste Management:`, course.title);
+      
+      return {
+        id: parseInt(course.id || '0'),
+        title: course.title,
+        imageUrl: course.imageUrl || 'https://via.placeholder.com/800x600?text=' + encodeURIComponent(course.title),
+        lastWatched: course.category || 'Professional Training', // Show category instead of progress
+        remainingTime: this.calculateEstimatedTime(course)
+      };
+    });
+    
+    this.wasteManagementCourses = wasteManagementCourses;
+    console.log('✅ Waste Management courses updated:', this.wasteManagementCourses);
+  }
+
+  // Helper method to get last watched content from course structure
+  private getLastWatchedContent(course: Course): string {
+    if (course.courseContent && course.courseContent.length > 0) {
+      const firstModule = course.courseContent[0];
+      return `Module 1: ${firstModule.title || 'Introduction'}`;
+    }
+    
+    // Fallback based on category or difficulty
+    if (course.category) {
+      return `${course.category} Module`;
+    }
+    
+    return 'Introduction Module';
+  }
+
+  // Helper method to calculate estimated time from course data
+  private calculateEstimatedTime(course: Course): string {
+    // Use estimatedDuration if available
+    if (course.estimatedDuration) {
+      return course.estimatedDuration;
+    }
+    
+    // Calculate from course content if available
+    if (course.courseContent && course.courseContent.length > 0) {
+      const totalMinutes = course.courseContent.reduce((total, content) => {
+        // Parse duration strings like "30 minutes", "1 hour", etc.
+        const duration = content.duration || '30 minutes';
+        const minutes = this.parseDurationToMinutes(duration);
+        return total + minutes;
+      }, 0);
+      
+      return this.formatMinutesToDuration(totalMinutes);
+    }
+    
+    // Fallback based on difficulty
+    const difficultyMap: { [key: string]: string } = {
+      'beginner': '2h 30m',
+      'intermediate': '4h 15m',
+      'advanced': '6h 45m'
+    };
+    
+    return difficultyMap[course.difficulty?.toLowerCase() || 'intermediate'] || '3h 30m';
+  }
+
+  // Parse duration string to minutes
+  private parseDurationToMinutes(duration: string): number {
+    const hourMatch = duration.match(/(\d+)\s*h/i);
+    const minuteMatch = duration.match(/(\d+)\s*m/i);
+    
+    let totalMinutes = 0;
+    
+    if (hourMatch) {
+      totalMinutes += parseInt(hourMatch[1]) * 60;
+    }
+    
+    if (minuteMatch) {
+      totalMinutes += parseInt(minuteMatch[1]);
+    }
+    
+    // If no match found, assume it's minutes
+    if (!hourMatch && !minuteMatch) {
+      const numberMatch = duration.match(/(\d+)/);
+      if (numberMatch) {
+        totalMinutes = parseInt(numberMatch[1]);
+      } else {
+        totalMinutes = 30; // Default fallback
+      }
+    }
+    
+    return totalMinutes;
+  }
+
+  // Format minutes back to duration string
+  private formatMinutesToDuration(totalMinutes: number): string {
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    
+    if (hours > 0 && minutes > 0) {
+      return `${hours}h ${minutes}m`;
+    } else if (hours > 0) {
+      return `${hours}h`;
+    } else {
+      return `${minutes}m`;
+    }
+  }
+
+  private loadFallbackCourses(): void {
+    console.log('🔄 Loading fallback courses due to error or no data');
+    
+    // Create fallback data for Continue Learning
+    this.continueLearningCourses = [
+      {
+        id: 1,
+        title: 'Industrial Facility Cleaning Certification',
+        imageUrl: 'https://images.unsplash.com/photo-1628177142898-93e36e4e3a50?w=800&h=600&fit=crop',
+        progress: 75,
+        lastWatched: 'Module 3: Safety Protocols',
+        remainingTime: '2h 30m'
+      },
+      {
+        id: 2,
+        title: 'Commercial Office Cleaning Standards',
+        imageUrl: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=800&h=600&fit=crop',
+        progress: 45,
+        lastWatched: 'Module 2: Cleaning Techniques',
+        remainingTime: '4h 15m'
+      }
+    ];
+
+    // Create fallback data for Waste Management
+    this.wasteManagementCourses = [
+      {
+        id: 1,
+        title: 'Industrial Facility Cleaning Certification',
+        imageUrl: 'https://images.unsplash.com/photo-1628177142898-93e36e4e3a50?w=800&h=600&fit=crop',
+        lastWatched: 'Industrial Cleaning',
+        remainingTime: '4h 30m'
+      },
+      {
+        id: 2,
+        title: 'Commercial Office Cleaning Standards',
+        imageUrl: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=800&h=600&fit=crop',
+        lastWatched: 'Commercial Cleaning',
+        remainingTime: '3h 45m'
+      }
+    ];
+    
+    console.log('📋 Fallback courses loaded for both sections');
+  }
+
+  // Navigation methods
+  navigateTo(url: string): void {
+    this.router.navigate([url]);
+  }
+
+  // Slider methods
   startSliderAutoplay(): void {
     this.sliderInterval = setInterval(() => {
-      this.currentSlide = (this.currentSlide + 1) % 3; // 3 is the number of slides
-    }, 4000); // Change slide every 4 seconds
+      this.currentSlide = (this.currentSlide + 1) % 3;
+    }, 4000);
   }
   
   stopSliderAutoplay(): void {
@@ -747,11 +447,11 @@ exploreCategoryDetails(categoryId: number): void {
   
   setSlide(index: number): void {
     this.currentSlide = index;
-    // Reset the timer when manually changing slides
     this.stopSliderAutoplay();
     this.startSliderAutoplay();
   }
 
+  // Carousel navigation methods
   prevRecommended(): void {
     if (this.currentRecommendedIndex > 0) {
       this.currentRecommendedIndex--;
@@ -764,7 +464,6 @@ exploreCategoryDetails(categoryId: number): void {
     }
   }
 
-  // Continue Learning navigation methods
   prevContinueLearning(): void {
     if (this.currentContinueLearningIndex > 0) {
       this.currentContinueLearningIndex--;
@@ -776,105 +475,43 @@ exploreCategoryDetails(categoryId: number): void {
       this.currentContinueLearningIndex++;
     }
   }
-  
-  // Popular Courses navigation methods
-  prevPopularCourses(): void {
-    if (this.currentPopularCoursesIndex > 0) {
-      this.currentPopularCoursesIndex--;
+
+  // Waste Management navigation methods
+  prevWasteManagement(): void {
+    if (this.currentWasteManagementIndex > 0) {
+      this.currentWasteManagementIndex--;
     }
   }
   
-  nextPopularCourses(): void {
-    if (this.currentPopularCoursesIndex < this.popularCourses.length - this.visiblePopularCoursesCount) {
-      this.currentPopularCoursesIndex++;
-    }
-  }
-  
-  // Short Courses navigation methods
-  prevShortCourses(): void {
-    if (this.currentShortCoursesIndex > 0) {
-      this.currentShortCoursesIndex--;
-    }
-  }
-  
-  nextShortCourses(): void {
-    if (this.currentShortCoursesIndex < this.shortCourses.length - this.visibleShortCoursesCount) {
-      this.currentShortCoursesIndex++;
-    }
-  }
-  
-  // Student Achievements navigation methods
-  prevAchievements(): void {
-    if (this.currentAchievementsIndex > 0) {
-      this.currentAchievementsIndex--;
-    }
-  }
-  
-  nextAchievements(): void {
-    if (this.currentAchievementsIndex < this.studentAchievements.length - this.visibleAchievementsCount) {
-      this.currentAchievementsIndex++;
+  nextWasteManagement(): void {
+    if (this.currentWasteManagementIndex < this.wasteManagementCourses.length - this.visibleWasteManagementCount) {
+      this.currentWasteManagementIndex++;
     }
   }
 
-  onCourseSelect(courseId: number): void {
-    console.log('Selected course:', courseId); // For debugging
-    this.router.navigate(['/course', courseId]);
+  // Utility methods
+  getInitials(name: string): string {
+    return name.split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase();
   }
 
-  showTooltip(event: MouseEvent, course: any): void {
-    const courseDetails: CourseDetails = {
-      id: course.id,
-      title: course.title,
-      summary: 'Learn the fundamentals and advanced concepts of this course.',
-      keyPoints: [
-        'Master core concepts',
-        'Hands-on projects',
-        'Industry best practices'
-      ],
-      outcomes: [
-        'Build real-world applications',
-        'Earn a certificate',
-        'Join developer community'
-      ]
-    };
-    
-    this.hoveredCourse = courseDetails;
-    this.tooltipPosition = {
-      x: event.clientX + 10,
-      y: event.clientY + 10
-    };
+  onImageError(event: Event, courseTitle: string): void {
+    const imgElement = event.target as HTMLImageElement;
+    if (imgElement && imgElement.src) {
+      imgElement.src = 'https://via.placeholder.com/800x600?text=' + encodeURIComponent(courseTitle);
+    }
   }
 
-  hideTooltip(): void {
-    this.hoveredCourse = null;
-  }
-
-  addToWishlist(courseId: number): void {
-    // Implement wishlist logic
+  addToWishlist(courseId: string): void {
     console.log('Added to wishlist:', courseId);
-    this.user!.wishlist++;
-  }
-
-  getUnreadNotificationsCount(): number {
-    return this.notifications.filter(n => !n.read).length;
-  }
-
-  getCartItemsCount(): number {
-    return this.cartItems.reduce((acc, item) => acc + item.quantity, 0);
-  }
-
-  async signOut(): Promise<void> {
-    try {
-      await this.authService.signOut();
-      this.router.navigate(['/log-in']);
-    } catch (error) {
-      console.error('Error signing out:', error);
-      // Force navigation even if signOut fails
-      this.router.navigate(['/log-in']);
+    if (this.user) {
+      this.user.wishlist++;
     }
   }
 
-  navigateToAnalytics(): void {
-    this.router.navigate(['/analytics']);
+  trackByCourseId(index: number, course: Course): string {
+    return course.id || index.toString();
   }
 }

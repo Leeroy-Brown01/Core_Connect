@@ -1,0 +1,426 @@
+<!-- main-layout.component.html -->
+<div class="h-screen flex flex-col">
+  <!-- Top Panel -->
+  <header class="bg-slate-200 dark:bg-gray-800 px-6 py-4 w-full flex items-center sticky top-0 z-40 transition-colors duration-200">
+    <!-- Left Section: Menu + Logo -->
+    <div class="md:w-3/12 w-10/12 flex items-center gap-4">
+      <!-- Menu Toggle Button -->
+      <button 
+        (click)="toggleSidenav()"
+        class="p-2 rounded-lg hover:bg-slate-300 dark:hover:bg-gray-700 hidden md:block transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <svg class="w-5 h-5 text-gray-700 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+        </svg>
+      </button>
+      
+      <!-- Modern Logo -->
+      <div class="flex items-center gap-3">
+        
+        
+        <!-- Logo Text -->
+        <div class="flex flex-col">
+          <h1 class="text-2xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 bg-clip-text text-transparent tracking-tight leading-none" 
+              style="font-family: 'Inter', 'SF Pro Display', -apple-system, system-ui, sans-serif; letter-spacing: -0.02em;">
+            ASA PORTAL
+          </h1>
+          <span class="text-xs text-gray-500 dark:text-gray-400 font-medium tracking-wide uppercase" 
+                style="font-family: 'Inter', sans-serif; letter-spacing: 0.1em;">
+            Software dev hub
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Center Section: Search -->
+    <div class="md:w-6/12 hidden md:block flex justify-center">
+      <div class="w-full max-w-md">
+        <div class="relative w-full">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+          </div>
+          <input 
+            type="text" 
+            [(ngModel)]="searchQuery"
+            (keyup.enter)="onSearch()"
+            class="block w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-600 rounded-full leading-5 bg-white dark:bg-gray-700 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 dark:text-white transition-colors duration-200"
+            placeholder="Search messages, users, or content..."
+            autocomplete="off">
+          <div *ngIf="searchQuery" class="absolute inset-y-0 right-0 pr-3 flex items-center">
+            <button 
+              (click)="clearSearch()"
+              class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none">
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Section: Actions -->
+    <div class="md:w-3/12 w-2/12 flex items-center justify-end gap-3">
+      <!-- Search Icon for Mobile -->
+      <button 
+        (click)="onSearch()"
+        class="p-2 block md:hidden rounded-lg hover:bg-slate-300 dark:hover:bg-gray-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <svg class="w-5 h-5 text-gray-700 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+        </svg>
+      </button>
+
+      <!-- Dark/Light Mode Toggle -->
+      <button 
+        (click)="toggleDarkMode()"
+        class="p-2 rounded-lg hover:bg-slate-300 dark:hover:bg-gray-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        [title]="isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'">
+        <!-- Light Mode Icon (show when dark mode is active) -->
+        <svg *ngIf="isDarkMode" class="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"></path>
+        </svg>
+        <!-- Dark Mode Icon (show when light mode is active) -->
+        <svg *ngIf="!isDarkMode" class="w-5 h-5 text-gray-700" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
+        </svg>
+      </button>
+
+      <!-- Help Button -->
+      <button 
+        (click)="onHelp()"
+        class="w-8 h-8 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-400 hover:bg-slate-300 dark:hover:bg-gray-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        title="Help">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+      </button>
+
+      <!-- User Avatar with Dropdown -->
+      <div class="relative">
+        <div 
+          class="w-8 h-8 md:block hidden rounded-full flex items-center justify-center text-white text-sm font-medium cursor-pointer hover:ring-2 hover:ring-blue-500 hover:ring-offset-2 transition-all duration-200 overflow-hidden"
+          [class.bg-blue-500]="!getUserProfileImage()"
+          (mouseenter)="onMouseEnterDropdown()"
+          (mouseleave)="onMouseLeaveDropdown()">
+          
+          <!-- Profile Image -->
+          <img 
+            *ngIf="getUserProfileImage()" 
+            [src]="getUserProfileImage()"
+            [alt]="getUserDisplayName()"
+            class="w-full h-full object-cover">
+          
+          <!-- Initials Fallback -->
+          <span *ngIf="!getUserProfileImage()">{{ getUserInitials() }}</span>
+        </div>
+        
+        <!-- Dropdown Menu -->
+        <div 
+          *ngIf="showUserDropdown"
+          class="absolute right-0 top-10 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50 transition-colors duration-200"
+          (mouseenter)="onMouseEnterDropdown()"
+          (mouseleave)="onMouseLeaveDropdown()">
+          
+          <!-- User Info Header -->
+          <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 rounded-full flex items-center justify-center text-white text-lg font-medium overflow-hidden"
+                   [class.bg-blue-500]="!getUserProfileImage()">
+                <img 
+                  *ngIf="getUserProfileImage()" 
+                  [src]="getUserProfileImage()"
+                  [alt]="getUserDisplayName()"
+                  class="w-full h-full object-cover">
+                <span *ngIf="!getUserProfileImage()">{{ getUserInitials() }}</span>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-semibold text-gray-900 dark:text-white truncate">{{ getUserDisplayName() }}</p>
+                <p class="text-xs text-gray-600 dark:text-gray-400 truncate">{{ getUserRole() }}</p>
+                <p *ngIf="getUserDepartment()" class="text-xs text-gray-500 dark:text-gray-500 truncate">{{ getUserDepartment() }}</p>
+              </div>
+            </div>
+          </div>
+          
+          <button 
+            class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-3"
+            (click)="onAccountSettings()">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            </svg>
+            Account Settings
+          </button>
+          
+          <hr class="my-1 border-gray-200 dark:border-gray-700">
+          
+          <button 
+            class="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-3"
+            (click)="onLogout()">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+            </svg>
+            Logout
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <div class="flex flex-1 overflow-hidden">
+    <!-- Side Navigation -->
+    <nav 
+      [class.w-64]="!isSidenavCollapsed"
+      [class.w-24]="isSidenavCollapsed"
+      class="bg-slate-200 dark:bg-gray-800 hidden md:flex border-r border-gray-300 dark:border-gray-700 p-4 transition-all duration-300 ease-in-out flex-col">
+      
+      <!-- Main Navigation Items - Takes available space -->
+      <div class="flex-1 overflow-y-auto">
+        <ul class="space-y-2">
+          <li *ngFor="let tab of tabs">
+            <button 
+              [title]="isSidenavCollapsed ? tab.label : ''"
+              class="w-full text-left px-4 py-3 rounded-lg transition-colors duration-200 flex items-center gap-3 group relative"
+              [class.bg-slate-300]="activeTab === tab.id && !isComposeTab(tab.id)"
+              [class.text-gray-800]="activeTab === tab.id && !isComposeTab(tab.id)"
+              [class.shadow-sm]="activeTab === tab.id && !isComposeTab(tab.id)"
+              [class.bg-red-200]="isComposeTab(tab.id)"
+              [class.text-red-800]="isComposeTab(tab.id)"
+              [class.hover:bg-red-300]="isComposeTab(tab.id)"
+              [class.text-gray-600]="activeTab !== tab.id && !isComposeTab(tab.id)"
+              [class.dark:text-gray-300]="activeTab !== tab.id && !isComposeTab(tab.id)"
+              [class.hover:bg-slate-300]="activeTab !== tab.id && !isComposeTab(tab.id)"
+              [class.dark:hover:bg-gray-700]="activeTab !== tab.id && !isComposeTab(tab.id)"
+              [class.hover:text-gray-800]="activeTab !== tab.id && !isComposeTab(tab.id)"
+              [class.dark:hover:text-white]="activeTab !== tab.id && !isComposeTab(tab.id)"
+              [class.justify-center]="isSidenavCollapsed"
+              [class.justify-between]="!isSidenavCollapsed"
+              (click)="switchTab(tab.id)">
+              
+              <div class="flex items-center gap-3" 
+                   [class.justify-center]="isSidenavCollapsed"
+                   [class.w-full]="isSidenavCollapsed">
+                <!-- Dashboard Icon -->
+                <svg *ngIf="tab.id === 'icd-dashboard'" class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                </svg>
+                
+                <!-- Compose Icon -->
+                <svg *ngIf="tab.id === 'compose'" class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                </svg>
+                
+                <!-- Downloads Icon -->
+                <svg *ngIf="tab.id === 'downloads'" class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                
+                <!-- Inbox Icon -->
+                <svg *ngIf="tab.id === 'inbox'" class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+                </svg>
+                
+                <!-- Sent Icon -->
+                <svg *ngIf="tab.id === 'sent'" class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                </svg>
+                
+                <!-- Active Users Icon (Updated) -->
+                <svg *ngIf="tab.id === 'icd-user-management'" class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                </svg>
+                
+                
+                <!-- Recycle Icon -->
+                <svg *ngIf="tab.id === 'recycle'" class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                </svg>
+                
+                <span *ngIf="!isSidenavCollapsed" class="truncate">{{ tab.label }}</span>
+              </div>
+              
+              <div 
+                *ngIf="isSidenavCollapsed"
+                class="absolute left-16 top-1/2 transform -translate-y-1/2 bg-gray-800 text-white text-sm px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                {{ tab.label }}
+              </div>
+            </button>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Settings - Sticky at Bottom -->
+      <div class="flex-shrink-0 pt-4 border-t border-gray-300 dark:border-gray-700">
+        <button 
+          [title]="isSidenavCollapsed ? 'Settings' : ''"
+          class="w-full text-left px-4 py-3 rounded-lg transition-colors duration-200 flex items-center gap-3 group relative"
+          [class.bg-slate-300]="activeTab === 'settings'"
+          [class.dark:bg-gray-700]="activeTab === 'settings'"
+          [class.text-gray-800]="activeTab === 'settings'"
+          [class.dark:text-white]="activeTab === 'settings'"
+          [class.shadow-sm]="activeTab === 'settings'"
+          [class.text-gray-600]="activeTab !== 'settings'"
+          [class.dark:text-gray-300]="activeTab !== 'settings'"
+          [class.hover:bg-slate-300]="activeTab !== 'settings'"
+          [class.dark:hover:bg-gray-700]="activeTab !== 'settings'"
+          [class.hover:text-gray-800]="activeTab !== 'settings'"
+          [class.dark:hover:text-white]="activeTab !== 'settings'"
+          [class.justify-center]="isSidenavCollapsed"
+          [class.justify-between]="!isSidenavCollapsed"
+          (click)="switchTab('settings')">
+          
+          <div class="flex items-center gap-3" 
+               [class.justify-center]="isSidenavCollapsed"
+               [class.w-full]="isSidenavCollapsed">
+            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            </svg>
+            
+            <span *ngIf="!isSidenavCollapsed" class="truncate">Settings</span>
+          </div>
+          
+          <div 
+            *ngIf="isSidenavCollapsed"
+            class="absolute left-16 top-1/2 transform -translate-y-1/2 bg-gray-800 text-white text-sm px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+            Settings
+          </div>
+        </button>
+      </div>
+    </nav>
+  
+    <!-- Main Content Area -->
+    <main class="flex-1 p-2 overflow-y-auto bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+      <div *ngIf="activeTab === 'icd-dashboard'">
+        <app-icd-dashboard></app-icd-dashboard>
+      </div>
+
+      <div *ngIf="activeTab === 'inbox'">
+        <app-inbox></app-inbox>
+      </div>
+
+      <div *ngIf="activeTab === 'sent'">
+        <app-sent></app-sent>
+      </div>
+
+      <div *ngIf="activeTab === 'icd-user-management'">
+        <app-icd-user-management></app-icd-user-management>
+      </div>
+
+      <div *ngIf="activeTab === 'account-settings'">
+        <app-icd-profile-settings></app-icd-profile-settings>
+      </div>
+
+      <div *ngIf="activeTab === 'archived'">
+         <app-archived></app-archived>
+      </div>
+
+      <div *ngIf="activeTab === 'recycle'">
+        <app-recycle></app-recycle>
+      </div>
+
+      <div *ngIf="activeTab === 'compose'">
+        <app-compose></app-compose>
+      </div>
+
+      <div *ngIf="activeTab === 'downloads'">
+        <app-icd-downloads></app-icd-downloads>
+      </div>
+
+      <div *ngIf="activeTab === 'settings'">
+        <div class="p-6 bg-white dark:bg-gray-800 rounded-lg">
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">Settings</h2>
+          <p class="text-gray-600 dark:text-gray-400">Configure your application settings here.</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <nav class="bg-slate-200 dark:bg-gray-800 border-t border-gray-300 dark:border-gray-700 px-4 md:hidden block py-2 transition-colors duration-200">
+    <div class="flex items-center justify-around">
+      <!-- Home -->
+      <button 
+        (click)="switchTab('inbox')"
+        class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors duration-200 min-w-0"
+        [class.text-blue-600]="activeTab === 'inbox'"
+        [class.bg-blue-50]="activeTab === 'inbox'"
+        [class.text-gray-600]="activeTab !== 'inbox'"
+        [class.dark:text-gray-300]="activeTab !== 'inbox'"
+        [class.hover:bg-slate-300]="activeTab !== 'inbox'"
+        [class.dark:hover:bg-gray-700]="activeTab !== 'inbox'">
+        <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+        </svg>
+        <span class="text-xs font-medium">Home</span>
+      </button>
+
+      <!-- Downloads -->
+      <button 
+        (click)="switchTab('downloads')"
+        class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors duration-200 min-w-0"
+        [class.text-blue-600]="activeTab === 'downloads'"
+        [class.bg-blue-50]="activeTab === 'downloads'"
+        [class.text-gray-600]="activeTab !== 'downloads'"
+        [class.dark:text-gray-300]="activeTab !== 'downloads'"
+        [class.hover:bg-slate-300]="activeTab !== 'downloads'"
+        [class.dark:hover:bg-gray-700]="activeTab !== 'downloads'">
+        <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+        </svg>
+        <span class="text-xs font-medium">Downloads</span>
+      </button>
+
+      <!-- Compose -->
+      <button 
+        (click)="switchTab('compose')"
+        class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors duration-200 min-w-0"
+        [class.text-blue-600]="activeTab === 'compose'"
+        [class.bg-blue-50]="activeTab === 'compose'"
+        [class.text-gray-600]="activeTab !== 'compose'"
+        [class.dark:text-gray-300]="activeTab !== 'compose'"
+        [class.hover:bg-slate-300]="activeTab !== 'compose'"
+        [class.dark:hover:bg-gray-700]="activeTab !== 'compose'">
+        <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+        </svg>
+        <span class="text-xs font-medium">Compose</span>
+      </button>
+
+      <!-- Settings -->
+      <button 
+        (click)="switchTab('settings')"
+        class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors duration-200 min-w-0"
+        [class.text-blue-600]="activeTab === 'settings'"
+        [class.bg-blue-50]="activeTab === 'settings'"
+        [class.text-gray-600]="activeTab !== 'settings'"
+        [class.dark:text-gray-300]="activeTab !== 'settings'"
+        [class.hover:bg-slate-300]="activeTab !== 'settings'"
+        [class.dark:hover:bg-gray-700]="activeTab !== 'settings'">
+        <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+        </svg>
+        <span class="text-xs font-medium">Settings</span>
+      </button>
+
+      <!-- User Profile -->
+      <button 
+        (click)="switchTab('account-settings')"
+        class="flex flex-col items-center py-2 px-3 rounded-lg transition-colors duration-200 min-w-0"
+        [class.text-blue-600]="activeTab === 'account-settings'"
+        [class.bg-blue-50]="activeTab === 'account-settings'"
+        [class.text-gray-600]="activeTab !== 'account-settings'"
+        [class.dark:text-gray-300]="activeTab !== 'account-settings'"
+        [class.hover:bg-slate-300]="activeTab !== 'account-settings'"
+        [class.dark:hover:bg-gray-700]="activeTab !== 'account-settings'">
+        <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+        </svg>
+        <span class="text-xs font-medium">You</span>
+      </button>
+    </div>
+  </nav>
+</div>
+

@@ -12,11 +12,9 @@ import { AuthService } from './services/auth.service';
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, NavBarComponent, RouterOutlet, FormsModule, ToastComponent],
+  imports: [CommonModule, RouterOutlet, FormsModule],
   template: `
-    <app-nav-bar *ngIf="showNavbar"></app-nav-bar>
     <router-outlet></router-outlet>
-    <app-toast></app-toast>
   `,
   styleUrls: ['./app.component.scss'],
   providers: [AuthGuard],
@@ -31,10 +29,16 @@ export class AppComponent implements OnInit, OnDestroy {
     '/landing-page',
     '/log-in',
     '/create-user-account',
-    '/video-output'
+    '/video-output',
+    '/icd',
+    '/icd-log-in',
+    '/icd-sign-up',
+    '/icd-dashbaord',
+    '/main-layout'
   ];
 
   private routerSubscription: Subscription | null = null;
+  private hasInitialRedirectHandled = false;
 
   constructor(
     private router: Router,
@@ -52,27 +56,18 @@ export class AppComponent implements OnInit, OnDestroy {
     // Set initial navbar visibility based on current route
     this.updateNavbarVisibility(this.router.url);
 
-    // Handle initial route based on auth state from Firestore
-    this.authService.currentUser$.pipe(take(1)).subscribe(user => {
-      const currentRoute = this.router.url;
-      console.log('App init - Current route:', currentRoute, 'User:', user ? user.email : 'No user');
-      
-      // If user is authenticated and on login page, they can stay or manually navigate
-      if (user && this.authService.isAuthenticatedSync() && (currentRoute === '/log-in' || currentRoute === '/login' || currentRoute === '/')) {
-        console.log('Authenticated user on login page - letting them choose to continue');
-        // Don't auto-redirect, let user manually continue
-      }
-      // If user is not authenticated and not on login/register pages, redirect to login
-      else if (!user && !currentRoute.includes('log-in') && !currentRoute.includes('create-user-account')) {
-        console.log('Unauthenticated user, redirecting to login');
-        this.router.navigate(['/log-in'], { replaceUrl: true });
+    // FIXED: Wait for auth initialization before handling routes
+    this.authService.authInitialized$.pipe(
+      filter(initialized => initialized),
+      take(1)
+    ).subscribe(() => {
+      if (!this.hasInitialRedirectHandled) {
+        this.handleInitialRoute();
+        this.hasInitialRedirectHandled = true;
       }
     });
 
-    // AuthService is initialized in constructor, just ensure it's injected
-    this.authService.waitForAuthInitialization().then(() => {
-      console.log('Firebase Auth initialized');
-    });
+    console.log('🚀 App component initialized, waiting for Firebase auth...');
   }
 
   ngOnDestroy() {
@@ -101,5 +96,32 @@ export class AppComponent implements OnInit, OnDestroy {
     });
 
     console.log('Current route:', basePath, 'Show navbar:', this.showNavbar);
+  }
+
+  private handleInitialRoute() {
+    const currentRoute = this.router.url;
+    const user = this.authService.getCurrentUser();
+    
+    console.log('🔍 Handling initial route - Route:', currentRoute, 'User:', user ? user.email : 'No user');
+    
+    // Define public routes that don't require authentication
+    const publicRoutes = ['/log-in', '/create-user-account', '/get-started', '/landing-page'];
+    const isPublicRoute = publicRoutes.some(route => currentRoute.startsWith(route));
+    
+    if (isPublicRoute) {
+      console.log('✅ Public route access allowed:', currentRoute);
+      return;
+    }
+    
+    // If trying to access protected route without authentication
+    if (!user && !isPublicRoute) {
+      console.log('🔒 Redirecting to login from protected route:', currentRoute);
+      this.router.navigate(['/log-in'], { 
+        queryParams: { returnUrl: currentRoute },
+        replaceUrl: true 
+      });
+    } else if (user) {
+      console.log('✅ Authenticated user accessing:', currentRoute);
+    }
   }
 }

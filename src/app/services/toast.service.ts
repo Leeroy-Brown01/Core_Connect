@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 
 export interface Toast {
-  id: number;
+  id: string;
   message: string;
   type: 'success' | 'error' | 'warning' | 'info';
   duration?: number;
@@ -12,24 +12,31 @@ export interface Toast {
   providedIn: 'root'
 })
 export class ToastService {
-  private toasts$ = new BehaviorSubject<Toast[]>([]);
-  private toastId = 0;
+  private toastsSubject = new BehaviorSubject<Toast[]>([]);
+  public toasts$ = this.toastsSubject.asObservable();
 
-  getToasts() {
-    return this.toasts$.asObservable();
+  constructor() {
+    console.log('ToastService initialized');
   }
 
-  show(message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info', duration: number = 5000) {
+  private generateId(): string {
+    return Math.random().toString(36).substr(2, 9);
+  }
+
+  show(message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info', duration: number = 5000): void {
     const toast: Toast = {
-      id: ++this.toastId,
+      id: this.generateId(),
       message,
       type,
       duration
     };
 
-    const currentToasts = this.toasts$.value;
-    this.toasts$.next([...currentToasts, toast]);
+    const currentToasts = this.toastsSubject.value;
+    this.toastsSubject.next([...currentToasts, toast]);
 
+    console.log(`Toast shown: ${type.toUpperCase()} - ${message}`);
+
+    // Auto remove after duration
     if (duration > 0) {
       setTimeout(() => {
         this.remove(toast.id);
@@ -37,28 +44,29 @@ export class ToastService {
     }
   }
 
-  success(message: string, duration: number = 5000) {
+  success(message: string, duration: number = 3000): void {
     this.show(message, 'success', duration);
   }
 
-  error(message: string, duration: number = 7000) {
+  error(message: string, duration: number = 5000): void {
     this.show(message, 'error', duration);
   }
 
-  warning(message: string, duration: number = 5000) {
+  warning(message: string, duration: number = 4000): void {
     this.show(message, 'warning', duration);
   }
 
-  info(message: string, duration: number = 5000) {
+  info(message: string, duration: number = 4000): void {
     this.show(message, 'info', duration);
   }
 
-  remove(id: number) {
-    const currentToasts = this.toasts$.value;
-    this.toasts$.next(currentToasts.filter(toast => toast.id !== id));
+  remove(id: string): void {
+    const currentToasts = this.toastsSubject.value;
+    const filteredToasts = currentToasts.filter(toast => toast.id !== id);
+    this.toastsSubject.next(filteredToasts);
   }
 
-  clear() {
-    this.toasts$.next([]);
+  clear(): void {
+    this.toastsSubject.next([]);
   }
 }

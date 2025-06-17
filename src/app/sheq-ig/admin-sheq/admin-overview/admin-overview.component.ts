@@ -1,11 +1,13 @@
-import { CommonModule,  } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { AfterViewInit, Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { UserService } from '../../../services/user.service';
+import { CourseService } from '../../../services/course.service';
 
 @Component({
   selector: 'app-admin-overview',
   standalone: true,
-  imports: [CommonModule,FormsModule, ],
+  imports: [CommonModule, FormsModule],
   templateUrl: './admin-overview.component.html',
   styleUrl: './admin-overview.component.scss'
 })
@@ -15,15 +17,27 @@ export class AdminOverviewComponent implements AfterViewInit, OnInit {
   startDate: Date = new Date();
   endDate: Date = new Date();
   selectedPeriod: string = 'Monthly';
+  selectedProvince = 'All Provinces';
+
+  // User metrics - will be populated from service
+  totalTrainers: number = 0;
+  totalTrainees: number = 0;
+  totalCourses: number = 0; // Will be updated when course service is integrated
+  totalAssessments: number = 41; // Will be updated when assessment service is integrated
+
+  // Loading states
+  isLoadingUserMetrics: boolean = false;
+  isLoadingCourseMetrics: boolean = false;
+
   upcomingExpiryAlerts = [
-  { name: 'Safety Certification', expiryDate: new Date('2023-05-10'), urgency: 'High' },
-  { name: 'First Aid Certification', expiryDate: new Date('2023-05-15'), urgency: 'Medium' },
-  { name: 'Fire Safety Certification', expiryDate: new Date('2023-05-20'), urgency: 'Low' },
-  { name: 'Equipment Handling Certification', expiryDate: new Date('2023-05-25'), urgency: 'High' },
-  { name: 'Chemical Handling Certification', expiryDate: new Date('2023-05-30'), urgency: 'Medium' },
-  { name: 'PPE Training Certification', expiryDate: new Date('2023-06-05'), urgency: 'Low' },
-  { name: 'Evacuation Drills Certification', expiryDate: new Date('2023-06-10'), urgency: 'High' }
-];
+    { name: 'Safety Certification', expiryDate: new Date('2023-05-10'), urgency: 'High' },
+    { name: 'First Aid Certification', expiryDate: new Date('2023-05-15'), urgency: 'Medium' },
+    { name: 'Fire Safety Certification', expiryDate: new Date('2023-05-20'), urgency: 'Low' },
+    { name: 'Equipment Handling Certification', expiryDate: new Date('2023-05-25'), urgency: 'High' },
+    { name: 'Chemical Handling Certification', expiryDate: new Date('2023-05-30'), urgency: 'Medium' },
+    { name: 'PPE Training Certification', expiryDate: new Date('2023-06-05'), urgency: 'Low' },
+    { name: 'Evacuation Drills Certification', expiryDate: new Date('2023-06-10'), urgency: 'High' }
+  ];
 
   courses = [
     { name: 'Safety Training', completed: 75, participants: 120, province: 'North West' },
@@ -41,32 +55,134 @@ export class AdminOverviewComponent implements AfterViewInit, OnInit {
   ];
 
   assessments = [
-  { name: 'Safety Training Assessment', completionDate: new Date('2023-05-01'), status: 'Pass' },
-  { name: 'Equipment Handling Assessment', completionDate: new Date('2023-05-02'), status: 'Average' },
-  { name: 'First Aid Assessment', completionDate: new Date('2023-05-03'), status: 'Failed' },
-  { name: 'Fire Safety Assessment', completionDate: new Date('2023-05-04'), status: 'Pass' },
-  { name: 'Chemical Handling Assessment', completionDate: new Date('2023-05-05'), status: 'Average' },
-  { name: 'PPE Training Assessment', completionDate: new Date('2023-05-06'), status: 'Failed' },
-  { name: 'Evacuation Drills Assessment', completionDate: new Date('2023-05-07'), status: 'Pass' }
-];
+    { name: 'Safety Training Assessment', completionDate: new Date('2023-05-01'), status: 'Pass' },
+    { name: 'Equipment Handling Assessment', completionDate: new Date('2023-05-02'), status: 'Average' },
+    { name: 'First Aid Assessment', completionDate: new Date('2023-05-03'), status: 'Failed' },
+    { name: 'Fire Safety Assessment', completionDate: new Date('2023-05-04'), status: 'Pass' },
+    { name: 'Chemical Handling Assessment', completionDate: new Date('2023-05-05'), status: 'Average' },
+    { name: 'PPE Training Assessment', completionDate: new Date('2023-05-06'), status: 'Failed' },
+    { name: 'Evacuation Drills Assessment', completionDate: new Date('2023-05-07'), status: 'Pass' }
+  ];
 
-recentActivities = [
+  recentActivities = [
     { type: 'user-plus', activity: 'New user registered', user: 'John D.', time: '2h ago', role: 'Admin' },
     { type: 'file-alt', activity: 'Report generated', user: 'Jane S.', time: '3h ago', role: 'Manager' },
     { type: 'exclamation-triangle', activity: 'System alert', user: 'System', time: '4h ago', role: 'System' },
     { type: 'user-times', activity: 'User account deactivated', user: 'Mike T.', time: '5h ago', role: 'Admin' }
   ];
-  selectedProvince = 'All Provinces';
 
-  
+  constructor(
+    private userService: UserService,
+    private courseService: CourseService
+  ) {}
 
   ngOnInit(): void {
-    // Initialize the adminName property
     this.updateEndDate();
     this.adminName = 'John Doe';
     this.selectedPeriod = 'Daily';
+    this.loadUserMetrics();
+    this.loadCourseMetrics();
   }
-  
+
+  // Load user metrics from service
+  private loadUserMetrics() {
+    this.isLoadingUserMetrics = true;
+    
+    this.userService.getAdminRoleMetrics().subscribe({
+      next: (metrics) => {
+        console.log('Received admin role metrics:', metrics);
+        
+        this.totalTrainers = metrics.totalTrainers;
+        this.totalTrainees = metrics.totalTrainees;
+        
+        this.isLoadingUserMetrics = false;
+        
+        console.log('Component metrics after assignment:', {
+          totalTrainers: this.totalTrainers,
+          totalTrainees: this.totalTrainees
+        });
+        
+        // Trigger counter animation after data is loaded
+        setTimeout(() => {
+          this.animateCounters();
+        }, 100);
+      },
+      error: (error) => {
+        console.error('Error loading user metrics:', error);
+        this.isLoadingUserMetrics = false;
+        
+        // Fallback to individual role counting if needed
+        this.loadFallbackMetrics();
+      }
+    });
+  }
+
+  // Fallback method for individual role counting
+  private loadFallbackMetrics() {
+    console.log('Using fallback metrics calculation');
+    
+    // Get trainer count
+    this.userService.getUserCountByRole('instructor').subscribe({
+      next: (count) => {
+        this.totalTrainers = count;
+        console.log('Fallback trainer count:', count);
+      },
+      error: (error) => console.error('Error getting trainer count:', error)
+    });
+    
+    // Get trainee count
+    this.userService.getUserCountByRole('trainee').subscribe({
+      next: (count) => {
+        this.totalTrainees = count;
+        console.log('Fallback trainee count:', count);
+      },
+      error: (error) => console.error('Error getting trainee count:', error)
+    });
+  }
+
+  // Load course metrics from service
+  private loadCourseMetrics() {
+    this.isLoadingCourseMetrics = true;
+    
+    this.courseService.getCourseCount().subscribe({
+      next: (count) => {
+        console.log('Received course count from service:', count);
+        
+        this.totalCourses = count;
+        this.isLoadingCourseMetrics = false;
+        
+        console.log('Component course metrics after assignment:', {
+          totalCourses: this.totalCourses
+        });
+        
+        // Trigger counter animation after data is loaded
+        setTimeout(() => {
+          this.animateCounters();
+        }, 100);
+      },
+      error: (error) => {
+        console.error('Error loading course metrics:', error);
+        this.isLoadingCourseMetrics = false;
+        
+        // Fallback: use simple course metrics
+        this.loadFallbackCourseMetrics();
+      }
+    });
+  }
+
+  // Fallback method for course counting
+  private loadFallbackCourseMetrics() {
+    console.log('Using fallback course metrics calculation');
+    
+    this.courseService.getSimpleCourseMetrics().subscribe({
+      next: (metrics) => {
+        this.totalCourses = metrics.totalCourses;
+        console.log('Fallback course metrics:', metrics);
+      },
+      error: (error) => console.error('Error getting fallback course metrics:', error)
+    });
+  }
+
   get filteredCourses() {
     if (this.selectedProvince === 'All Provinces') return this.courses;
     return this.courses.filter(course => 
@@ -75,7 +191,7 @@ recentActivities = [
   }
 
   ngAfterViewInit(): void {
-    this.animateCounters();
+    // Initial animation will be triggered after data loads
   }
 
   private animateCounters() {
@@ -102,7 +218,7 @@ recentActivities = [
 
   updateDateRange(event: any) {
     this.startDate = new Date(event.target.value);
-    this.updateEndDate(); // Now using the unified calculation method
+    this.updateEndDate();
   }
 
   updateEndDate() {
@@ -110,14 +226,12 @@ recentActivities = [
 
     switch(this.selectedPeriod) {
       case 'Daily':
-        // Set to today 00:00 - 23:59
         this.startDate = new Date(currentDate);
         this.startDate.setHours(0, 0, 0, 0);
         this.endDate = new Date(currentDate);
         this.endDate.setHours(23, 59, 59, 999);
         break;
       case 'Weekly':
-        // Last 7 days including today
         this.endDate = new Date(currentDate);
         this.endDate.setHours(23, 59, 59, 999);
         this.startDate = new Date(currentDate);
@@ -125,16 +239,13 @@ recentActivities = [
         this.startDate.setHours(0, 0, 0, 0);
         break;
       case 'Monthly':
-        // First to last day of current month
         this.startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
         this.endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
         break;
       case 'Yearly':
-        // Full current year
         this.startDate = new Date(currentDate.getFullYear(), 0, 1);
         this.endDate = new Date(currentDate.getFullYear(), 11, 31);
         break;
+    }
   }
-     
- }
 }

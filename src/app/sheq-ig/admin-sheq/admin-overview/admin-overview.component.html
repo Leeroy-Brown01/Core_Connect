@@ -29,40 +29,49 @@
 
   <!-- Key Metrics Grid -->
   <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-    <!-- 001 -->
+    <!-- Total Trainers -->
     <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-green-500">
       <div class="flex justify-between items-center">
         <div>
-          <p class="text-xs text-gray-500 mb-1">Active Trainers</p>
-          <p class="text-xl font-bold animate-count" data-count="12">0</p>
+          <p class="text-xs text-gray-500 mb-1">Total Trainers</p>
+          <p class="text-xl font-bold">
+            <span *ngIf="!isLoadingUserMetrics" class="animate-count" [attr.data-count]="totalTrainers">0</span>
+            <span *ngIf="isLoadingUserMetrics" class="animate-pulse">Loading...</span>
+          </p>
         </div>
       </div>
     </div>
-    <!-- 002 -->
+    <!-- Total Trainees -->
     <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-green-500">
       <div class="flex justify-between items-center">
         <div>
-          <p class="text-xs text-gray-500 mb-1">Active Trainees</p>
-          <p class="text-xl font-bold animate-count" data-count="358">0</p>
+          <p class="text-xs text-gray-500 mb-1">Total Trainees</p>
+          <p class="text-xl font-bold">
+            <span *ngIf="!isLoadingUserMetrics" class="animate-count" [attr.data-count]="totalTrainees">0</span>
+            <span *ngIf="isLoadingUserMetrics" class="animate-pulse">Loading...</span>
+          </p>
         </div>
       </div>
     </div>
-    <!-- 003 -->
+    <!-- Total Courses -->
     <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-green-500">
       <div class="flex justify-between items-center">
         <div>
-          <p class="text-xs text-gray-500 mb-1">Active Courses</p>
-          <p class="text-xl font-bold animate-count" data-count="24">0</p>
+          <p class="text-xs text-gray-500 mb-1">Total Courses</p>
+          <p class="text-xl font-bold">
+            <span *ngIf="!isLoadingCourseMetrics" class="animate-count" [attr.data-count]="totalCourses">0</span>
+            <span *ngIf="isLoadingCourseMetrics" class="animate-pulse">Loading...</span>
+          </p>
           <span class="text-xs text-red-500">3 assessments pending</span>
         </div>
       </div>
     </div>
-    <!-- 004 -->
+    <!-- Assessments -->
     <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-green-500">
       <div class="flex justify-between items-center">
         <div>
           <p class="text-xs text-gray-500 mb-1">Assessments</p>
-          <p class="text-xl font-bold animate-count" data-count="41">0</p>
+          <p class="text-xl font-bold animate-count" [attr.data-count]="totalAssessments">0</p>
           <span class="text-xs text-red-500">5 require action</span>
         </div>
       </div>

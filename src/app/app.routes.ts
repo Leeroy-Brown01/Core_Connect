@@ -29,6 +29,27 @@ import { NavBarComponent } from './sheq-ig/nav-bar/nav-bar.component';
 import { TestComponent } from './test-component/test-component.component';
 import { ProfileSettingsComponent } from './sheq-ig/profile-settings/profile-settings.component';
 import { CreateTrainingComponent } from './sheq-ig/create-training/create-training.component';
+import { InstructorDashboardComponent } from './sheq-ig/instructor-dashboard/instructor-dashboard.component';
+import { InstructorOverviewComponent } from './sheq-ig/instructor-dashboard/instructor-overview/instructor-overview.component';
+import { IcdComponent } from './icd/icd.component';
+import { IcdLogInComponent } from './icd/icd-log-in/icd-log-in.component';
+import { IcdSignUpComponent } from './icd/icd-sign-up/icd-sign-up.component';
+import { IcdDashboardComponent } from './icd/icd-dashboard/icd-dashboard.component';
+import { MainLayoutComponent } from './icd/main-layout/main-layout.component';
+import { InboxComponent } from './icd/inbox/inbox.component';
+import { SentComponent } from './icd/sent/sent.component';
+import { ComposeComponent } from './icd/compose/compose.component';
+import { IcdUsersComponent } from './icd/icd-users/icd-users.component';
+import { IcdProfileSettingsComponent } from './icd/icd-profile-settings/icd-profile-settings.component';
+import { ArchivedComponent } from './icd/archived/archived.component';
+import { RecycleComponent } from './icd/recycle/recycle.component';
+import { IcdUserManagementComponent } from './icd/icd-user-management/icd-user-management.component';
+import { IcdOverviewComponent } from './icd/icd-overview/icd-overview.component';
+import { IcdDocumentManagementComponent } from './icd/icd-document-management/icd-document-management.component';
+import { IcdDepartmentManagementComponent } from './icd/icd-department-management/icd-department-management.component';
+import { IcdDraftComponent } from './icd/icd-draft/icd-draft.component';
+import { IcdDownloadsComponent } from './icd/icd-downloads/icd-downloads.component';
+import { IcdMessageDetailsComponent } from './icd/icd-message-details/icd-message-details.component';
 
 export const routes: Routes = [
   // Public routes (no authentication required)
@@ -69,6 +90,7 @@ export const routes: Routes = [
     component: VideoOutputComponent,
     canActivate: [AuthGuard]
   },
+  
   {
     path: 'course-details/:id',
     component: CourseDetailsComponent,
@@ -117,23 +139,44 @@ export const routes: Routes = [
     canActivate: [AuthGuard],
     data: { roles: ['trainee', 'employee', 'manager', 'supervisor'] } // Add role-based access if using RoleGuard
   },
+  // instructor routes
+  {
+    path: 'instructor-dashboard',
+    component: InstructorDashboardComponent,
+    canActivate: [AuthGuard],
+    data: { roles: ['admin', 'instructor',] } // Add role-based access if using RoleGuard
+  },
+  {
+    path: 'instructor-overview',
+    component: InstructorOverviewComponent,
+    canActivate: [AuthGuard],
+    data: { roles: ['admin', 'instructor',] } // Add role-based access if using RoleGuard
+  },
+  {
+    path: 'instructor-course-management',
+    component: CourseManagementComponent,
+    canActivate: [AuthGuard],
+    data: { roles: ['admin', 'instructor',] } // Add role-based access if using RoleGuard
+  },
 
   // Admin routes
   {
     path: 'admin-sheq',
     component: AdminSheqComponent,
-    canActivate: [AuthGuard]
+    canActivate: [AuthGuard],
+    data: { roles: ['admin'] }
   },
   {
     path: 'create-training',
     component: CreateTrainingComponent,
-    canActivate: [AuthGuard]
+    canActivate: [AuthGuard],
+    data: { roles: ['admin', 'instructor'] } // Allow both admin and instructor
   },
   {
     path: 'admin-dashboard',
     component: AdminDashboardComponent,
     canActivate: [AuthGuard],
-    data: { roles: ['admin'] } // Add role-based access if using RoleGuard
+    data: { roles: ['admin'] } // Keep admin-only
   },
   {
     path: 'admin-overview',
@@ -226,6 +269,89 @@ export const routes: Routes = [
     component: TestComponent,
     canActivate: [AuthGuard]
   },
+
+  // icd routes
+  {
+    path: 'main-layout',
+    component: MainLayoutComponent,  
+    children: [
+      {
+        path: 'icd-user-management',
+        component: IcdUserManagementComponent
+      },
+      {
+        path: 'icd-overview',
+        component: IcdOverviewComponent
+      },
+      {
+        path: 'icd-dashboard',
+        component: IcdDashboardComponent
+      },
+      {
+        path: 'inbox',
+        component: InboxComponent
+      },
+      {
+        path: 'compose',
+        component: ComposeComponent
+      },
+      {
+        path: 'icd-users',
+        component: IcdUsersComponent
+      },
+      {
+        path: 'icd-downloads',
+        component: IcdDownloadsComponent
+      },
+      {
+        path: 'icd-draft',
+        component: IcdDraftComponent
+      },
+      {
+        path: 'icd-department-management',
+        component: IcdDepartmentManagementComponent
+      },
+      {
+        path: 'icd-document-management',
+        component: IcdDocumentManagementComponent
+      },
+      {
+        path: 'archived',
+        component: ArchivedComponent
+      },
+      {
+        path: 'icd-message-details/:id',
+        component: IcdMessageDetailsComponent
+      },
+      {
+        path: 'recycle',
+        component: RecycleComponent
+      },
+      {
+        path: 'sent',
+        component: SentComponent
+      },
+      {
+        path: 'icd-profile-settings',
+        component: IcdProfileSettingsComponent
+      },
+
+    ]
+  },
+  {
+    path: 'icd',
+    component: IcdComponent  //landing-page
+  },
+  {
+    path: 'icd-log-in',
+    component: IcdLogInComponent
+  },
+  {
+    path: 'icd-sign-up',
+    component: IcdSignUpComponent
+  },
+  
+ 
 
   // Add video-output route if not already present
   {

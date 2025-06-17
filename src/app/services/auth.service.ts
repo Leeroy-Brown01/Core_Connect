@@ -6,6 +6,7 @@ import { Router } from '@angular/router';
 import { map, filter, take } from 'rxjs/operators';
 
 export interface UserData {
+  displayName: any;
   uid: string;
   fullName: string;
   email: string;
@@ -31,9 +32,9 @@ export class AuthService {
   public authInitialized$ = this.authInitialized.asObservable();
 
   constructor(
-    private auth: Auth,
-    private firestore: Firestore,
-    private router: Router
+    public auth: Auth,
+    public firestore: Firestore,
+    public router: Router
   ) {
     console.log('AuthService initialized with Firebase Auth and Firestore');
     this.initializeAuth();
@@ -41,39 +42,41 @@ export class AuthService {
 
   private async initializeAuth() {
     try {
-      // Set persistence to LOCAL to maintain sessions across browser restarts
+      console.log('🔥 Initializing Firebase Auth...');
       await setPersistence(this.auth, browserLocalPersistence);
       
       // Listen to auth state changes
       onAuthStateChanged(this.auth, async (user) => {
-        console.log('Auth state changed:', user ? user.uid : 'No user');
+        console.log('🔥 Auth state changed:', user ? `✅ ${user.email}` : '❌ No user');
+        
         if (user) {
           try {
-            // Fetch user data from Firestore
             const userData = await this.fetchUserData(user.uid);
+            console.log('✅ User data loaded:', userData.email);
             this.currentUserSubject.next(userData);
-            
-            // Update last login in background
             this.updateLastLoginBackground(user.uid);
           } catch (error) {
-            console.error('Error fetching user data:', error);
-            // If user doesn't exist in Firestore, sign them out
+            console.error('❌ Error fetching user data, signing out:', error);
             await this.signOut();
           }
         } else {
+          console.log('🔓 No authenticated user');
           this.currentUserSubject.next(null);
         }
+        
+        // Mark as initialized only after first auth state check
         if (!this.authInitialized.value) {
+          console.log('✅ Auth initialization complete');
           this.authInitialized.next(true);
         }
       });
     } catch (error) {
-      console.error('Error setting auth persistence:', error);
-      this.authInitialized.next(true); // Still mark as initialized even if persistence fails
+      console.error('❌ Error setting auth persistence:', error);
+      this.authInitialized.next(true);
     }
   }
 
-  private async fetchUserData(uid: string): Promise<UserData> {
+  protected async fetchUserData(uid: string): Promise<UserData> {
     try {
       const userDocRef = doc(this.firestore, `users/${uid}`);
       const userDoc = await getDoc(userDocRef);
@@ -165,7 +168,7 @@ export class AuthService {
     }
   }
 
-  private async saveUserData(uid: string, userData: UserData): Promise<void> {
+  protected async saveUserData(uid: string, userData: UserData): Promise<void> {
     try {
       const userDocRef = doc(this.firestore, `users/${uid}`);
       console.log('Saving user data to Firestore...');
@@ -224,7 +227,7 @@ export class AuthService {
     }
   }
 
-  private async updateLastLogin(uid: string): Promise<void> {
+  protected async updateLastLogin(uid: string): Promise<void> {
     try {
       const userDocRef = doc(this.firestore, `users/${uid}`);
       await updateDoc(userDocRef, { 
