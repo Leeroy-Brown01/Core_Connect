@@ -1,5 +1,3 @@
-const { transform } = require('typescript')
-
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
@@ -10,9 +8,7 @@ module.exports = {
       sm: '340px',
       md: '768px',
       lg: '976px',
-      lg: '1024px',
-      
-     
+      xl: '1024px',
     },
     extend: {
       backgroundImage: {
@@ -27,6 +23,5 @@ module.exports = {
   plugins: [
     require('daisyui'),
   ],
-
 }
 
