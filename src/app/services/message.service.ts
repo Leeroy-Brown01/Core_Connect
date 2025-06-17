@@ -1,12 +1,13 @@
 import { Injectable, inject } from '@angular/core';
 import { Firestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, Timestamp, query, where, orderBy, getDoc } from '@angular/fire/firestore';
 import { BehaviorSubject } from 'rxjs';
-import { AuthService } from './auth.service';
+import { ICDAuthService } from './icd-auth.service'; // Changed from AuthService to ICDAuthService
 
 export interface MessageData {
   id?: string;
   senderId: string;
   senderName: string;
+  senderEmail?: string; // Add senderEmail property
   recipientDepartments: string[];
   to: string; // recipient email
   subject: string;
@@ -31,16 +32,16 @@ export interface MessageData {
 export class MessageService {
   private readonly MESSAGES_COLLECTION = 'messages';
   private firestore = inject(Firestore);
-  private authService = inject(AuthService);
+  private icdAuthService = inject(ICDAuthService); // Changed from authService to icdAuthService
 
   constructor() {
-    console.log('MessageService initialized with Base64 file storage and proper injection context');
+    console.log('MessageService initialized with ICDAuthService and Base64 file storage');
   }
 
   // Create a new message
-  async createMessage(messageData: Omit<MessageData, 'id' | 'timestamp' | 'senderId' | 'senderName'>): Promise<string> {
+  async createMessage(messageData: Omit<MessageData, 'id' | 'timestamp' | 'senderId' | 'senderName' | 'senderEmail'>): Promise<string> {
     try {
-      const currentUser = this.authService.getCurrentUser();
+      const currentUser = this.icdAuthService.getCurrentUser(); // Using ICDAuthService
       if (!currentUser) {
         throw new Error('User must be authenticated to send messages');
       }
@@ -50,6 +51,7 @@ export class MessageService {
       const messageToSave: Omit<MessageData, 'id'> = {
         senderId: currentUser.uid,
         senderName: currentUser.fullName,
+        senderEmail: currentUser.email, // Add sender email
         recipientDepartments: messageData.recipientDepartments,
         to: messageData.to,
         subject: messageData.subject,
@@ -96,7 +98,7 @@ export class MessageService {
 
   // Send message with attachment
   async sendMessageWithAttachment(
-    messageData: Omit<MessageData, 'id' | 'timestamp' | 'senderId' | 'senderName' | 'attachedFile'>,
+    messageData: Omit<MessageData, 'id' | 'timestamp' | 'senderId' | 'senderName' | 'senderEmail' | 'attachedFile'>,
     attachmentFile?: File
   ): Promise<string> {
     try {
@@ -131,7 +133,7 @@ export class MessageService {
 
   // Save as draft
   async saveDraft(
-    messageData: Omit<MessageData, 'id' | 'timestamp' | 'senderId' | 'senderName'>,
+    messageData: Omit<MessageData, 'id' | 'timestamp' | 'senderId' | 'senderName' | 'senderEmail'>,
     attachmentFile?: File
   ): Promise<string> {
     try {
@@ -241,11 +243,11 @@ export class MessageService {
           ...doc.data()
         })) as MessageData[];
 
-        // Sort in memory by timestamp (descending)
+        // Sort in memory by timestamp (descending) with proper timestamp conversion
         messages.sort((a, b) => {
-          const aTime = a.timestamp?.toDate ? a.timestamp.toDate().getTime() : 0;
-          const bTime = b.timestamp?.toDate ? b.timestamp.toDate().getTime() : 0;
-          return bTime - aTime;
+          const aTime = this.convertTimestampToDate(a.timestamp);
+          const bTime = this.convertTimestampToDate(b.timestamp);
+          return bTime.getTime() - aTime.getTime();
         });
       }
 
@@ -256,69 +258,115 @@ export class MessageService {
     }
   }
 
-  // Get messages sent by current user (updated method)
+  // Get sent messages for current user
   async getSentMessages(): Promise<MessageData[]> {
     try {
-      const currentUser = this.authService.getCurrentUser();
+      const currentUser = this.icdAuthService.getCurrentUser(); // Using ICDAuthService
       if (!currentUser) {
-        throw new Error('User must be authenticated');
+        console.warn('MessageService.getSentMessages: No authenticated user found');
+        return [];
       }
+
+      console.log('MessageService.getSentMessages - Current User:', {
+        uid: currentUser.uid,
+        email: currentUser.email
+      });
 
       const messagesCollection = collection(this.firestore, this.MESSAGES_COLLECTION);
       
-      let messages: MessageData[] = [];
-
-      try {
-        // Try the optimized query first (requires index)
-        const q = query(
-          messagesCollection,
-          where('senderId', '==', currentUser.uid),
-          where('status', '==', 'sent'),
-          orderBy('timestamp', 'desc')
+      // Query messages where senderId matches current user's uid OR email
+      const queries = [];
+      
+      if (currentUser.uid) {
+        queries.push(
+          query(
+            messagesCollection,
+            where('senderId', '==', currentUser.uid),
+            orderBy('timestamp', 'desc')
+          )
         );
-
-        const querySnapshot = await getDocs(q);
-        messages = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as MessageData[];
-
-      } catch (indexError) {
-        console.warn('⚠️ Index not available for sent messages, falling back to simple query:', indexError);
-        
-        // Fallback: Query by senderId only, then filter and sort in memory
-        const fallbackQuery = query(
-          messagesCollection,
-          where('senderId', '==', currentUser.uid)
-        );
-
-        const fallbackSnapshot = await getDocs(fallbackQuery);
-        const allUserMessages = fallbackSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as MessageData[];
-
-        // Filter for sent status and sort in memory
-        messages = allUserMessages
-          .filter(msg => msg.status === 'sent')
-          .sort((a, b) => {
-            const aTime = a.timestamp?.toDate ? a.timestamp.toDate().getTime() : 0;
-            const bTime = b.timestamp?.toDate ? b.timestamp.toDate().getTime() : 0;
-            return bTime - aTime;
-          });
       }
+      
+      if (currentUser.email && currentUser.email !== currentUser.uid) {
+        queries.push(
+          query(
+            messagesCollection,
+            where('senderId', '==', currentUser.email),
+            orderBy('timestamp', 'desc')
+          )
+        );
+      }
+
+      // If we have senderEmail field, also query by that
+      if (currentUser.email) {
+        queries.push(
+          query(
+            messagesCollection,
+            where('senderEmail', '==', currentUser.email),
+            orderBy('timestamp', 'desc')
+          )
+        );
+      }
+
+      const messages: MessageData[] = [];
+      const messageIds = new Set<string>(); // To avoid duplicates
+
+      // Execute all queries and combine results
+      for (const q of queries) {
+        try {
+          const querySnapshot = await getDocs(q);
+          querySnapshot.forEach((doc) => {
+            if (!messageIds.has(doc.id)) {
+              messageIds.add(doc.id);
+              const data = doc.data();
+              messages.push({
+                id: doc.id,
+                senderId: data['senderId'],
+                senderName: data['senderName'],
+                senderEmail: data['senderEmail'],
+                to: data['to'],
+                recipientDepartments: data['recipientDepartments'] || [],
+                subject: data['subject'],
+                message: data['message'],
+                timestamp: data['timestamp'],
+                attachedFile: data['attachedFile'],
+                priority: data['priority'],
+                category: data['category'],
+                status: data['status'] || 'sent'
+              });
+            }
+          });
+        } catch (queryError) {
+          console.warn('Query failed:', queryError);
+        }
+      }
+
+      // Sort by timestamp descending with proper timestamp conversion
+      messages.sort((a, b) => {
+        const timestampA = this.convertTimestampToDate(a.timestamp);
+        const timestampB = this.convertTimestampToDate(b.timestamp);
+        return timestampB.getTime() - timestampA.getTime();
+      });
+
+      console.log(`MessageService.getSentMessages: Found ${messages.length} sent messages for user`);
+      console.log('Sample messages:', messages.slice(0, 2).map(m => ({
+        id: m.id,
+        senderId: m.senderId,
+        senderEmail: m.senderEmail,
+        subject: m.subject
+      })));
 
       return messages;
     } catch (error) {
-      console.error('❌ Error fetching sent messages:', error);
-      throw error;
+      console.error('❌ Error in MessageService.getSentMessages:', error);
+      return [];
     }
   }
 
   // Get inbox messages for current user (updated method)
   async getInboxMessages(): Promise<MessageData[]> {
     try {
-      const currentUser = this.authService.getCurrentUser();
+      const currentUser = this.icdAuthService.getCurrentUser(); // Using ICDAuthService
       if (!currentUser) {
         throw new Error('User must be authenticated');
       }
@@ -358,11 +406,11 @@ export class MessageService {
           ...doc.data()
         })) as MessageData[];
 
-        // Sort in memory by timestamp (descending)
+        // Sort in memory by timestamp (descending) with proper timestamp conversion
         allMessages.sort((a, b) => {
-          const aTime = a.timestamp?.toDate ? a.timestamp.toDate().getTime() : 0;
-          const bTime = b.timestamp?.toDate ? b.timestamp.toDate().getTime() : 0;
-          return bTime - aTime;
+          const aTime = this.convertTimestampToDate(a.timestamp);
+          const bTime = this.convertTimestampToDate(b.timestamp);
+          return bTime.getTime() - aTime.getTime();
         });
       }
 
@@ -422,7 +470,7 @@ export class MessageService {
   // Mark message as read (updated method)
   async markAsRead(messageId: string): Promise<void> {
     try {
-      const currentUser = this.authService.getCurrentUser();
+      const currentUser = this.icdAuthService.getCurrentUser(); // Using ICDAuthService
       if (!currentUser) return;
 
       const messageDoc = doc(this.firestore, `${this.MESSAGES_COLLECTION}/${messageId}`);
@@ -523,5 +571,45 @@ export class MessageService {
     }
     
     return `data:${attachedFile.type};base64,${attachedFile.base64Content}`;
+  }
+
+  // Helper method to convert various timestamp formats to Date
+  private convertTimestampToDate(timestamp: any): Date {
+    if (!timestamp) {
+      return new Date(0); // Return epoch if no timestamp
+    }
+
+    // If it's a Firestore Timestamp
+    if (timestamp.toDate && typeof timestamp.toDate === 'function') {
+      return timestamp.toDate();
+    }
+
+    // If it's already a Date
+    if (timestamp instanceof Date) {
+      return timestamp;
+    }
+
+    // If it's a string
+    if (typeof timestamp === 'string') {
+      return new Date(timestamp);
+    }
+
+    // If it's a Firebase timestamp with seconds property
+    if (timestamp.seconds) {
+      return new Date(timestamp.seconds * 1000);
+    }
+
+    // If it's a number (milliseconds)
+    if (typeof timestamp === 'number') {
+      return new Date(timestamp);
+    }
+
+    // Fallback
+    try {
+      return new Date(timestamp);
+    } catch (error) {
+      console.warn('Could not convert timestamp to Date:', timestamp);
+      return new Date(0);
+    }
   }
 }

@@ -265,6 +265,7 @@ export class IcdUserManagementComponent implements OnInit {
       // First create the user account
       const userData: Omit<UserData, 'uid'> = {
         fullName: this.newUserForm.fullName,
+        displayName: this.newUserForm.fullName, // Add missing displayName property
         email: this.newUserForm.email,
         phone: this.newUserForm.phone,
         department: this.newUserForm.department,

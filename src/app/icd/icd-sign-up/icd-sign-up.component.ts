@@ -94,6 +94,7 @@ export class IcdSignUpComponent {
       // Prepare user data (excluding password and confirmPassword)
       const userData: Omit<UserData, 'uid'> = {
         fullName: this.signupData.fullName,
+        displayName: this.signupData.fullName, // Add missing displayName property
         email: this.signupData.email,
         phone: this.signupData.phone,
         department: this.signupData.department,

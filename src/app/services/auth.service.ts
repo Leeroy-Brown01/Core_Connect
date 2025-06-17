@@ -6,6 +6,7 @@ import { Router } from '@angular/router';
 import { map, filter, take } from 'rxjs/operators';
 
 export interface UserData {
+  displayName: any;
   uid: string;
   fullName: string;
   email: string;

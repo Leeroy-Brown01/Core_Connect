@@ -333,10 +333,18 @@ export class SentComponent implements OnInit, OnDestroy {
     return this.sentService.formatTime(timestamp);
   }
 
-  // User display methods
+  // User display methods - These should show the CURRENT logged-in user, not the message sender
   getUserDisplayName(): string {
     if (this.currentICDUser?.fullName) {
       return this.currentICDUser.fullName;
+    }
+    
+    if (this.currentUser?.fullName) {
+      return this.currentUser.fullName;
+    }
+    
+    if (this.currentUser?.displayName) {
+      return this.currentUser.displayName;
     }
     
     if (this.currentUser?.email) {
@@ -349,6 +357,14 @@ export class SentComponent implements OnInit, OnDestroy {
   getUserFirstName(): string {
     if (this.currentICDUser?.fullName) {
       return this.currentICDUser.fullName.split(' ')[0];
+    }
+    
+    if (this.currentUser?.fullName) {
+      return this.currentUser.fullName.split(' ')[0];
+    }
+    
+    if (this.currentUser?.displayName) {
+      return this.currentUser.displayName.split(' ')[0];
     }
     
     if (this.currentUser?.email) {
@@ -370,10 +386,67 @@ export class SentComponent implements OnInit, OnDestroy {
         : names[0][0].toUpperCase();
     }
     
+    if (this.currentUser?.fullName) {
+      const names = this.currentUser.fullName.split(' ');
+      return names.length >= 2 
+        ? `${names[0][0]}${names[1][0]}`.toUpperCase()
+        : names[0][0].toUpperCase();
+    }
+    
     if (this.currentUser?.email) {
       return this.currentUser.email[0].toUpperCase();
     }
     
     return 'U';
+  }
+
+  // Get the CURRENT user's email for display
+  getCurrentUserEmail(): string {
+    return this.currentUser?.email || 'Unknown';
+  }
+
+  // Get the MESSAGE sender's information (different from current user)
+  getMessageSenderName(message: SentMessage): string {
+    return message.senderName || 'Unknown Sender';
+  }
+
+  getMessageSenderInitials(message: SentMessage): string {
+    if (message.senderName) {
+      const names = message.senderName.split(' ');
+      return names.length >= 2 
+        ? `${names[0][0]}${names[1][0]}`.toUpperCase()
+        : names[0][0].toUpperCase();
+    }
+    return 'S';
+  }
+
+  // Forward message
+  forwardMessage(message: SentMessage | null): void {
+    if (!message) {
+      console.warn('No message to forward');
+      this.toastService.warning('No message selected');
+      return;
+    }
+
+    try {
+      console.log('📤 Forwarding sent message:', message.id);
+      
+      // Set the message for forwarding in the sent service
+      this.sentService.setMessageForForwarding(message);
+      
+      // Show success notification
+      this.toastService.success('Message prepared for forwarding');
+      
+      // Close the modal
+      this.closeModal();
+      
+      // You might want to navigate to compose or open a compose modal here
+      // For now, we'll just log the action
+      console.log('✅ Message set for forwarding');
+      
+    } catch (error) {
+      console.error('❌ Error forwarding message:', error);
+      this.toastService.error('Failed to forward message');
+    }
   }
 }

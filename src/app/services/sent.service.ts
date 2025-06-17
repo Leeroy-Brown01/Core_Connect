@@ -30,6 +30,7 @@ export interface SentMessage {
 })
 export class SentService {
   private selectedMessage: SentMessage | null = null;
+  private messageForForwarding: SentMessage | null = null;
   private messageService = inject(MessageService);
   private icdAuthService = inject(ICDAuthService);
 
@@ -46,20 +47,66 @@ export class SentService {
     try {
       const currentUser = this.icdAuthService.getCurrentUser();
       if (!currentUser) {
-        console.warn('No authenticated user found');
+        console.warn('SentService: No authenticated user found via ICDAuthService');
         return [];
       }
+
+      // Log extensive user information for debugging
+      console.log('SentService.fetchSentMessages - Current User from ICDAuthService:', {
+        uid: currentUser.uid,
+        email: currentUser.email,
+        fullName: currentUser.fullName,
+        displayName: currentUser.displayName
+      });
 
       console.log('🔍 Fetching sent messages for user:', currentUser.email);
       
       // Use the message service to get sent messages
-      const messages = await this.messageService.getSentMessages();
-      console.log(`📤 Received ${messages.length} sent messages from MessageService`);
+      const allMessages = await this.messageService.getSentMessages();
+      console.log(`📤 Received ${allMessages.length} total sent messages from MessageService`);
+
+      // Filter messages by current user - use both email and uid for matching
+      const userMessages = allMessages.filter(msg => {
+        const isMatch = msg.senderId === currentUser.uid || 
+                       msg.senderId === currentUser.email ||
+                       (msg.senderEmail && msg.senderEmail === currentUser.email);
+        
+        if (isMatch) {
+          console.log('✅ Message matches current user:', {
+            messageId: msg.id,
+            messageSenderId: msg.senderId,
+            messageSenderEmail: msg.senderEmail,
+            messageSenderName: msg.senderName,
+            currentUserUid: currentUser.uid,
+            currentUserEmail: currentUser.email,
+            currentUserFullName: currentUser.fullName
+          });
+        }
+        
+        return isMatch;
+      });
+
+      console.log(`🔍 Filtered to ${userMessages.length} messages for current user`);
+      
+      if (userMessages.length === 0) {
+        console.warn('⚠️ No sent messages found for current user:', {
+          currentUserUid: currentUser.uid,
+          currentUserEmail: currentUser.email,
+          currentUserFullName: currentUser.fullName,
+          totalMessages: allMessages.length,
+          sampleMessageSenderIds: allMessages.slice(0, 3).map(m => ({ 
+            id: m.id, 
+            senderId: m.senderId, 
+            senderEmail: m.senderEmail,
+            senderName: m.senderName 
+          }))
+        });
+      }
 
       // Transform MessageData to SentMessage format
-      const sentMessages = messages.map(msg => this.transformToSentMessage(msg));
+      const sentMessages = userMessages.map(msg => this.transformToSentMessage(msg));
       
-      console.log(`✅ Transformed ${sentMessages.length} sent messages`);
+      console.log(`✅ Transformed ${sentMessages.length} sent messages for current user`);
       return sentMessages;
     } catch (error) {
       console.error('❌ Error fetching sent messages:', error);
@@ -128,6 +175,20 @@ export class SentService {
   // Clear selected message
   clearSelectedMessage(): void {
     this.selectedMessage = null;
+  }
+
+  // Message forwarding methods
+  setMessageForForwarding(message: SentMessage): void {
+    this.messageForForwarding = message;
+    console.log('📤 Message set for forwarding:', message.id);
+  }
+
+  getMessageForForwarding(): SentMessage | null {
+    return this.messageForForwarding;
+  }
+
+  clearMessageForForwarding(): void {
+    this.messageForForwarding = null;
   }
 
   // Format timestamp
