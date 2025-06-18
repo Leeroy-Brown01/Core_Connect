@@ -126,23 +126,58 @@ export class MainLayoutComponent {
 
   async onLogout(): Promise<void> {
     try {
-      console.log('🔓 Logging out from ICD...');
+      console.log('🔓 Starting complete system logout...');
       
       const currentUser = this.icdAuthService.getCurrentUser();
       const userName = currentUser?.fullName || 'User';
       
+      // Close any open dropdowns/modals
+      this.closeUserDropdown();
+      
+      // Clear local component state
+      this.currentUser = null;
+      this.currentICDUser = null;
+      this.isLoadingUser = false;
+      
+      console.log('🔄 Clearing user session...');
+      
+      // Sign out from Firebase Auth (this will trigger auth state change)
       await this.icdAuthService.signOut();
       
-      console.log('✅ ICD logout successful');
-      this.toastService.success(`Goodbye ${userName}! You have been logged out successfully.`, 3000);
+      console.log('✅ Successfully signed out from Firebase Auth');
+      
+      // Show success message
+      this.toastService.success(`Goodbye ${userName}! You have been logged out successfully.`, 2000);
+      
+      // Force navigation to login page after a brief delay
+      setTimeout(() => {
+        console.log('🔄 Navigating to login page...');
+        this.router.navigate(['/icd-log-in'], { 
+          replaceUrl: true,
+          queryParams: {},
+          fragment: null 
+        });
+      }, 1000);
       
     } catch (error) {
-      console.error('❌ ICD logout failed:', error);
-      this.toastService.error('Logout failed. Redirecting anyway...');
-      // Force navigation even if logout fails
-      this.router.navigate(['/icd/log-in']);
+      console.error('❌ Error during logout:', error);
+      
+      // Even if logout fails, clear local state and force navigation
+      this.currentUser = null;
+      this.currentICDUser = null;
+      this.isLoadingUser = false;
+      
+      this.toastService.error('Logout completed. Redirecting to login...');
+      
+      // Force navigation regardless of error
+      setTimeout(() => {
+        this.router.navigate(['/icd-log-in'], { 
+          replaceUrl: true,
+          queryParams: {},
+          fragment: null 
+        });
+      }, 500);
     }
-    this.closeUserDropdown();
   }
 
   onSearch(): void {

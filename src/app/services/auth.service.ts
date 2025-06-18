@@ -248,15 +248,36 @@ export class AuthService {
 
   async signOut(): Promise<void> {
     try {
-      console.log('Signing out...');
+      console.log('🔓 AuthService: Starting sign out process...');
+      
+      // Sign out from Firebase Auth
       await signOut(this.auth);
+      
+      // Clear local user state
       this.currentUserSubject.next(null);
-      this.router.navigate(['/log-in']);
-      console.log('✅ Sign out successful');
+      
+      console.log('✅ AuthService: Sign out successful');
+      
+      // Navigate to generic login page (can be overridden by subclasses)
+      this.router.navigate(['/log-in'], { 
+        replaceUrl: true,
+        queryParams: {},
+        fragment: null 
+      });
+      
     } catch (error) {
-      console.error('❌ Sign out error:', error);
+      console.error('❌ AuthService: Sign out error:', error);
+      
       // Clear local state even if Firebase signOut fails
       this.currentUserSubject.next(null);
+      
+      // Force navigation to login page
+      this.router.navigate(['/log-in'], { 
+        replaceUrl: true,
+        queryParams: {},
+        fragment: null 
+      });
+      
       throw error;
     }
   }

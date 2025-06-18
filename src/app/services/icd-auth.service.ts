@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Firestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs } from '@angular/fire/firestore';
 import { AuthService, UserData } from './auth.service';
 import { Router } from '@angular/router';
-import { Auth } from '@angular/fire/auth';
+import { Auth, signOut } from '@angular/fire/auth';
 
 export interface ICDUser extends UserData {
   // Add ICD-specific fields if needed
@@ -181,6 +181,43 @@ export class ICDAuthService extends AuthService {
       console.log('✅ ICD user data updated successfully');
     } catch (error) {
       console.error('❌ Error updating ICD user data:', error);
+      throw error;
+    }
+  }
+
+  // Override signOut to navigate to ICD login page
+  override async signOut(): Promise<void> {
+    try {
+      console.log('🔓 ICDAuthService: Starting sign out process...');
+      
+      // Sign out from Firebase Auth
+      await signOut(this.auth);
+      
+      // Clear local user state
+      this.currentUserSubject.next(null);
+      
+      console.log('✅ ICDAuthService: Sign out successful');
+      
+      // Navigate to ICD login page (not the generic login)
+      this.router.navigate(['/icd-log-in'], { 
+        replaceUrl: true,
+        queryParams: {},
+        fragment: null 
+      });
+      
+    } catch (error) {
+      console.error('❌ ICDAuthService: Sign out error:', error);
+      
+      // Clear local state even if Firebase signOut fails
+      this.currentUserSubject.next(null);
+      
+      // Force navigation to login page
+      this.router.navigate(['/icd-log-in'], { 
+        replaceUrl: true,
+        queryParams: {},
+        fragment: null 
+      });
+      
       throw error;
     }
   }
