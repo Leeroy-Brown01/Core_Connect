@@ -6,6 +6,7 @@ import { ToastService } from '../../services/toast.service';
 import { ToastComponent } from '../../components/toast/toast.component';
 import { AuthService, UserData } from '../../services/auth.service';
 import { ICDUserService, FirebaseICDUser } from '../../services/icd-user.service';
+import { AdminUserCreationService } from '../../services/admin-user-creation.service';
 
 interface User {
   id: string;
@@ -97,7 +98,8 @@ export class IcdUserManagementComponent implements OnInit {
     private icdAuthService: ICDAuthService,
     private toastService: ToastService,
     private authService: AuthService,
-    private icdUserService: ICDUserService
+    private icdUserService: ICDUserService,
+    private adminUserCreationService: AdminUserCreationService
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -256,16 +258,18 @@ export class IcdUserManagementComponent implements OnInit {
     this.isCreatingUser = true;
     
     try {
-      console.log('🔑 Creating new ICD user in Firebase:', this.newUserForm.email);
+      console.log('🔑 Creating new ICD user without auto-login:', this.newUserForm.email);
       
       // Get current user info
-      const currentUser = await this.authService.getCurrentUser();
-      const userId = currentUser?.uid || 'unknown-user';
-      
-      // First create the user account
+      const currentUser = this.icdAuthService.getCurrentUser();
+      if (!currentUser) {
+        throw new Error('No authenticated user found');
+      }
+
+      // Prepare user data
       const userData: Omit<UserData, 'uid'> = {
         fullName: this.newUserForm.fullName,
-        displayName: this.newUserForm.fullName, // Add missing displayName property
+        displayName: this.newUserForm.fullName,
         email: this.newUserForm.email,
         phone: this.newUserForm.phone,
         department: this.newUserForm.department,
@@ -277,35 +281,27 @@ export class IcdUserManagementComponent implements OnInit {
         trainingCompleted: false
       };
 
-      // Create user using ICDAuthService
-      const authResult = await this.icdAuthService.createUserAccount(userData, this.newUserForm.password);
+      // Use AdminUserCreationService to create user without affecting current auth
+      const result = await this.adminUserCreationService.createUserDirectly(
+        userData, 
+        this.newUserForm.password,
+        currentUser.uid
+      );
       
-      if (authResult.success && authResult.user) {
-        // Then save to ICD users collection
-        const icdUserResult = await this.icdUserService.createUser({
-          fullName: this.newUserForm.fullName,
-          email: this.newUserForm.email,
-          phone: this.newUserForm.phone,
-          department: this.newUserForm.department,
-          province: this.newUserForm.province,
-          role: this.newUserForm.role,
-          status: 'active',
-          trainingCompleted: false,
-          createdBy: userId
-        });
-
-        if (icdUserResult.success) {
-          console.log('✅ ICD user created successfully in Firebase');
-          this.toastService.success(`User "${this.newUserForm.fullName}" created successfully!`);
-          
-          // Reload users from Firebase
+      if (result.success) {
+        console.log('✅ ICD user created successfully without auto-login');
+        this.toastService.success(`User "${this.newUserForm.fullName}" created successfully!`);
+        
+        // Wait a moment for Firestore to update
+        setTimeout(async () => {
+          // Reload users to show the new user
           await this.loadUsers();
-          
-          // Close modal and reset form
-          this.closeAddUserModal();
-        } else {
-          this.toastService.error(`Failed to save user data: ${icdUserResult.error}`);
-        }
+        }, 1000);
+        
+        // Close modal and reset form
+        this.closeAddUserModal();
+      } else {
+        this.toastService.error(`Failed to create user: ${result.error}`);
       }
       
     } catch (error: any) {

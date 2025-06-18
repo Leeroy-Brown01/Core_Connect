@@ -15,7 +15,6 @@ import { IcdUserManagementComponent } from '../icd-user-management/icd-user-mana
 import { ICDAuthService } from '../../services/icd-auth.service';
 import { ICDUserService, FirebaseICDUser } from '../../services/icd-user.service';
 import { ToastService } from '../../services/toast.service';
-import { ToastComponent } from '../../components/toast/toast.component';
 
 interface Tab {
   id: string;
@@ -36,7 +35,6 @@ interface Tab {
     ArchivedComponent,
     ComposeComponent,
     IcdDownloadsComponent,
-    ToastComponent
   ],
   templateUrl: './main-layout.component.html',
   styleUrls: ['./main-layout.component.scss']
@@ -202,14 +200,14 @@ export class MainLayoutComponent {
       this.currentICDUser = allUsers.find(user => user.email === authUser.email) || null;
       
       if (this.currentICDUser) {
-        console.log('✅ ICD User data loaded:', this.currentICDUser);
+        console.log('✅ ICD User data loaded:', this.currentICDUser.fullName);
       } else {
         console.warn('⚠️ ICD User not found in database');
       }
       
-      this.isLoadingUser = false;
     } catch (error) {
       console.error('❌ Error loading ICD user data:', error);
+    } finally {
       this.isLoadingUser = false;
     }
   }
@@ -256,31 +254,33 @@ export class MainLayoutComponent {
       }
     }
 
-    // Subscribe to current user
-    this.icdAuthService.currentUser$.subscribe(user => {
-      this.currentUser = user;
-      console.log('Current ICD user:', user?.email || 'None');
-      
-      // Load ICD user data when auth user changes
-      if (user) {
-        this.loadCurrentICDUser();
-      }
-    });
-
-    // Check authentication
+    // Wait for auth initialization first
     try {
       await this.icdAuthService.waitForAuthInitialization();
-      const user = this.icdAuthService.getCurrentUser();
       
+      // Subscribe to current user changes
+      this.icdAuthService.currentUser$.subscribe(user => {
+        this.currentUser = user;
+        if (user?.email) {
+          console.log('Current ICD user:', user.email);
+          // Load ICD user data when auth user changes
+          this.loadCurrentICDUser();
+        } else {
+          console.log('No authenticated user');
+          this.currentUser = null;
+          this.currentICDUser = null;
+        }
+      });
+
+      // Check if user is authenticated
+      const user = this.icdAuthService.getCurrentUser();
       if (!user) {
         console.log('No authenticated user found, redirecting to login');
-        this.router.navigate(['/icd/log-in']);
-      } else {
-        // Load ICD user data
-        await this.loadCurrentICDUser();
+        this.router.navigate(['/icd-log-in']);
       }
     } catch (error) {
-      console.error('Error checking authentication:', error);
+      console.error('Error during initialization:', error);
+      this.router.navigate(['/icd-log-in']);
     }
   }
 }

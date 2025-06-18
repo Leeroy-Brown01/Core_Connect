@@ -8,7 +8,7 @@ import { ToastComponent } from '../../components/toast/toast.component';
 
 @Component({
   selector: 'app-icd-log-in',
-  imports: [CommonModule, FormsModule, ToastComponent],
+  imports: [CommonModule, FormsModule],
   templateUrl: './icd-log-in.component.html',
   styleUrls: ['./icd-log-in.component.scss']
 })

@@ -22,7 +22,7 @@ export interface FirebaseICDUser {
   providedIn: 'root'
 })
 export class ICDUserService {
-  private usersCollection = 'icd-users';
+  private usersCollection = 'icd-users'; // Make sure this matches ICDAuthService
   private firestore = inject(Firestore);
 
   constructor() {
@@ -97,10 +97,20 @@ export class ICDUserService {
         const data = doc.data();
         users.push({
           id: doc.id,
-          ...data,
+          fullName: data['fullName'],
+          email: data['email'],
+          phone: data['phone'],
+          department: data['department'],
+          province: data['province'],
+          role: data['role'],
+          status: data['status'],
+          profilePhoto: data['profilePhoto'] || '',
+          trainingCompleted: data['trainingCompleted'] || false,
+          createdBy: data['createdBy'] || '',
+          documentsCount: data['documentsCount'] || 0,
           // Convert Firestore timestamps back to Date objects
           createdAt: data['createdAt']?.toDate ? data['createdAt'].toDate() : new Date(data['createdAt']),
-          lastLoginAt: data['lastLoginAt']?.toDate ? data['lastLoginAt'].toDate() : undefined
+          lastLoginAt: data['lastLogin']?.toDate ? data['lastLogin'].toDate() : undefined
         } as FirebaseICDUser);
       });
 

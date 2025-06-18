@@ -6,7 +6,6 @@ import { filter, take } from 'rxjs/operators';
 import { FormsModule } from '@angular/forms';
 import { ToastComponent } from './components/toast/toast.component';
 import { AuthGuard } from './guards/auth.guard';
-import { NavBarComponent } from './sheq-ig/nav-bar/nav-bar.component';
 import { AuthService } from './services/auth.service';
 
 @Component({

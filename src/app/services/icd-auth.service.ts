@@ -85,7 +85,8 @@ export class ICDAuthService extends AuthService {
         createdAt: userData.createdAt,
         lastLogin: userData.lastLogin || null,
         lastActiveAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
+        documentsCount: 0
       };
       
       await setDoc(icdUserDocRef, firestoreData);
@@ -159,6 +160,56 @@ export class ICDAuthService extends AuthService {
     } catch (error) {
       console.error('❌ ICD sign in failed:', error);
       throw error;
+    }
+  }
+
+  // ICD-specific method to create users
+  async createICDUser(
+    userData: Omit<UserData, 'uid'>, 
+    password: string,
+    options?: { createdBy?: string }
+  ): Promise<{ success: boolean; user?: UserData; error?: string }> {
+    try {
+      console.log('🔑 Creating ICD user account...');
+      
+      // Create Firebase Auth user and save to ICD collection
+      const result = await this.createUserAccount(userData, password);
+      
+      if (result.success && result.user) {
+        // Add createdBy field if provided
+        if (options?.createdBy) {
+          try {
+            const icdUserDocRef = doc(this.firestore, `${this.ICD_COLLECTION}/${result.user.uid}`);
+            await updateDoc(icdUserDocRef, { 
+              createdBy: options.createdBy 
+            });
+            console.log('✅ Added createdBy field to ICD user');
+          } catch (error) {
+            console.warn('⚠️ Failed to add createdBy field:', error);
+          }
+        }
+        
+        console.log('✅ ICD user created successfully');
+        
+        // Return the created user data
+        const createdUser = this.getCurrentUser();
+        
+        return {
+          success: true,
+          user: createdUser || undefined
+        };
+      } else {
+        return {
+          success: false,
+          error: 'Failed to create user account'
+        };
+      }
+    } catch (error: any) {
+      console.error('❌ Error creating ICD user:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to create ICD user'
+      };
     }
   }
 }
