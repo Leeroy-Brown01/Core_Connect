@@ -34,6 +34,11 @@ export const routes: Routes = [
     component: MainLayoutComponent,  
     children: [
       {
+        path: '',
+        redirectTo: 'icd-dashboard',
+        pathMatch: 'full'
+      },
+      {
         path: 'icd-user-management',
         component: IcdUserManagementComponent
       },
@@ -92,8 +97,7 @@ export const routes: Routes = [
       {
         path: 'icd-profile-settings',
         component: IcdProfileSettingsComponent
-      },
-
+      }
     ]
   },
   {
@@ -107,14 +111,7 @@ export const routes: Routes = [
   {
     path: 'icd-sign-up',
     component: IcdSignUpComponent
-  },
-  
- 
-
-  
-
-  // Fallback route
-  
+  }
 ];
 
 
