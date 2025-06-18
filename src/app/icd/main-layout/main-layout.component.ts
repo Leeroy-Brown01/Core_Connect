@@ -2,7 +2,16 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { RouterOutlet } from '@angular/router';
+import { IcdDashboardComponent } from '../icd-dashboard/icd-dashboard.component';
+import { InboxComponent } from '../inbox/inbox.component';
+import { SentComponent } from '../sent/sent.component';
+import { IcdUsersComponent } from '../icd-users/icd-users.component';
+import { IcdProfileSettingsComponent } from '../icd-profile-settings/icd-profile-settings.component';
+import { RecycleComponent } from '../recycle/recycle.component';
+import { ArchivedComponent } from '../archived/archived.component';
+import { ComposeComponent } from '../compose/compose.component';
+import { IcdDownloadsComponent } from '../icd-downloads/icd-downloads.component';
+import { IcdUserManagementComponent } from '../icd-user-management/icd-user-management.component';
 import { ICDAuthService } from '../../services/icd-auth.service';
 import { ICDUserService, FirebaseICDUser } from '../../services/icd-user.service';
 import { ToastService } from '../../services/toast.service';
@@ -15,11 +24,17 @@ interface Tab {
 
 @Component({
   selector: 'app-main-layout',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    RouterOutlet
+  imports: [CommonModule
+    , FormsModule
+    , IcdDashboardComponent
+    , InboxComponent
+    , SentComponent
+    ,IcdUserManagementComponent
+    ,IcdProfileSettingsComponent, 
+    RecycleComponent,
+    ArchivedComponent,
+    ComposeComponent,
+    IcdDownloadsComponent,
   ],
   templateUrl: './main-layout.component.html',
   styleUrls: ['./main-layout.component.scss']
@@ -78,7 +93,6 @@ export class MainLayoutComponent {
 
   switchTab(tabId: string): void {
     this.activeTab = tabId;
-    this.router.navigate(['/main-layout', tabId]);
     this.closeUserDropdown();
   }
 
