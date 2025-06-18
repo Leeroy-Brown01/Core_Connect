@@ -25,7 +25,7 @@ export interface UserData {
   providedIn: 'root'
 })
 export class AuthService {
-  private currentUserSubject = new BehaviorSubject<UserData | null>(null);
+  protected currentUserSubject = new BehaviorSubject<UserData | null>(null);
   private authInitialized = new BehaviorSubject<boolean>(false);
   
   public currentUser$ = this.currentUserSubject.asObservable();

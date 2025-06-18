@@ -85,8 +85,7 @@ export class ICDAuthService extends AuthService {
         createdAt: userData.createdAt,
         lastLogin: userData.lastLogin || null,
         lastActiveAt: new Date(),
-        updatedAt: new Date(),
-        documentsCount: 0
+        updatedAt: new Date()
       };
       
       await setDoc(icdUserDocRef, firestoreData);
@@ -163,53 +162,26 @@ export class ICDAuthService extends AuthService {
     }
   }
 
-  // ICD-specific method to create users
-  async createICDUser(
-    userData: Omit<UserData, 'uid'>, 
-    password: string,
-    options?: { createdBy?: string }
-  ): Promise<{ success: boolean; user?: UserData; error?: string }> {
+  // Override updateUserData to update ICD users collection
+  override async updateUserData(uid: string, updates: Partial<UserData>): Promise<void> {
     try {
-      console.log('🔑 Creating ICD user account...');
+      const icdUserDocRef = doc(this.firestore, `${this.ICD_COLLECTION}/${uid}`);
+      await updateDoc(icdUserDocRef, {
+        ...updates,
+        updatedAt: new Date()
+      });
       
-      // Create Firebase Auth user and save to ICD collection
-      const result = await this.createUserAccount(userData, password);
-      
-      if (result.success && result.user) {
-        // Add createdBy field if provided
-        if (options?.createdBy) {
-          try {
-            const icdUserDocRef = doc(this.firestore, `${this.ICD_COLLECTION}/${result.user.uid}`);
-            await updateDoc(icdUserDocRef, { 
-              createdBy: options.createdBy 
-            });
-            console.log('✅ Added createdBy field to ICD user');
-          } catch (error) {
-            console.warn('⚠️ Failed to add createdBy field:', error);
-          }
-        }
-        
-        console.log('✅ ICD user created successfully');
-        
-        // Return the created user data
-        const createdUser = this.getCurrentUser();
-        
-        return {
-          success: true,
-          user: createdUser || undefined
-        };
-      } else {
-        return {
-          success: false,
-          error: 'Failed to create user account'
-        };
+      // Update local state if it's the current user
+      const currentUser = this.getCurrentUser();
+      if (currentUser && currentUser.uid === uid) {
+        const updatedUser = { ...currentUser, ...updates };
+        this.currentUserSubject.next(updatedUser);
       }
-    } catch (error: any) {
-      console.error('❌ Error creating ICD user:', error);
-      return {
-        success: false,
-        error: error.message || 'Failed to create ICD user'
-      };
+      
+      console.log('✅ ICD user data updated successfully');
+    } catch (error) {
+      console.error('❌ Error updating ICD user data:', error);
+      throw error;
     }
   }
 }

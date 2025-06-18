@@ -101,7 +101,7 @@ export class IcdLogInComponent {
   navigateTo(route: string): void {
     if (route === 'icd-sign-up') {
       console.log('Navigating to ICD sign-up...');
-      this.router.navigate(['/icd/sign-up']);
+      this.router.navigate(['/icd-sign-up']);
     } else if (route === 'icd-dashboard') {
       // This should not be used directly - login should handle navigation
       console.warn('Direct navigation to dashboard - use login form instead');

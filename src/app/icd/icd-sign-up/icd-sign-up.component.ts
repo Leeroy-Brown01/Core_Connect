@@ -163,7 +163,7 @@ export class IcdSignUpComponent {
 
   navigateTo(route: string): void {
     if (route === 'icd-log-in') {
-      this.router.navigate(['/icd/log-in']);
+      this.router.navigate(['/icd-log-in']);
     }
   }
 
