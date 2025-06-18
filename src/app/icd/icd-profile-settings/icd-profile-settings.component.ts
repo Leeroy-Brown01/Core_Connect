@@ -19,6 +19,13 @@ export class IcdProfileSettingsComponent implements OnInit {
   showDeleteConfirmation = false;
   deleteConfirmationText = '';
 
+  // Image upload properties
+  showImageUploadModal = false;
+  selectedImageFile: File | null = null;
+  imagePreviewUrl: string | null = null;
+  isUploadingImage = false;
+  showCameraOptions = false;
+
   profileSections = [
     {
       id: 'edit-profile',
@@ -227,5 +234,172 @@ export class IcdProfileSettingsComponent implements OnInit {
 
   getUserRole(): string {
     return this.currentUser?.role || 'User';
+  }
+
+  // Image upload methods
+  openImageUploadModal(): void {
+    this.showImageUploadModal = true;
+    this.selectedImageFile = null;
+    this.imagePreviewUrl = null;
+    this.showCameraOptions = false;
+  }
+
+  closeImageUploadModal(): void {
+    this.showImageUploadModal = false;
+    this.selectedImageFile = null;
+    this.imagePreviewUrl = null;
+    this.showCameraOptions = false;
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        this.toastService.error('Please select a valid image file');
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        this.toastService.error('Image size should be less than 5MB');
+        return;
+      }
+      
+      this.selectedImageFile = file;
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.imagePreviewUrl = e.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  async openCamera(): Promise<void> {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          width: { ideal: 640 }, 
+          height: { ideal: 480 },
+          facingMode: 'user' // Front camera
+        } 
+      });
+      
+      this.showCameraOptions = true;
+      
+      // Wait for DOM to update
+      setTimeout(() => {
+        const video = document.getElementById('cameraVideo') as HTMLVideoElement;
+        if (video) {
+          video.srcObject = stream;
+          video.play();
+        }
+      }, 100);
+      
+    } catch (error) {
+      console.error('Error accessing camera:', error);
+      this.toastService.error('Unable to access camera. Please use file upload instead.');
+    }
+  }
+
+  capturePhoto(): void {
+    const video = document.getElementById('cameraVideo') as HTMLVideoElement;
+    const canvas = document.getElementById('photoCanvas') as HTMLCanvasElement;
+    
+    if (video && canvas) {
+      const context = canvas.getContext('2d');
+      if (context) {
+        // Set canvas dimensions
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        
+        // Draw video frame to canvas
+        context.drawImage(video, 0, 0);
+        
+        // Convert canvas to blob
+        canvas.toBlob((blob) => {
+          if (blob) {
+            // Create file from blob
+            this.selectedImageFile = new File([blob], 'camera-photo.jpg', { type: 'image/jpeg' });
+            this.imagePreviewUrl = canvas.toDataURL('image/jpeg');
+            
+            // Stop camera
+            this.stopCamera();
+            this.showCameraOptions = false;
+          }
+        }, 'image/jpeg', 0.8);
+      }
+    }
+  }
+
+  stopCamera(): void {
+    const video = document.getElementById('cameraVideo') as HTMLVideoElement;
+    if (video && video.srcObject) {
+      const stream = video.srcObject as MediaStream;
+      stream.getTracks().forEach(track => track.stop());
+      video.srcObject = null;
+    }
+    this.showCameraOptions = false;
+  }
+
+  async uploadImage(): Promise<void> {
+    if (!this.selectedImageFile || !this.currentUser) {
+      this.toastService.error('Please select an image first');
+      return;
+    }
+
+    this.isUploadingImage = true;
+
+    try {
+      // Convert image to base64 for storage (in a real app, you'd upload to cloud storage)
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const base64Image = e.target?.result as string;
+        
+        try {
+          // Update user profile with new image
+          await this.icdAuthService.updateUserData(this.currentUser.uid, {
+            profilePhoto: base64Image
+          });
+
+          // Update local user data
+          this.currentUser.profilePhoto = base64Image;
+          
+          this.toastService.success('Profile image updated successfully!');
+          this.closeImageUploadModal();
+          
+        } catch (error) {
+          console.error('Error updating profile image:', error);
+          this.toastService.error('Failed to update profile image');
+        } finally {
+          this.isUploadingImage = false;
+        }
+      };
+      
+      reader.readAsDataURL(this.selectedImageFile);
+      
+    } catch (error) {
+      console.error('Error processing image:', error);
+      this.toastService.error('Failed to process image');
+      this.isUploadingImage = false;
+    }
+  }
+
+  removeCurrentImage(): void {
+    if (this.currentUser) {
+      this.currentUser.profilePhoto = null;
+      // Update in database
+      this.icdAuthService.updateUserData(this.currentUser.uid, {
+        profilePhoto: ''
+      }).then(() => {
+        this.toastService.success('Profile image removed successfully!');
+      }).catch(() => {
+        this.toastService.error('Failed to remove profile image');
+      });
+    }
   }
 }
