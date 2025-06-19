@@ -213,6 +213,37 @@ export class IcdProfileSettingsComponent implements OnInit {
     }
   }
 
+  async signOut(): Promise<void> {
+    try {
+      console.log('🔓 Starting sign out from profile settings...');
+      
+      const userName = this.currentUser?.fullName || 'User';
+      
+      // Show confirmation toast
+      this.toastService.success(`Goodbye ${userName}! Signing you out...`, 2000);
+      
+      // Sign out using ICDAuthService
+      await this.icdAuthService.signOut();
+      
+      console.log('✅ Sign out successful from profile settings');
+      
+    } catch (error) {
+      console.error('❌ Sign out error from profile settings:', error);
+      
+      // Show error message but still try to navigate
+      this.toastService.error('Sign out completed. Redirecting to login...');
+      
+      // Force navigation even if sign out fails
+      setTimeout(() => {
+        this.router.navigate(['/icd-log-in'], { 
+          replaceUrl: true,
+          queryParams: {},
+          fragment: null 
+        });
+      }, 500);
+    }
+  }
+
   getUserInitials(): string {
     if (this.currentUser?.fullName) {
       const names = this.currentUser.fullName.split(' ');
