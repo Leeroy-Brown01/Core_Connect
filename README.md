@@ -1,0 +1,2 @@
+# CoreConnect
+internal document circulator
