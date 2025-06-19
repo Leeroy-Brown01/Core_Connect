@@ -1,4 +1,5 @@
  HEAD
+ HEAD
 # Sheq-IG
 E-learning software
 
@@ -30,3 +31,7 @@ Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To u
 
 To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
  ce38d6e (Initial commit)
+
+# CoreConnect
+internal document circulator
+4d2c7100bf1965873a0fd219941bdf0f7ff188b5
