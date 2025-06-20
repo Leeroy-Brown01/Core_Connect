@@ -15,6 +15,8 @@ import { IcdUserManagementComponent } from '../icd-user-management/icd-user-mana
 import { ICDAuthService } from '../../services/icd-auth.service';
 import { ICDUserService, FirebaseICDUser } from '../../services/icd-user.service';
 import { ToastService } from '../../services/toast.service';
+import { InboxService } from '../../services/inbox.service';
+import { Subscription } from 'rxjs';
 
 interface Tab {
   id: string;
@@ -51,11 +53,16 @@ export class MainLayoutComponent {
   currentICDUser: FirebaseICDUser | null = null;
   isLoadingUser: boolean = true;
 
+  // Inbox notification
+  unreadInboxCount = 0;
+  private subscriptions: Subscription[] = [];
+
   constructor(
     private icdAuthService: ICDAuthService,
     private icdUserService: ICDUserService,
     private router: Router,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private inboxService: InboxService
   ) {
     console.log('MainLayoutComponent initialized with ICDAuthService and ICDUserService');
   }
@@ -317,5 +324,27 @@ export class MainLayoutComponent {
       console.error('Error during initialization:', error);
       this.router.navigate(['/icd-log-in']);
     }
+
+    // Subscribe to unread inbox messages
+    const unreadSub = this.inboxService.getUnreadCount().subscribe(count => {
+      this.unreadInboxCount = count;
+    });
+    
+    this.subscriptions.push(unreadSub);
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.forEach(sub => sub.unsubscribe());
+  }
+
+  onSidenavScroll(event: Event): void {
+    if (this.isSidenavCollapsed) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  }
+
+  hasUnreadInboxMessages(): boolean {
+    return this.unreadInboxCount > 0;
   }
 }

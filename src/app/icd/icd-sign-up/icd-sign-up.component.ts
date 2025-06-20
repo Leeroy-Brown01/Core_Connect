@@ -30,6 +30,14 @@ export class IcdSignUpComponent {
   showPassword = false;
   showConfirmPassword = false;
 
+  // Image upload properties
+  showImageUploadModal = false;
+  selectedImageFile: File | null = null;
+  imagePreviewUrl: string | null = null;
+  isUploadingImage = false;
+  showCameraOptions = false;
+  profileImageBase64: string = '';
+
   // Department options for ICD
   departments = [
     'Human Resources',
@@ -100,7 +108,7 @@ export class IcdSignUpComponent {
         department: this.signupData.department,
         province: this.signupData.province,
         role: this.signupData.role,
-        profilePhoto: '',
+        profilePhoto: this.profileImageBase64 || '', // Include the uploaded image
         status: 'active',
         createdAt: new Date(),
         trainingCompleted: false
@@ -218,5 +226,148 @@ export class IcdSignUpComponent {
       confirmPassword: 'Confirm Password'
     };
     return labels[fieldName] || fieldName;
+  }
+
+  // Image upload methods
+  openImageUploadModal(): void {
+    this.showImageUploadModal = true;
+    this.selectedImageFile = null;
+    this.imagePreviewUrl = null;
+    this.showCameraOptions = false;
+  }
+
+  closeImageUploadModal(): void {
+    this.showImageUploadModal = false;
+    this.selectedImageFile = null;
+    this.imagePreviewUrl = null;
+    this.showCameraOptions = false;
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        this.toastService.error('Please select a valid image file');
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        this.toastService.error('Image size should be less than 5MB');
+        return;
+      }
+      
+      this.selectedImageFile = file;
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.imagePreviewUrl = e.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  async openCamera(): Promise<void> {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          width: { ideal: 640 }, 
+          height: { ideal: 480 },
+          facingMode: 'user'
+        } 
+      });
+      
+      this.showCameraOptions = true;
+      
+      setTimeout(() => {
+        const video = document.getElementById('signupCameraVideo') as HTMLVideoElement;
+        if (video) {
+          video.srcObject = stream;
+          video.play();
+        }
+      }, 100);
+      
+    } catch (error) {
+      console.error('Error accessing camera:', error);
+      this.toastService.error('Unable to access camera. Please use file upload instead.');
+    }
+  }
+
+  capturePhoto(): void {
+    const video = document.getElementById('signupCameraVideo') as HTMLVideoElement;
+    const canvas = document.getElementById('signupPhotoCanvas') as HTMLCanvasElement;
+    
+    if (video && canvas) {
+      const context = canvas.getContext('2d');
+      if (context) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        context.drawImage(video, 0, 0);
+        
+        canvas.toBlob((blob) => {
+          if (blob) {
+            this.selectedImageFile = new File([blob], 'signup-photo.jpg', { type: 'image/jpeg' });
+            this.imagePreviewUrl = canvas.toDataURL('image/jpeg');
+            this.stopCamera();
+            this.showCameraOptions = false;
+          }
+        }, 'image/jpeg', 0.8);
+      }
+    }
+  }
+
+  stopCamera(): void {
+    const video = document.getElementById('signupCameraVideo') as HTMLVideoElement;
+    if (video && video.srcObject) {
+      const stream = video.srcObject as MediaStream;
+      stream.getTracks().forEach(track => track.stop());
+      video.srcObject = null;
+    }
+    this.showCameraOptions = false;
+  }
+
+  async uploadImage(): Promise<void> {
+    if (!this.selectedImageFile) {
+      this.toastService.error('Please select an image first');
+      return;
+    }
+
+    this.isUploadingImage = true;
+
+    try {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.profileImageBase64 = e.target?.result as string;
+        this.toastService.success('Profile image added successfully!');
+        this.closeImageUploadModal();
+        this.isUploadingImage = false;
+      };
+      
+      reader.readAsDataURL(this.selectedImageFile);
+      
+    } catch (error) {
+      console.error('Error processing image:', error);
+      this.toastService.error('Failed to process image');
+      this.isUploadingImage = false;
+    }
+  }
+
+  removeProfileImage(): void {
+    this.profileImageBase64 = '';
+    this.toastService.success('Profile image removed');
+  }
+
+  getProfileImageInitials(): string {
+    if (this.signupData.fullName) {
+      const names = this.signupData.fullName.split(' ');
+      return names.length >= 2 
+        ? `${names[0][0]}${names[1][0]}`.toUpperCase()
+        : names[0][0].toUpperCase();
+    }
+    return 'U';
   }
 }

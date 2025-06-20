@@ -12,7 +12,7 @@ export interface UserData {
   email: string;
   phone: string | number;
   department: string;
-  province: string;
+  province?: string; // Make province optional instead of required
   role: string;
   profilePhoto?: string;
   status: string;

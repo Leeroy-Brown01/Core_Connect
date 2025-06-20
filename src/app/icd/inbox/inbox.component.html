@@ -1,27 +1,8 @@
 <div class="p-2 ">
   
-  <!-- Welcome Section - Sticky -->
-  <div class="sticky top-0 z-20 bg-gray-50 mb-2 py-3">
-    <div class="flex items-center gap-3">
-      <!-- User Avatar - Only visible on small screens -->
-      <div class="w-12 h-12 sm:block md:hidden bg-blue-500 rounded-full flex items-center justify-center text-white font-medium">
-        {{ getUserInitials() }}
-      </div>
-      
-      <!-- Welcome Text -->
-      <div class="flex-1">
-        <h1 class="text-xl font-semibold text-gray-900 mb-1">
-          Welcome back, {{ getUserFirstName() }} {{ getUserLastName() }}!
-        </h1>
-        <p class="text-sm text-gray-600">
-          {{ getUserRole() }} 
-        </p>
-      </div>
-    </div>
-  </div>
-
   <!-- Tab Navigation for mobile screen - Sticky -->
-  <div class="sticky top-16 z-10 bg-gray-50 mb-2 md:hidden block">
+  <div class="sticky z-10 bg-gray-50 mb-2 md:hidden block">
+    
     <div class="border-b border-gray-200 mb-6">
       <nav class="flex space-x-5">
         <button
@@ -163,14 +144,11 @@
     </div>
 
     <!-- Archived Tab -->
-    <div *ngIf="activeTab === 'archived'">
-      <app-archived></app-archived>
+    <div *ngIf="activeTab === 'icd-downloads'">
+      <app-icd-downloads></app-icd-downloads>
     </div>
 
-    <!-- Recycled Tab -->
-    <div *ngIf="activeTab === 'recycled'">
-     <app-recycle></app-recycle>
-    </div>
+   
   </div>
 
   <!-- Message Details Modal -->

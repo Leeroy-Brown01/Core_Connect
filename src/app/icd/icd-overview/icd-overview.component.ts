@@ -5,6 +5,7 @@ import { DepartmentService, FirebaseDepartment } from '../../services/department
 import { ICDUserService, FirebaseICDUser } from '../../services/icd-user.service';
 import { SentService, SentMessage } from '../../services/sent.service';
 import { ICDAuthService } from '../../services/icd-auth.service';
+import { InboxService, InboxMessage } from '../../services/inbox.service';
 import { Subscription, forkJoin } from 'rxjs';
 
 interface StatCard {
@@ -50,6 +51,7 @@ export class IcdOverviewComponent implements OnInit, OnDestroy {
   public allDepartments: FirebaseDepartment[] = [];
   private allUsers: FirebaseICDUser[] = [];
   private sentMessages: SentMessage[] = [];
+  private inboxMessages: InboxMessage[] = [];
 
   // Filter options
   selectedFilter = 'all';
@@ -70,7 +72,8 @@ export class IcdOverviewComponent implements OnInit, OnDestroy {
     private departmentService: DepartmentService,
     private icdUserService: ICDUserService,
     private sentService: SentService,
-    private icdAuthService: ICDAuthService
+    private icdAuthService: ICDAuthService,
+    private inboxService: InboxService
   ) {}
 
   ngOnInit(): void {
@@ -110,7 +113,21 @@ export class IcdOverviewComponent implements OnInit, OnDestroy {
         }
       });
 
-      this.subscriptions.push(sentSub);
+      // Load inbox messages for current user
+      const inboxSub = this.inboxService.allInboxMessages$.subscribe({
+        next: (messages) => {
+          this.inboxMessages = messages;
+          console.log('📧 Inbox messages loaded:', messages.length);
+          this.processData();
+        },
+        error: (error) => {
+          console.error('❌ Error loading inbox messages:', error);
+          this.inboxMessages = [];
+          this.processData();
+        }
+      });
+
+      this.subscriptions.push(sentSub, inboxSub);
 
     } catch (error) {
       console.error('❌ Error loading overview data:', error);
@@ -141,9 +158,13 @@ export class IcdOverviewComponent implements OnInit, OnDestroy {
 
   private generateStats(): void {
     const totalUsers = this.allUsers.length;
-    const activeUsers = this.allUsers.filter(user => user.status === 'active').length;
     const totalDepartments = this.allDepartments.length;
     const totalMessages = this.sentMessages.length;
+    const totalInboxMessages = this.inboxMessages.length;
+    const unreadMessages = this.inboxMessages.filter(msg => {
+      const currentUser = this.icdAuthService.getCurrentUser();
+      return currentUser && (!msg.readBy || !msg.readBy.includes(currentUser.uid));
+    }).length;
 
     this.stats = [
       {
@@ -153,9 +174,9 @@ export class IcdOverviewComponent implements OnInit, OnDestroy {
         color: 'from-blue-500 to-blue-600'
       },
       {
-        title: 'Active Users',
-        value: activeUsers,
-        icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
+        title: 'Inbox Messages',
+        value: totalInboxMessages,
+        icon: 'M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4',
         color: 'from-green-500 to-green-600'
       },
       {

@@ -11,6 +11,7 @@ import { InboxService } from '../../services/inbox.service';
 import { ICDDownloadsService } from '../../services/icd-downloads.service';
 import { ToastService } from '../../services/toast.service';
 import { Subscription } from 'rxjs';
+import { IcdDownloadsComponent } from '../icd-downloads/icd-downloads.component';
 
 interface InboxMessage {
   id?: string;
@@ -42,7 +43,7 @@ interface InboxMessage {
 
 @Component({
   selector: 'app-inbox',
-  imports: [CommonModule, ArchivedComponent, SentComponent, RecycleComponent, IcdUserManagementComponent],
+  imports: [CommonModule, IcdDownloadsComponent, SentComponent, IcdUserManagementComponent],
   templateUrl: './inbox.component.html',
   styleUrl: './inbox.component.scss'
 })
@@ -64,8 +65,8 @@ export class InboxComponent implements OnInit, OnDestroy {
     { id: 'inbox', label: 'Inbox' },
     { id: 'sent', label: 'Sent' },
     { id: 'icd-user-management', label: 'Users' },
-    { id: 'archived', label: 'Archived' },
-    { id: 'recycled', label: 'Recycled' }
+    { id: 'icd-downloads', label: 'Downloads' },
+    
   ];
 
   // Filter options
