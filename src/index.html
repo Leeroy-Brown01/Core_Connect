@@ -2,20 +2,313 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>MyPos</title>
+  <title>Core Connect - Software Dev Hub</title>
   <base href="/">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  
+  <!-- Essential meta tags for compatibility -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="theme-color" content="#3b82f6">
+  <meta name="msapplication-TileColor" content="#3b82f6">
+  
+  <!-- Preconnect to external resources -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+  
+  <!-- Favicon -->
   <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+  <link rel="apple-touch-icon" href="favicon.ico">
+  
+  <!-- Critical CSS - Inline for faster loading -->
+  <style>
+    /* Loading screen styles */
+    #initial-loader {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #dbeafe 0%, #ffffff 50%, #e0e7ff 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    
+    .loader-content {
+      text-align: center;
+      max-width: 400px;
+      padding: 2rem;
+    }
+    
+    .loader-logo {
+      font-size: 2.5rem;
+      font-weight: bold;
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 1rem;
+      letter-spacing: -0.02em;
+    }
+    
+    .loader-subtitle {
+      font-size: 0.875rem;
+      color: #6b7280;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 2rem;
+    }
+    
+    .loader-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #e5e7eb;
+      border-top: 3px solid #3b82f6;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 1rem;
+    }
+    
+    .loader-text {
+      color: #6b7280;
+      font-size: 0.875rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .loader-progress {
+      width: 200px;
+      height: 4px;
+      background: #e5e7eb;
+      border-radius: 2px;
+      overflow: hidden;
+      margin: 1rem auto;
+    }
+    
+    .loader-progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+      border-radius: 2px;
+      animation: progress 2s ease-in-out infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    @keyframes progress {
+      0% { width: 0%; }
+      50% { width: 70%; }
+      100% { width: 100%; }
+    }
+    
+    /* Dark mode support for loader */
+    @media (prefers-color-scheme: dark) {
+      #initial-loader {
+        background: linear-gradient(135deg, #111827 0%, #1f2937 50%, #111827 100%);
+      }
+      .loader-subtitle, .loader-text {
+        color: #9ca3af;
+      }
+      .loader-spinner {
+        border-color: #374151;
+        border-top-color: #60a5fa;
+      }
+      .loader-progress {
+        background: #374151;
+      }
+    }
+    
+    /* Hide loader when app loads */
+    .app-loaded #initial-loader {
+      opacity: 0;
+      transition: opacity 0.3s ease-out;
+      pointer-events: none;
+    }
+    
+    /* Fallback for no-JS */
+    .no-js #initial-loader .loader-spinner {
+      display: none;
+    }
+    
+    .no-js #initial-loader .loader-text::after {
+      content: " Please enable JavaScript to continue.";
+      color: #ef4444;
+      font-weight: 600;
+    }
+  </style>
+  
+  <!-- Font loading with fallbacks -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons&display=swap" rel="stylesheet">
+  
+  <!-- External CSS with fallbacks -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
+  
+  <!-- Browser feature detection -->
+  <script>
+    // Detect browser capabilities
+    window.browserSupport = {
+      es6: (function() {
+        try {
+          new Function("(a = 0) => a");
+          return true;
+        } catch (err) {
+          return false;
+        }
+      })(),
+      fetch: typeof fetch !== 'undefined',
+      promise: typeof Promise !== 'undefined',
+      customElements: 'customElements' in window,
+      shadowDom: 'attachShadow' in Element.prototype,
+      modules: 'noModule' in HTMLScriptElement.prototype
+    };
+    
+    // Add browser classes to html element
+    var html = document.documentElement;
+    html.className += window.browserSupport.es6 ? ' js-es6' : ' js-legacy';
+    html.className += window.browserSupport.modules ? ' js-modules' : ' js-no-modules';
+    
+    // Loading progress simulation
+    var loadingMessages = [
+      'Initializing application...',
+      'Loading core modules...',
+      'Setting up components...',
+      'Preparing interface...',
+      'Almost ready...'
+    ];
+    
+    var currentMessage = 0;
+    
+    function updateLoadingMessage() {
+      var loaderText = document.querySelector('.loader-text');
+      if (loaderText && currentMessage < loadingMessages.length) {
+        loaderText.textContent = loadingMessages[currentMessage];
+        currentMessage++;
+      }
+    }
+    
+    // Update loading message every 400ms
+    var messageInterval = setInterval(updateLoadingMessage, 400);
+    
+    // Clear interval when app loads
+    window.addEventListener('load', function() {
+      clearInterval(messageInterval);
+      setTimeout(function() {
+        var loaderText = document.querySelector('.loader-text');
+        if (loaderText) {
+          loaderText.textContent = 'Ready!';
+        }
+      }, 100);
+    });
+    
+    // Hide loader when Angular is ready
+    window.hideLoader = function() {
+      document.body.classList.add('app-loaded');
+      setTimeout(function() {
+        var loader = document.getElementById('initial-loader');
+        if (loader) {
+          loader.style.display = 'none';
+        }
+      }, 300);
+    };
+    
+    // Fallback timeout to hide loader
+    setTimeout(function() {
+      if (!document.body.classList.contains('app-loaded')) {
+        window.hideLoader();
+      }
+    }, 10000);
+  </script>
+  
+  <!-- No JavaScript fallback -->
+  <noscript>
+    <style>
+      .loader-spinner { display: none !important; }
+      .loader-text::after { 
+        content: " Please enable JavaScript to use this application.";
+        color: #ef4444;
+        font-weight: 600;
+      }
+    </style>
+  </noscript>
 </head>
-<body>
-  <app-root></app-root>
-  <script
-  src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.x.x/dist/alpine.min.js"
-  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDtycx8x9bZi-DtFNOVFRXLbzEv4hIUMDU&libraries=places" defer
-></script>
 
+<body class="no-js">
+  <!-- Loading Screen -->
+  <div id="initial-loader">
+    <div class="loader-content">
+      <div class="loader-logo">CORE CONNECT</div>
+      <div class="loader-subtitle">Software Dev Hub</div>
+      <div class="loader-spinner"></div>
+      <div class="loader-text">Loading application...</div>
+      <div class="loader-progress">
+        <div class="loader-progress-bar"></div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Angular Application -->
+  <app-root>
+    <!-- Fallback content for when Angular fails to load -->
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; font-family: sans-serif; text-align: center; padding: 2rem;">
+      <h1 style="color: #1f2937; font-size: 2rem; margin-bottom: 1rem;">Loading...</h1>
+      <p style="color: #6b7280; margin-bottom: 2rem;">If this message persists, please refresh the page or update your browser.</p>
+      <button onclick="location.reload()" style="background: #3b82f6; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 0.5rem; cursor: pointer; font-size: 1rem;">
+        Refresh Page
+      </button>
+    </div>
+  </app-root>
+  
+  <!-- Polyfill loading for legacy browsers -->
+  <script>
+    // Load polyfills for older browsers
+    if (!window.browserSupport.es6 || !window.browserSupport.fetch || !window.browserSupport.promise) {
+      console.log('Loading polyfills for legacy browser support...');
+      
+      // Load core-js for ES6+ features
+      if (!window.browserSupport.promise) {
+        var script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/core-js-bundle@3.32.0/minified.js';
+        script.async = false;
+        document.head.appendChild(script);
+      }
+      
+      // Load fetch polyfill
+      if (!window.browserSupport.fetch) {
+        var fetchScript = document.createElement('script');
+        fetchScript.src = 'https://cdn.jsdelivr.net/npm/whatwg-fetch@3.6.2/dist/fetch.umd.js';
+        fetchScript.async = false;
+        document.head.appendChild(fetchScript);
+      }
+    }
+    
+    // Remove no-js class
+    document.body.classList.remove('no-js');
+  </script>
+  
+  <!-- External Scripts -->
+  <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.x.x/dist/alpine.min.js" defer></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDtycx8x9bZi-DtFNOVFRXLbzEv4hIUMDU&libraries=places" defer></script>
+  
+  <!-- Hide loader when Angular initializes -->
+  <script>
+    // Listen for Angular bootstrap
+    window.addEventListener('DOMContentLoaded', function() {
+      // Additional delay to ensure Angular is fully loaded
+      setTimeout(function() {
+        if (typeof ng !== 'undefined' || document.querySelector('app-root').children.length > 1) {
+          window.hideLoader();
+        }
+      }, 1000);
+    });
+  </script>
 </body>
 </html>

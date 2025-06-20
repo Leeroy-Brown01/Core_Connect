@@ -1,14 +1,14 @@
-<div class="p-2 ">
+<div class="p-2">
   
   <!-- Tab Navigation for mobile screen - Sticky -->
-  <div class="sticky z-10 bg-gray-50 mb-2 md:hidden block">
+  <div class="sticky z-10 theme-bg-secondary mb-2 md:hidden block">
     
-    <div class="border-b border-gray-200 mb-6">
+    <div class="theme-border border-b mb-6">
       <nav class="flex space-x-5">
         <button
           *ngFor="let tab of tabs"
           (click)="switchTab(tab.id)"
-          class="py-4 px-1 border-b-2 font-medium text-sm"
+          class="py-4 px-1 border-b-2 font-medium text-sm focus:outline-none"
           [class.border-blue-500]="activeTab === tab.id"
           [class.text-blue-600]="activeTab === tab.id"
           [class.border-transparent]="activeTab !== tab.id"
@@ -24,9 +24,9 @@
     <!-- Inbox Tab -->
     <div *ngIf="activeTab === 'inbox'">
       <!-- Inbox List -->
-      <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+      <div class="theme-card rounded-lg shadow-sm">
         <!-- filtering categories -->
-        <div class="px-4 py-3 border-b border-gray-100">
+        <div class="px-4 py-3 theme-border border-b">
           <div class="flex gap-2 overflow-x-auto scrollbar-hide">
             <button
               *ngFor="let category of mobileFilterCategories; let i = index"
@@ -36,9 +36,12 @@
               [class.text-white]="selectedMobileFilter === category.id"
               [class.shadow-sm]="selectedMobileFilter === category.id"
               [class.bg-gray-100]="selectedMobileFilter !== category.id"
+              [class.dark:bg-gray-700]="selectedMobileFilter !== category.id"
               [class.text-gray-700]="selectedMobileFilter !== category.id"
+              [class.dark:text-gray-300]="selectedMobileFilter !== category.id"
               [class.hover:bg-blue-600]="selectedMobileFilter === category.id"
-              [class.hover:bg-gray-200]="selectedMobileFilter !== category.id">
+              [class.hover:bg-gray-200]="selectedMobileFilter !== category.id"
+              [class.dark:hover:bg-gray-600]="selectedMobileFilter !== category.id">
               
               <span>{{ category.label }}</span>
               
@@ -57,10 +60,10 @@
         
         
         <!-- Message List -->
-        <div class="divide-y divide-gray-200">
+        <div class="divide-y theme-border">
           <div 
             *ngFor="let item of filteredMessages; trackBy: trackByItemId"
-            class="px-6 py-4 hover:bg-gray-50 transition-colors duration-150 cursor-pointer relative group"
+            class="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150 cursor-pointer relative group"
             [ngClass]="getMessageStatusColor(item)"
             (click)="viewMessage(item)">
             
@@ -76,20 +79,20 @@
                   <!-- Sender Name and Subject -->
                   <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2">
-                      <span class="font-semibold text-gray-900 truncate">{{ item.senderName }}</span>
+                      <span class="font-semibold theme-text-primary truncate">{{ item.senderName }}</span>
                       <span *ngIf="!item.isRead" class="w-2 h-2 bg-blue-500 rounded-full"></span>
                     </div>
-                    <h3 class="font-medium text-gray-800 truncate">{{ item.subject }}</h3>
+                    <h3 class="font-medium theme-text-primary truncate">{{ item.subject }}</h3>
                   </div>
                 </div>
                 
                 <!-- Message Preview -->
-                <p class="text-gray-600 text-sm line-clamp-2 ml-13">{{ item.textContent }}</p>
+                <p class="theme-text-secondary text-sm line-clamp-2 ml-13">{{ item.textContent }}</p>
               </div>
 
               <!-- Right Section: Time and Attachment -->
               <div class="flex flex-col items-end gap-2 ml-4">
-                <span class="text-xs text-gray-500 whitespace-nowrap">{{ item.time }}</span>
+                <span class="text-xs theme-text-muted whitespace-nowrap">{{ item.time }}</span>
                 <div *ngIf="item.hasAttachment" class="flex items-center gap-1">
                   <button 
                     (click)="$event.stopPropagation(); downloadAttachment(item)"
@@ -110,23 +113,23 @@
 
         <!-- Empty State -->
         <div *ngIf="filteredMessages.length === 0 && inboxMessages.length > 0" class="px-6 py-12 text-center">
-          <svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-12 h-12 theme-text-muted mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
           </svg>
-          <h3 class="text-lg font-medium text-gray-900 mb-2">No messages match this filter</h3>
-          <p class="text-gray-600">Try selecting a different filter to see your inbox messages.</p>
+          <h3 class="text-lg font-medium theme-text-primary mb-2">No messages match this filter</h3>
+          <p class="theme-text-secondary">Try selecting a different filter to see your inbox messages.</p>
         </div>
 
         <!-- No Messages State -->
         <div *ngIf="inboxMessages.length === 0 && !isLoading" class="px-6 py-12 text-center">
-          <svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-12 h-12 theme-text-muted mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
           </svg>
-          <h3 class="text-lg font-medium text-gray-900 mb-2">Your inbox is empty</h3>
-          <p class="text-gray-600 mb-4">No messages have been sent to you yet.</p>
+          <h3 class="text-lg font-medium theme-text-primary mb-2">Your inbox is empty</h3>
+          <p class="theme-text-secondary mb-4">No messages have been sent to you yet.</p>
           <button 
             (click)="refreshMessages()"
-            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+            class="theme-button-primary px-4 py-2 rounded-md transition-colors">
             Refresh
           </button>
         </div>
@@ -156,10 +159,10 @@
        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
        (click)="onModalBackgroundClick($event)">
     
-    <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+    <div class="theme-card rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
       
       <!-- Modal Header -->
-      <div class="flex items-center justify-between p-6 border-b border-gray-200 bg-gray-50">
+      <div class="flex items-center justify-between p-6 theme-border border-b theme-bg-secondary">
         <div class="flex items-center gap-3">
           <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
             <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -167,8 +170,8 @@
             </svg>
           </div>
           <div>
-            <h2 class="text-xl font-semibold text-gray-900">Message Details</h2>
-            <p class="text-sm text-gray-500">Inbox message information</p>
+            <h2 class="text-xl font-semibold theme-text-primary">Message Details</h2>
+            <p class="text-sm theme-text-muted">Inbox message information</p>
           </div>
         </div>
         
@@ -185,7 +188,7 @@
           <!-- Close Button -->
           <button 
             (click)="closeMessageModal()"
-            class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-full transition-colors">
+            class="p-2 theme-text-muted hover:text-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
             </svg>
@@ -197,11 +200,11 @@
       <div *ngIf="selectedModalMessage" class="flex-1 overflow-y-auto">
         
         <!-- Email Header Section -->
-        <div class="p-6 border-b border-gray-100">
+        <div class="p-6 theme-border border-b">
           
           <!-- Subject Line -->
           <div class="mb-4">
-            <h1 class="text-2xl font-bold text-gray-900 leading-tight">{{ selectedModalMessage.subject }}</h1>
+            <h1 class="text-2xl font-bold theme-text-primary leading-tight">{{ selectedModalMessage.subject }}</h1>
             
             <!-- Priority & Category Tags -->
             <div class="flex items-center gap-2 mt-2">
@@ -234,9 +237,9 @@
                 {{ selectedModalMessage.senderName.charAt(0).toUpperCase() }}
               </div>
               <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium text-gray-500 uppercase tracking-wide">From</p>
-                <p class="text-lg font-semibold text-gray-900">{{ selectedModalMessage.senderName }}</p>
-                <p class="text-sm text-gray-600">{{ selectedModalMessage.senderEmail || 'No email provided' }}</p>
+                <p class="text-sm font-medium theme-text-muted uppercase tracking-wide">From</p>
+                <p class="text-lg font-semibold theme-text-primary">{{ selectedModalMessage.senderName }}</p>
+                <p class="text-sm theme-text-secondary">{{ selectedModalMessage.senderEmail || 'No email provided' }}</p>
               </div>
             </div>
 
@@ -246,10 +249,10 @@
                 {{ getUserInitials() }}
               </div>
               <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium text-gray-500 uppercase tracking-wide">To</p>
-                <p class="text-lg font-semibold text-gray-900">{{ getUserDisplayName() }}</p>
-                <p class="text-sm text-gray-600">{{ currentUser?.email }}</p>
-                <p *ngIf="selectedModalMessage.recipientDepartments?.length > 0" class="text-sm text-gray-600">
+                <p class="text-sm font-medium theme-text-muted uppercase tracking-wide">To</p>
+                <p class="text-lg font-semibold theme-text-primary">{{ getUserDisplayName() }}</p>
+                <p class="text-sm theme-text-secondary">{{ currentUser?.email }}</p>
+                <p *ngIf="selectedModalMessage.recipientDepartments?.length > 0" class="text-sm theme-text-secondary">
                   Via departments: {{ selectedModalMessage.recipientDepartments.join(', ') }}
                 </p>
               </div>
@@ -258,7 +261,7 @@
           </div>
 
           <!-- Message Metadata -->
-          <div class="mt-6 flex items-center justify-between text-sm text-gray-500">
+          <div class="mt-6 flex items-center justify-between text-sm theme-text-muted">
             <div class="flex items-center gap-4">
               <span class="flex items-center gap-1">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -287,28 +290,28 @@
 
         <!-- Message Content Section -->
         <div class="p-6">
-          <div class="bg-gray-50 rounded-lg border border-gray-200 p-6">
+          <div class="theme-bg-secondary rounded-lg theme-border border p-6">
             <div class="prose max-w-none">
-              <div class="text-gray-800 leading-relaxed whitespace-pre-wrap text-base">{{ selectedModalMessage.message }}</div>
+              <div class="theme-text-primary leading-relaxed whitespace-pre-wrap text-base">{{ selectedModalMessage.message }}</div>
             </div>
           </div>
         </div>
 
         <!-- Attachment Section -->
         <div *ngIf="selectedModalMessage.hasAttachment" class="px-6 pb-6">
-          <div class="border-t border-gray-200 pt-6">
-            <h4 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div class="theme-border border-t pt-6">
+            <h4 class="text-lg font-semibold theme-text-primary mb-4 flex items-center gap-2">
+              <svg class="w-5 h-5 theme-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
               </svg>
               Attachment
             </h4>
             
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
                   <!-- File Icon -->
-                  <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <div class="w-12 h-12 bg-blue-100 dark:bg-blue-800 rounded-lg flex items-center justify-center">
                     <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
                     </svg>
@@ -316,15 +319,15 @@
                   
                   <!-- File Info -->
                   <div>
-                    <p class="font-semibold text-blue-900">{{ selectedModalMessage.attachmentName || 'Attached File' }}</p>
-                    <p class="text-sm text-blue-700">Click download to save file</p>
+                    <p class="font-semibold text-blue-900 dark:text-blue-100">{{ selectedModalMessage.attachmentName || 'Attached File' }}</p>
+                    <p class="text-sm text-blue-700 dark:text-blue-300">Click download to save file</p>
                   </div>
                 </div>
                 
                 <!-- Download Button -->
                 <button 
                   (click)="downloadAttachment(selectedModalMessage)"
-                  class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
+                  class="theme-button-primary inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors">
                   <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                   </svg>
@@ -338,8 +341,8 @@
       </div>
 
       <!-- Modal Footer -->
-      <div class="flex items-center justify-between p-6 border-t border-gray-200 bg-gray-50">
-        <div class="flex items-center gap-4 text-sm text-gray-500">
+      <div class="flex items-center justify-between p-6 theme-border border-t theme-bg-secondary">
+        <div class="flex items-center gap-4 text-sm theme-text-muted">
           <span>Message received</span>
           <span class="w-1 h-1 bg-gray-300 rounded-full"></span>
           <span>{{ formatTimestamp(selectedModalMessage?.timestamp) }}</span>
@@ -351,28 +354,28 @@
             *ngIf="selectedModalMessage?.isRead"
             (click)="markAsRead(selectedModalMessage)"
             [disabled]="isMarkingAsRead"
-            class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50">
+            class="px-4 py-2 theme-text-secondary theme-bg-primary theme-border border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50">
             Mark as Unread
           </button>
 
           <!-- Archive Button -->
           <button 
             (click)="archiveMessage()"
-            class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
+            class="px-4 py-2 theme-text-secondary theme-bg-primary theme-border border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
             Archive
           </button>
           
           <!-- Reply Button -->
           <button 
             (click)="replyToMessage()"
-            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
+            class="theme-button-primary px-4 py-2 rounded-lg transition-colors">
             Reply
           </button>
 
           <!-- More Actions Dropdown -->
           <div class="relative">
             <button 
-              class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-lg transition-colors">
+              class="p-2 theme-text-muted hover:text-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
               </svg>

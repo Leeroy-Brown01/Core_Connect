@@ -1,0 +1,31 @@
+# This file is used by the build system to adjust CSS and JS output to support the specified browsers below.
+# For additional information regarding the format and rule options, please see:
+# https://github.com/browserslist/browserslist#queries
+
+# You can see what browsers were selected by your queries by running:
+#   npx browserslist
+
+# Modern browsers that support ES2022+ features
+> 0.5%
+last 2 versions
+Firefox ESR
+
+# Legacy browser support (for polyfills)
+not dead
+not IE 9-11 # For Angular support, remove if you need IE 11
+not op_mini all
+
+# Specific browser versions for better compatibility
+Chrome >= 84
+Firefox >= 78
+Safari >= 14
+Edge >= 84
+
+# Mobile browsers
+iOS >= 13
+Android >= 81
+
+# For development
+last 1 Chrome version
+last 1 Firefox version
+last 1 Safari version

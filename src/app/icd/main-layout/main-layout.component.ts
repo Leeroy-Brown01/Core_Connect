@@ -16,6 +16,7 @@ import { ICDAuthService } from '../../services/icd-auth.service';
 import { ICDUserService, FirebaseICDUser } from '../../services/icd-user.service';
 import { ToastService } from '../../services/toast.service';
 import { InboxService } from '../../services/inbox.service';
+import { ThemeService } from '../../services/theme.service';
 import { Subscription } from 'rxjs';
 
 interface Tab {
@@ -62,9 +63,10 @@ export class MainLayoutComponent {
     private icdUserService: ICDUserService,
     private router: Router,
     private toastService: ToastService,
-    private inboxService: InboxService
+    private inboxService: InboxService,
+    private themeService: ThemeService
   ) {
-    console.log('MainLayoutComponent initialized with ICDAuthService and ICDUserService');
+    console.log('MainLayoutComponent initialized with ThemeService');
   }
 
   tabs: Tab[] = [
@@ -209,19 +211,13 @@ export class MainLayoutComponent {
   }
 
   toggleDarkMode(): void {
-    this.isDarkMode = !this.isDarkMode;
-    console.log('Dark mode:', this.isDarkMode ? 'ON' : 'OFF');
+    this.themeService.toggleTheme();
     
-    if (this.isDarkMode) {
-      document.documentElement.classList.add('dark');
-      document.body.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      document.body.classList.remove('dark');
-    }
+    const currentTheme = this.themeService.getCurrentTheme();
+    const themeName = this.themeService.getThemeDisplayName(currentTheme);
     
-    localStorage.setItem('darkMode', this.isDarkMode.toString());
-    this.toastService.success(`${this.isDarkMode ? 'Dark' : 'Light'} mode activated`);
+    console.log(`🎨 Theme toggled to: ${currentTheme}`);
+    this.toastService.success(`${themeName} activated`);
   }
 
   private async loadCurrentICDUser(): Promise<void> {
@@ -286,15 +282,16 @@ export class MainLayoutComponent {
   }
 
   async ngOnInit(): Promise<void> {
-    // Initialize dark mode from localStorage
-    const savedDarkMode = localStorage.getItem('darkMode');
-    if (savedDarkMode) {
-      this.isDarkMode = savedDarkMode === 'true';
-      if (this.isDarkMode) {
-        document.documentElement.classList.add('dark');
-        document.body.classList.add('dark');
-      }
-    }
+    // Initialize theme service
+    this.themeService.listenForSystemThemeChanges();
+    
+    // Subscribe to theme changes to update component state
+    this.subscriptions.push(
+      this.themeService.currentTheme$.subscribe(theme => {
+        this.isDarkMode = theme === 'dark';
+        console.log(`🎨 Theme changed: ${theme}`);
+      })
+    );
 
     // Wait for auth initialization first
     try {
@@ -346,5 +343,9 @@ export class MainLayoutComponent {
 
   hasUnreadInboxMessages(): boolean {
     return this.unreadInboxCount > 0;
+  }
+
+  get currentTheme(): string {
+    return this.themeService.getCurrentTheme();
   }
 }

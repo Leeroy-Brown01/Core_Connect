@@ -1,6 +1,6 @@
-<div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+<div class="min-h-screen theme-bg-secondary">
   <!-- Header Section -->
-  <div class="bg-white shadow-sm border-b border-gray-200">
+  <div class="theme-card shadow-sm theme-border border-b">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between py-6">
         <div class="flex items-center space-x-4">
@@ -25,19 +25,19 @@
           <div>
             <!-- Loading State -->
             <div *ngIf="isLoadingUser" class="animate-pulse">
-              <div class="h-7 bg-gray-200 rounded w-48 mb-2"></div>
-              <div class="h-4 bg-gray-200 rounded w-32"></div>
+              <div class="h-7 loading-skeleton rounded w-48 mb-2"></div>
+              <div class="h-4 loading-skeleton rounded w-32"></div>
             </div>
             
             <!-- User Data -->
             <div *ngIf="!isLoadingUser">
-              <h1 class="text-2xl font-bold text-gray-900">
+              <h1 class="text-2xl font-bold theme-text-primary">
                 Welcome back, {{ getUserFirstName() }}!
               </h1>
               <div class="flex items-center gap-3 mt-1">
-                <p class="text-sm text-gray-600">{{ getUserRole() }}</p>
+                <p class="text-sm theme-text-secondary">{{ getUserRole() }}</p>
                 <span class="w-1 h-1 bg-gray-300 rounded-full"></span>
-                <p class="text-sm text-gray-500">{{ getUserDepartment() }} Department</p>
+                <p class="text-sm theme-text-muted">{{ getUserDepartment() }} Department</p>
               </div>
             </div>
           </div>
@@ -46,7 +46,7 @@
         <!-- Quick Stats or Actions -->
         <div class="hidden md:flex items-center gap-4">
           <div class="text-right">
-            <p class="text-sm text-gray-500">Status</p>
+            <p class="text-sm theme-text-muted">Status</p>
             <div class="flex items-center gap-1">
               <div class="w-2 h-2 bg-green-500 rounded-full"></div>
               <span class="text-sm font-medium text-green-700">Active</span>
@@ -58,7 +58,7 @@
   </div>
 
   <!-- Navigation Tabs -->
-  <div class="bg-white border-b border-gray-200 sticky top-0 z-10">
+  <div class="theme-card theme-border border-b sticky top-0 z-10">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between">
         <!-- Desktop Tab Navigation -->
@@ -66,10 +66,10 @@
           <button 
             *ngFor="let tab of tabs"
             (click)="switchTab(tab.id)"
-            class="py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors duration-200"
+            class="py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors duration-200 focus:outline-none"
             [class]="activeTab === tab.id 
               ? 'border-blue-500 text-blue-600' 
-              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'">
+              : 'border-transparent theme-text-muted hover:text-gray-700 hover:border-gray-300'">
             {{ tab.label }}
           </button>
         </div>
@@ -79,7 +79,7 @@
           <select 
             [(ngModel)]="activeTab" 
             (change)="switchTab(activeTab)"
-            class="w-full py-2 px-3 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            class="theme-input w-full py-2 px-3 rounded-md text-sm">
             <option *ngFor="let tab of tabs" [value]="tab.id">{{ tab.label }}</option>
           </select>
         </div>
@@ -89,7 +89,7 @@
           <button 
             (click)="scrollLeft()"
             [disabled]="!canScrollLeft()"
-            class="p-2 text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed">
+            class="p-2 theme-text-muted hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
             </svg>
@@ -97,7 +97,7 @@
           <button 
             (click)="scrollRight()"
             [disabled]="!canScrollRight()"
-            class="p-2 text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed">
+            class="p-2 theme-text-muted hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
             </svg>

@@ -2,11 +2,11 @@
   
   <!-- Header Section -->
   <div class="mb-6">
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <div class="theme-card rounded-lg shadow-sm p-6">
       <div class="flex items-center gap-4">
         <!-- User Avatar - Clickable -->
         <div 
-          class="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center text-white text-xl font-medium cursor-pointer hover:ring-4 hover:ring-blue-200 transition-all duration-200 overflow-hidden relative group"
+          class="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center text-white text-xl font-medium cursor-pointer hover:ring-4 hover:ring-blue-200 dark:hover:ring-blue-800 transition-all duration-200 overflow-hidden relative group"
           (click)="openImageUploadModal()">
           
           <!-- Profile Image -->
@@ -30,9 +30,9 @@
         
         <!-- User Info -->
         <div>
-          <h1 class="text-xl font-semibold text-gray-900">{{ getUserDisplayName() }}</h1>
-          <p class="text-sm text-gray-600">{{ getUserRole() }} - Profile Settings</p>
-          <p class="text-xs text-blue-600 cursor-pointer hover:text-blue-800" (click)="openImageUploadModal()">
+          <h1 class="text-xl font-semibold theme-text-primary">{{ getUserDisplayName() }}</h1>
+          <p class="text-sm theme-text-secondary">{{ getUserRole() }} - Profile Settings</p>
+          <p class="text-xs text-blue-600 cursor-pointer hover:text-blue-800 transition-colors" (click)="openImageUploadModal()">
             Click avatar to change photo
           </p>
         </div>
@@ -45,8 +45,8 @@
     
     <!-- Sidebar - Responsive Navigation -->
     <div class="w-full md:w-64">
-      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-        <h3 class="text-sm font-semibold text-gray-900 mb-4 hidden md:block">Settings</h3>
+      <div class="theme-card rounded-lg shadow-sm p-4">
+        <h3 class="text-sm font-semibold theme-text-primary mb-4 hidden md:block">Settings</h3>
         
         <!-- Mobile/Small Screen - Horizontal Tabs -->
         <nav class="sm:flex sm:space-x-4 md:hidden space-y-2 sm:space-y-0">
@@ -54,12 +54,15 @@
             *ngFor="let section of profileSections"
             (click)="selectSection(section.id)"
             [class.bg-blue-50]="activeSection === section.id"
+            [class.dark:bg-blue-900]="activeSection === section.id"
             [class.text-blue-700]="activeSection === section.id"
+            [class.dark:text-blue-300]="activeSection === section.id"
             [class.border-blue-200]="activeSection === section.id"
-            class="w-full sm:flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium rounded-lg transition-colors hover:bg-gray-50 border border-transparent text-center">
+            [class.dark:border-blue-700]="activeSection === section.id"
+            class="w-full sm:flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium rounded-lg transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 theme-border border-transparent text-center">
             <div>
               <div class="font-medium">{{section.name}}</div>
-              <div class="text-xs text-gray-500 hidden sm:block">{{section.description}}</div>
+              <div class="text-xs theme-text-muted hidden sm:block">{{section.description}}</div>
             </div>
           </button>
         </nav>
@@ -70,12 +73,15 @@
             *ngFor="let section of profileSections"
             (click)="selectSection(section.id)"
             [class.bg-blue-50]="activeSection === section.id"
+            [class.dark:bg-blue-900]="activeSection === section.id"
             [class.text-blue-700]="activeSection === section.id"
+            [class.dark:text-blue-300]="activeSection === section.id"
             [class.border-blue-200]="activeSection === section.id"
-            class="w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors hover:bg-gray-50 border border-transparent text-left">
+            [class.dark:border-blue-700]="activeSection === section.id"
+            class="w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 theme-border border-transparent text-left">
             <div>
               <div class="font-medium">{{section.name}}</div>
-              <div class="text-xs text-gray-500">{{section.description}}</div>
+              <div class="text-xs theme-text-muted">{{section.description}}</div>
             </div>
           </button>
         </nav>
@@ -84,55 +90,55 @@
 
     <!-- Content Area -->
     <div class="flex-1">
-      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div class="theme-card rounded-lg shadow-sm p-6">
         
         <!-- Edit Profile Section -->
         <div *ngIf="activeSection === 'edit-profile'">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4">Personal Information</h3>
+          <h3 class="text-lg font-semibold theme-text-primary mb-4">Personal Information</h3>
           
           <div class="space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                <label class="block text-sm font-medium theme-text-secondary mb-2">Full Name</label>
                 <input
                   type="text"
                   [(ngModel)]="profileForm.fullName"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+                  class="theme-input w-full px-3 py-2 rounded-lg">
               </div>
               
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                <label class="block text-sm font-medium theme-text-secondary mb-2">Email Address</label>
                 <input
                   type="email"
                   [(ngModel)]="profileForm.email"
                   disabled
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed">
-                <p class="text-xs text-gray-500 mt-1">Email cannot be changed</p>
+                  class="theme-input w-full px-3 py-2 rounded-lg opacity-60 cursor-not-allowed">
+                <p class="text-xs theme-text-muted mt-1">Email cannot be changed</p>
               </div>
               
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                <label class="block text-sm font-medium theme-text-secondary mb-2">Phone Number</label>
                 <input
                   type="tel"
                   [(ngModel)]="profileForm.phone"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+                  class="theme-input w-full px-3 py-2 rounded-lg">
               </div>
               
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Department</label>
+                <label class="block text-sm font-medium theme-text-secondary mb-2">Department</label>
                 <input
                   type="text"
                   [(ngModel)]="profileForm.department"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+                  class="theme-input w-full px-3 py-2 rounded-lg">
               </div>
             </div>
             
-            <div class="flex flex-col space-y-3 pt-4 border-t border-gray-200">
+            <div class="flex flex-col space-y-3 pt-4 theme-border border-t">
               <!-- Save Changes Button -->
               <div class="flex justify-end">
                 <button
                   (click)="saveProfile()"
-                  class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors">
+                  class="theme-button-primary px-6 py-2 font-medium rounded-lg transition-colors">
                   Save Changes
                 </button>
               </div>
@@ -166,37 +172,37 @@
 
         <!-- Password Section -->
         <div *ngIf="activeSection === 'password'">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4">Change Password</h3>
+          <h3 class="text-lg font-semibold theme-text-primary mb-4">Change Password</h3>
           
           <div class="space-y-4 max-w-md">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
+              <label class="block text-sm font-medium theme-text-secondary mb-2">Current Password</label>
               <input
                 type="password"
                 [(ngModel)]="passwordForm.currentPassword"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+                class="theme-input w-full px-3 py-2 rounded-lg">
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">New Password</label>
+              <label class="block text-sm font-medium theme-text-secondary mb-2">New Password</label>
               <input
                 type="password"
                 [(ngModel)]="passwordForm.newPassword"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+                class="theme-input w-full px-3 py-2 rounded-lg">
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
+              <label class="block text-sm font-medium theme-text-secondary mb-2">Confirm New Password</label>
               <input
                 type="password"
                 [(ngModel)]="passwordForm.confirmPassword"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+                class="theme-input w-full px-3 py-2 rounded-lg">
             </div>
             
-            <div class="flex justify-end pt-4 border-t border-gray-200">
+            <div class="flex justify-end pt-4 theme-border border-t">
               <button
                 (click)="updatePassword()"
-                class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors">
+                class="theme-button-primary px-6 py-2 font-medium rounded-lg transition-colors">
                 Update Password
               </button>
             </div>
@@ -209,13 +215,13 @@
 
   <!-- Image Upload Modal -->
   <div *ngIf="showImageUploadModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+    <div class="theme-card rounded-lg shadow-xl max-w-md w-full p-6">
       <!-- Modal Header -->
       <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-semibold text-gray-900">Update Profile Photo</h3>
+        <h3 class="text-lg font-semibold theme-text-primary">Update Profile Photo</h3>
         <button 
           (click)="closeImageUploadModal()"
-          class="text-gray-400 hover:text-gray-600 transition-colors">
+          class="theme-text-muted hover:text-gray-600 transition-colors">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
           </svg>
@@ -224,7 +230,7 @@
 
       <!-- Current Image Preview -->
       <div class="mb-4">
-        <div class="w-24 h-24 mx-auto bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
+        <div class="w-24 h-24 mx-auto theme-bg-tertiary rounded-full flex items-center justify-center overflow-hidden">
           <img 
             *ngIf="imagePreviewUrl" 
             [src]="imagePreviewUrl" 
@@ -237,7 +243,7 @@
             class="w-full h-full object-cover">
           <span 
             *ngIf="!imagePreviewUrl && !currentUser?.profilePhoto" 
-            class="text-2xl text-gray-400">
+            class="text-2xl theme-text-muted">
             {{ getUserInitials() }}
           </span>
         </div>
@@ -258,7 +264,7 @@
           <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
             <button 
               (click)="capturePhoto()"
-              class="px-4 py-2 bg-white text-gray-900 rounded-full shadow-lg hover:bg-gray-100 transition-colors flex items-center gap-2">
+              class="px-4 py-2 theme-bg-primary theme-text-primary rounded-full shadow-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -284,14 +290,14 @@
               accept="image/*" 
               (change)="onFileSelected($event)"
               class="hidden">
-            <div class="w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors cursor-pointer text-center">
-              <svg class="w-8 h-8 mx-auto text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="w-full px-4 py-3 border-2 border-dashed theme-border rounded-lg hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors cursor-pointer text-center">
+              <svg class="w-8 h-8 mx-auto theme-text-muted mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
               </svg>
-              <p class="text-sm text-gray-600">
+              <p class="text-sm theme-text-secondary">
                 <span class="font-medium text-blue-600">Click to upload</span> or drag and drop
               </p>
-              <p class="text-xs text-gray-500 mt-1">PNG, JPG, GIF up to 5MB</p>
+              <p class="text-xs theme-text-muted mt-1">PNG, JPG, GIF up to 5MB</p>
             </div>
           </label>
         </div>
@@ -299,8 +305,8 @@
         <!-- Camera Option -->
         <button 
           (click)="openCamera()"
-          class="w-full px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
-          <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          class="w-full px-4 py-3 theme-border border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center justify-center gap-2">
+          <svg class="w-5 h-5 theme-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
           </svg>
@@ -326,7 +332,7 @@
           <button 
             (click)="closeImageUploadModal()"
             [disabled]="isUploadingImage"
-            class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50">
+            class="px-4 py-2 theme-border border theme-text-secondary rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50">
             Cancel
           </button>
 
@@ -335,7 +341,7 @@
             *ngIf="selectedImageFile && !showCameraOptions"
             (click)="uploadImage()"
             [disabled]="isUploadingImage"
-            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2">
+            class="theme-button-primary px-4 py-2 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2">
             <svg *ngIf="isUploadingImage" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
               <path class="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -349,7 +355,7 @@
 
   <!-- Delete Account Confirmation Modal -->
   <div *ngIf="showDeleteConfirmation" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+    <div class="theme-card rounded-lg shadow-xl max-w-md w-full p-6">
       <div class="flex items-center gap-4 mb-4">
         <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
           <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -357,17 +363,17 @@
           </svg>
         </div>
         <div>
-          <h3 class="text-lg font-semibold text-gray-900">Delete Account</h3>
-          <p class="text-sm text-gray-600">This action cannot be undone</p>
+          <h3 class="text-lg font-semibold theme-text-primary">Delete Account</h3>
+          <p class="text-sm theme-text-secondary">This action cannot be undone</p>
         </div>
       </div>
       
       <div class="mb-6">
-        <p class="text-sm text-gray-700 mb-4">
+        <p class="text-sm theme-text-secondary mb-4">
           Are you sure you want to delete your account? This will permanently remove all your data and you will be logged out.
         </p>
         
-        <p class="text-sm text-gray-700 mb-2">
+        <p class="text-sm theme-text-secondary mb-2">
           Type <strong>DELETE MY ACCOUNT</strong> to confirm:
         </p>
         
@@ -375,14 +381,14 @@
           type="text"
           [(ngModel)]="deleteConfirmationText"
           placeholder="DELETE MY ACCOUNT"
-          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none">
+          class="theme-input w-full px-3 py-2 rounded-lg">
       </div>
       
       <div class="flex gap-3 justify-end">
         <button
           (click)="closeDeleteConfirmation()"
           [disabled]="isDeleting"
-          class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50">
+          class="px-4 py-2 theme-border border theme-text-secondary rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50">
           Cancel
         </button>
         
