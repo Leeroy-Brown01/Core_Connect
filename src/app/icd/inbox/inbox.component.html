@@ -4,11 +4,11 @@
   <div class="sticky z-10 theme-bg-secondary mb-2 md:hidden block">
     
     <div class="theme-border border-b mb-6">
-      <nav class="flex space-x-5">
+      <nav class="flex space-x-5 overflow-x-auto scrollbar-hide">
         <button
           *ngFor="let tab of tabs"
           (click)="switchTab(tab.id)"
-          class="py-4 px-1 border-b-2 font-medium text-sm focus:outline-none"
+          class="py-4 px-1 border-b-2 font-medium text-sm focus:outline-none whitespace-nowrap"
           [class.border-blue-500]="activeTab === tab.id"
           [class.text-blue-600]="activeTab === tab.id"
           [class.border-transparent]="activeTab !== tab.id"
@@ -57,7 +57,6 @@
             </button>
           </div>
         </div>
-        
         
         <!-- Message List -->
         <div class="divide-y theme-border">
@@ -136,6 +135,11 @@
       </div>
     </div>
 
+    <!-- Compose Tab -->
+    <div  *ngIf="activeTab === 'compose'">
+      <app-compose class="hidden"></app-compose>
+    </div>
+
     <!-- Sent Tab -->
     <div *ngIf="activeTab === 'sent'">
       <app-sent></app-sent>
@@ -146,12 +150,10 @@
       <app-icd-user-management></app-icd-user-management>
     </div>
 
-    <!-- Archived Tab -->
+    <!-- Downloads Tab -->
     <div *ngIf="activeTab === 'icd-downloads'">
       <app-icd-downloads></app-icd-downloads>
     </div>
-
-   
   </div>
 
   <!-- Message Details Modal -->
@@ -362,22 +364,40 @@
           <button 
             (click)="archiveMessage()"
             class="px-4 py-2 theme-text-secondary theme-bg-primary theme-border border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8l6 6 6-6"></path>
+            </svg>
             Archive
           </button>
           
           <!-- Reply Button -->
           <button 
             (click)="replyToMessage()"
-            class="theme-button-primary px-4 py-2 rounded-lg transition-colors">
+            class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
+            </svg>
             Reply
+          </button>
+
+          <!-- Forward Button -->
+          <button 
+            (click)="forwardMessage()"
+            class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+            </svg>
+            Forward
           </button>
 
           <!-- More Actions Dropdown -->
           <div class="relative">
             <button 
-              class="p-2 theme-text-muted hover:text-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors">
+              (click)="deleteMessage()"
+              class="p-2 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              title="Delete message">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
               </svg>
             </button>
           </div>

@@ -12,6 +12,8 @@ import { ICDDownloadsService } from '../../services/icd-downloads.service';
 import { ToastService } from '../../services/toast.service';
 import { Subscription } from 'rxjs';
 import { IcdDownloadsComponent } from '../icd-downloads/icd-downloads.component';
+import { ReplyService, ReplyData, ForwardData } from '../../services/reply.service';
+import { ComposeComponent } from '../compose/compose.component';
 
 interface InboxMessage {
   id?: string;
@@ -43,7 +45,7 @@ interface InboxMessage {
 
 @Component({
   selector: 'app-inbox',
-  imports: [CommonModule, IcdDownloadsComponent, SentComponent, IcdUserManagementComponent],
+  imports: [CommonModule, IcdDownloadsComponent, SentComponent, IcdUserManagementComponent, ComposeComponent],
   templateUrl: './inbox.component.html',
   styleUrl: './inbox.component.scss'
 })
@@ -66,7 +68,7 @@ export class InboxComponent implements OnInit, OnDestroy {
     { id: 'sent', label: 'Sent' },
     { id: 'icd-user-management', label: 'Users' },
     { id: 'icd-downloads', label: 'Downloads' },
-    
+    { id: 'compose', label: 'Compose' },
   ];
 
   // Filter options
@@ -106,7 +108,8 @@ export class InboxComponent implements OnInit, OnDestroy {
     private icdUserService: ICDUserService,
     private inboxService: InboxService,
     private icdDownloadsService: ICDDownloadsService,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private replyService: ReplyService
   ) {}
 
   ngOnInit(): void {
@@ -561,38 +564,88 @@ export class InboxComponent implements OnInit, OnDestroy {
   }
 
   replyToMessage(): void {
-    if (!this.selectedModalMessage) return;
+    if (!this.selectedModalMessage) {
+      console.warn('No message selected for reply');
+      return;
+    }
     
-    console.log('📧 Replying to message:', this.selectedModalMessage.id);
+    console.log('📧 Preparing reply to message:', this.selectedModalMessage.id);
     
-    // Close modal and navigate to compose with reply data
+    // Get current user data for context
+    const currentUser = this.icdAuthService.getCurrentUser();
+    if (!currentUser) {
+      this.toastService?.error('User not authenticated');
+      return;
+    }
+
+    // Use sender's email from the message, fallback to senderId if no email
+    const senderEmail = this.selectedModalMessage.senderEmail || this.selectedModalMessage.senderId || '';
+
+    // Prepare reply data
+    const replyData: ReplyData = {
+      replyTo: senderEmail,
+      replyToName: this.selectedModalMessage.senderName || 'Unknown Sender',
+      originalSubject: this.selectedModalMessage.subject || 'No Subject',
+      originalMessage: this.selectedModalMessage.message || '',
+      originalMessageId: this.selectedModalMessage.id || '',
+      originalTimestamp: this.selectedModalMessage.timestamp,
+      isReply: true
+    };
+
+    // Set reply data in service
+    this.replyService.setReplyData(replyData);
+    
+    // Close modal
     this.closeMessageModal();
     
-    // Switch to compose tab (you might want to implement this navigation)
-    // For now, just log the action
-    console.log('Navigate to compose with reply data:', {
-      replyTo: this.selectedModalMessage.senderName,
-      originalSubject: this.selectedModalMessage.subject,
-      originalMessage: this.selectedModalMessage.message
-    });
+    // Navigate to compose tab
+    this.activeTab = 'compose';
+    
+    // Show success message
+    this.toastService?.info(`Replying to: ${replyData.replyToName}`);
+    
+    console.log('✅ Reply data set, navigating to compose');
   }
 
   forwardMessage(): void {
     if (!this.selectedModalMessage) return;
     
-    console.log('📤 Forwarding message:', this.selectedModalMessage.id);
+    console.log('📤 Preparing to forward message:', this.selectedModalMessage.id);
     
-    // Close modal and navigate to compose with forward data
+    // Get current user data for context
+    const currentUser = this.icdAuthService.getCurrentUser();
+    if (!currentUser) {
+      this.toastService?.error('User not authenticated');
+      return;
+    }
+
+    // Use sender's email from the message, fallback to senderId if no email
+    const senderEmail = this.selectedModalMessage.senderEmail || this.selectedModalMessage.senderId || '';
+
+    // Prepare forward data
+    const forwardData: ForwardData = {
+      originalSubject: this.selectedModalMessage.subject || 'No Subject',
+      originalMessage: this.selectedModalMessage.message || '',
+      originalSender: this.selectedModalMessage.senderName || 'Unknown Sender',
+      originalSenderEmail: senderEmail,
+      originalMessageId: this.selectedModalMessage.id || '',
+      originalTimestamp: this.selectedModalMessage.timestamp,
+      isForward: true
+    };
+
+    // Set forward data in service
+    this.replyService.setForwardData(forwardData);
+    
+    // Close modal
     this.closeMessageModal();
     
-    // Switch to compose tab (you might want to implement this navigation)
-    // For now, just log the action
-    console.log('Navigate to compose with forward data:', {
-      forward: true,
-      originalSubject: this.selectedModalMessage.subject,
-      originalMessage: this.selectedModalMessage.message,
-      originalSender: this.selectedModalMessage.senderName
-    });
+    // Navigate to compose tab
+    this.activeTab = 'compose';
+    
+    // Show success message
+    this.toastService?.info(`Forwarding message from: ${forwardData.originalSender}`);
+    
+    console.log('✅ Forward data set, navigating to compose');
   }
 
   archiveMessage(): void {

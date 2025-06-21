@@ -1,10 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MessageService } from '../../services/message.service';
 import { ToastService } from '../../services/toast.service';
 import { AuthService } from '../../services/auth.service';
 import { ToastComponent } from '../../components/toast/toast.component';
+import { ReplyService, ReplyData, ForwardData, ComposeData } from '../../services/reply.service';
+import { Subscription } from 'rxjs';
 
 interface MessageFormData {
   to: string;
@@ -22,7 +24,7 @@ interface MessageFormData {
   templateUrl: './compose.component.html',
   styleUrl: './compose.component.scss'
 })
-export class ComposeComponent implements OnInit {
+export class ComposeComponent implements OnInit, OnDestroy {
   messageData: MessageFormData = {
     to: '',
     recipientDepartments: [],
@@ -37,7 +39,7 @@ export class ComposeComponent implements OnInit {
   isSending = false;
   isSaving = false;
   isProcessingFile = false;
-  
+
   // Available options
   availableDepartments: string[] = [];
   priorityOptions = [
@@ -45,7 +47,7 @@ export class ComposeComponent implements OnInit {
     { value: 'normal', label: 'Normal Priority' },
     { value: 'high', label: 'High Priority' }
   ];
-  
+
   categoryOptions = [
     { value: 'general', label: 'General' },
     { value: 'urgent', label: 'Urgent' },
@@ -57,23 +59,35 @@ export class ComposeComponent implements OnInit {
     { value: 'other', label: 'Other' }
   ];
 
+  private replySubscription?: Subscription;
+
   constructor(
     private messageService: MessageService,
     private toastService: ToastService,
-    private authService: AuthService
+    private authService: AuthService,
+    private replyService: ReplyService
   ) {}
 
   ngOnInit(): void {
     this.availableDepartments = this.messageService.getDepartments();
+
+    // Subscribe to reply data
+    this.subscribeToReplyData();
+  }
+
+  ngOnDestroy(): void {
+    if (this.replySubscription) {
+      this.replySubscription.unsubscribe();
+    }
   }
 
   async onSubmit() {
     if (this.validateForm()) {
       this.isSending = true;
-      
+
       try {
         console.log('📤 Sending message:', this.messageData);
-        
+
         const messageId = await this.messageService.sendMessageWithAttachment(
           {
             to: this.messageData.to,
@@ -86,11 +100,11 @@ export class ComposeComponent implements OnInit {
           },
           this.attachedFile || undefined
         );
-        
+
         console.log('✅ Message sent successfully with ID:', messageId);
         this.toastService.success('Message sent successfully!');
         this.resetForm();
-        
+
       } catch (error: any) {
         console.error('❌ Error sending message:', error);
         this.toastService.error(error.message || 'Failed to send message. Please try again.');
@@ -107,10 +121,10 @@ export class ComposeComponent implements OnInit {
     }
 
     this.isSaving = true;
-    
+
     try {
       console.log('💾 Saving as draft:', this.messageData);
-      
+
       const draftId = await this.messageService.saveDraft(
         {
           to: this.messageData.to,
@@ -123,10 +137,10 @@ export class ComposeComponent implements OnInit {
         },
         this.attachedFile || undefined
       );
-      
+
       console.log('✅ Draft saved successfully with ID:', draftId);
       this.toastService.success('Draft saved successfully!');
-      
+
     } catch (error: any) {
       console.error('❌ Error saving draft:', error);
       this.toastService.error(error.message || 'Failed to save draft. Please try again.');
@@ -150,7 +164,7 @@ export class ComposeComponent implements OnInit {
   // Department selection methods
   onDepartmentChange(department: string, event: Event) {
     const isChecked = (event.target as HTMLInputElement).checked;
-    
+
     if (isChecked) {
       if (!this.messageData.recipientDepartments.includes(department)) {
         this.messageData.recipientDepartments.push(department);
@@ -161,7 +175,7 @@ export class ComposeComponent implements OnInit {
         this.messageData.recipientDepartments.splice(index, 1);
       }
     }
-    
+
     console.log('Selected departments:', this.messageData.recipientDepartments);
   }
 
@@ -183,7 +197,7 @@ export class ComposeComponent implements OnInit {
   onFilesDrop(event: DragEvent) {
     event.preventDefault();
     this.isDragOver = false;
-    
+
     const files = event.dataTransfer?.files;
     if (files && files.length > 0) {
       this.handleFile(files[0]);
@@ -204,12 +218,12 @@ export class ComposeComponent implements OnInit {
       this.toastService.error(validation.error!);
       return;
     }
-    
+
     this.isProcessingFile = true;
-    
+
     // Show processing message
     this.toastService.info(`Processing file "${file.name}"...`);
-    
+
     // Small delay to show processing state
     setTimeout(() => {
       this.attachedFile = file;
@@ -261,23 +275,22 @@ export class ComposeComponent implements OnInit {
       this.toastService.error('Please specify a recipient email or select at least one department.');
       return false;
     }
-    
+
     if (!this.messageData.subject.trim()) {
       this.toastService.error('Please enter a subject.');
       return false;
     }
-    
+
     if (!this.messageData.message.trim()) {
       this.toastService.error('Please enter a message.');
       return false;
     }
 
-    // Only check file processing if a file was selected
-    if (this.attachedFile && this.isProcessingFile) {
+    if (this.isProcessingFile) {
       this.toastService.error('Please wait for file processing to complete.');
       return false;
     }
-    
+
     return true;
   }
 
@@ -318,6 +331,117 @@ export class ComposeComponent implements OnInit {
 
   isCharacterLimitExceeded(): boolean {
     return this.getCharacterCount() > this.getMaxCharacters();
+  }
+
+  /**
+   * Subscribe to reply data from ReplyService
+   */
+  private subscribeToReplyData(): void {
+    this.replySubscription = this.replyService.composeData$.subscribe(composeData => {
+      if (composeData) {
+        console.log('📧 Received compose data in compose component:', composeData);
+        
+        if (this.replyService.isReplyData(composeData)) {
+          this.fillReplyForm(composeData);
+        } else if (this.replyService.isForwardData(composeData)) {
+          this.fillForwardForm(composeData);
+        }
+        
+        // Clear compose data after using it
+        this.replyService.clearComposeData();
+      }
+    });
+  }
+
+  /**
+   * Fill form with reply data
+   */
+  private fillReplyForm(replyData: ReplyData): void {
+    try {
+      // Fill recipient email
+      this.messageData.to = replyData.replyTo;
+
+      // Format and fill subject with "Re:" prefix
+      this.messageData.subject = this.replyService.formatReplySubject(replyData.originalSubject);
+
+      // Fill message with quoted original message
+      const quotedMessage = this.replyService.formatQuotedMessage(
+        replyData.originalMessage,
+        replyData.replyToName,
+        replyData.originalTimestamp
+      );
+
+      this.messageData.message = quotedMessage;
+
+      // Set priority to normal for replies
+      this.messageData.priority = 'normal';
+
+      // Set category based on original or default to reply
+      this.messageData.category = 'general';
+
+      // Clear departments selection (since we're replying to specific email)
+      this.messageData.recipientDepartments = [];
+
+      // Show success message
+      this.toastService.info(`Replying to: ${replyData.replyToName}`);
+
+      console.log('✅ Reply form filled successfully');
+      console.log('Form data:', {
+        to: this.messageData.to,
+        subject: this.messageData.subject,
+        messageLength: this.messageData.message.length
+      });
+
+    } catch (error) {
+      console.error('❌ Error filling reply form:', error);
+      this.toastService.error('Error setting up reply. Please fill the form manually.');
+    }
+  }
+
+  /**
+   * Fill form with forward data
+   */
+  private fillForwardForm(forwardData: ForwardData): void {
+    try {
+      // Clear recipient email (user needs to enter who to forward to)
+      this.messageData.to = '';
+
+      // Format and fill subject with "Fwd:" prefix
+      this.messageData.subject = this.replyService.formatForwardSubject(forwardData.originalSubject);
+
+      // Fill message with forward format
+      const forwardMessage = this.replyService.formatForwardMessage(
+        forwardData.originalMessage,
+        forwardData.originalSender,
+        forwardData.originalSenderEmail || '',
+        forwardData.originalTimestamp
+      );
+
+      this.messageData.message = forwardMessage;
+
+      // Set priority to normal for forwards
+      this.messageData.priority = 'normal';
+
+      // Set category to general
+      this.messageData.category = 'general';
+
+      // Clear departments selection (user needs to select who to forward to)
+      this.messageData.recipientDepartments = [];
+
+      // Show success message
+      this.toastService.info(`Forwarding message from: ${forwardData.originalSender}`);
+
+      console.log('✅ Forward form filled successfully');
+      console.log('Form data:', {
+        to: this.messageData.to,
+        subject: this.messageData.subject,
+        messageLength: this.messageData.message.length
+      });
+
+    } catch (error) {
+      console.error('❌ Error filling forward form:', error);
+      this.toastService.error('Error setting up forward. Please fill the form manually.');
+    }
   }
 
   // New helper method to check if form has minimum required content for sending
