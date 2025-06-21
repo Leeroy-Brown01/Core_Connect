@@ -658,16 +658,40 @@ export class InboxComponent implements OnInit, OnDestroy {
     this.closeMessageModal();
   }
 
-  deleteMessage(): void {
+  async deleteMessage(): Promise<void> {
     if (!this.selectedModalMessage?.id) return;
     
-    const confirmed = confirm('Are you sure you want to delete this message?');
+    const confirmed = confirm(`Are you sure you want to delete the message "${this.selectedModalMessage.subject}"? This action cannot be undone.`);
     if (confirmed) {
-      console.log('🗑️ Deleting message:', this.selectedModalMessage.id);
-      
-      // Here you would implement the delete functionality
-      // For now, just close the modal
-      this.closeMessageModal();
+      try {
+        console.log('🗑️ Deleting message:', this.selectedModalMessage.id);
+        
+        // Show loading state
+        this.isMarkingAsRead = true; // Reuse loading state for delete
+        
+        // Delete the message using message service
+        await this.messageService.deleteMessage(this.selectedModalMessage.id);
+        
+        // Remove from local arrays
+        this.inboxMessages = this.inboxMessages.filter(msg => msg.id !== this.selectedModalMessage!.id);
+        this.filteredMessages = this.filteredMessages.filter(msg => msg.id !== this.selectedModalMessage!.id);
+        
+        // Update filter counts
+        this.updateFilterCounts();
+        
+        // Close modal
+        this.closeMessageModal();
+        
+        // Show success message
+        this.toastService?.success('Message deleted successfully');
+        
+        console.log('✅ Message deleted successfully');
+      } catch (error) {
+        console.error('❌ Error deleting message:', error);
+        this.toastService?.error('Failed to delete message. Please try again.');
+      } finally {
+        this.isMarkingAsRead = false;
+      }
     }
   }
 

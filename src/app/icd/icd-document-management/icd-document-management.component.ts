@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { DocumentService, FirebaseDocument } from '../../services/document.service';
-import { AuthService } from '../../services/auth.service';
+import { ICDAuthService } from '../../services/icd-auth.service';
 
 interface Document {
   id: string;
@@ -60,13 +60,23 @@ export class IcdDocumentManagementComponent implements OnInit {
   documents: Document[] = [];
   filteredDocuments: Document[] = [];
   firebaseDocuments: FirebaseDocument[] = []; // Store original Firebase documents
+  currentUser: any;
+  canUpload: boolean = false;
+  canDelete: boolean = false;
 
   constructor(
     private documentService: DocumentService,
-    private authService: AuthService
+    private icdAuthService: ICDAuthService
   ) {}
 
   async ngOnInit(): Promise<void> {
+    console.log('🔄 Initializing ICD Document Management component...');
+    
+    // Wait for auth initialization using ICDAuthService
+    await this.icdAuthService.waitForAuthInitialization();
+    this.currentUser = this.icdAuthService.getCurrentUser();
+    this.checkUserPermissions();
+
     await this.loadDocuments();
   }
 
@@ -199,8 +209,7 @@ export class IcdDocumentManagementComponent implements OnInit {
       console.log('📄 Uploading document to Firebase:', this.newDocumentForm.name);
       
       // Get current user info
-      const currentUser = await this.authService.getCurrentUser();
-      const userName = currentUser?.fullName || 'Unknown User';
+      const userName = this.currentUser?.fullName || 'Unknown User';
       
       // Upload to Firebase
       const result = await this.documentService.uploadDocument(
@@ -262,6 +271,14 @@ export class IcdDocumentManagementComponent implements OnInit {
     const fileInput = document.getElementById('documentFile') as HTMLInputElement;
     if (fileInput) {
       fileInput.value = '';
+    }
+  }
+
+  private checkUserPermissions(): void {
+    const user = this.icdAuthService.getCurrentUser();
+    if (user) {
+      this.canUpload = user.role === 'admin' || user.role === 'manager';
+      this.canDelete = user.role === 'admin';
     }
   }
 

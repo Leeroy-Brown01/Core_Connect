@@ -5,6 +5,9 @@ import { BehaviorSubject, Observable, firstValueFrom } from 'rxjs';
 import { Router } from '@angular/router';
 import { map, filter, take } from 'rxjs/operators';
 
+// NOTE: For ICD components, use ICDAuthService instead of this generic AuthService
+// This service is kept for non-ICD legacy components only
+
 export interface UserData {
   displayName: any;
   uid: string;
@@ -27,7 +30,8 @@ export interface UserData {
 export class AuthService {
   protected currentUserSubject = new BehaviorSubject<UserData | null>(null);
   private authInitialized = new BehaviorSubject<boolean>(false);
-  
+  private isAdminCreatingUser = false; // Flag to prevent auto-navigation
+
   public currentUser$ = this.currentUserSubject.asObservable();
   public authInitialized$ = this.authInitialized.asObservable();
 
@@ -48,6 +52,12 @@ export class AuthService {
       // Listen to auth state changes
       onAuthStateChanged(this.auth, async (user) => {
         console.log('🔥 Auth state changed:', user ? `✅ ${user.email}` : '❌ No user');
+        
+        // Skip processing if admin is creating a user
+        if (this.isAdminCreatingUser) {
+          console.log('⏭️ Skipping auth state change (admin creating user)');
+          return;
+        }
         
         if (user) {
           try {
@@ -108,9 +118,18 @@ export class AuthService {
     }
   }
 
-  async createUserAccount(userData: Omit<UserData, 'uid'>, password: string): Promise<{ success: boolean; user?: any }> {
+  async createUserAccount(
+    userData: Omit<UserData, 'uid'>, 
+    password: string,
+    preventAutoLogin: boolean = false
+  ): Promise<{ success: boolean; user?: any }> {
     try {
       console.log('Creating user account...');
+      
+      // Set flag if this is admin creation
+      if (preventAutoLogin) {
+        this.isAdminCreatingUser = true;
+      }
       
       // Validate inputs
       if (!userData.email || !password) {
@@ -138,10 +157,16 @@ export class AuthService {
         // Save to Firestore
         await this.saveUserData(credential.user.uid, userDocData);
         
-        // Update current user subject
-        this.currentUserSubject.next(userDocData);
+        // Only auto-login if not prevented (for admin user creation)
+        if (!preventAutoLogin) {
+          // Update current user subject
+          this.currentUserSubject.next(userDocData);
+          console.log('✅ User account created and logged in');
+        } else {
+          console.log('✅ User account created without auto-login (admin mode)');
+          // Don't update currentUserSubject to maintain admin session
+        }
         
-        console.log('✅ User account created successfully');
         return { success: true, user: credential.user };
       }
       
@@ -165,6 +190,9 @@ export class AuthService {
       }
       
       throw error;
+    } finally {
+      // Reset the flag
+      this.isAdminCreatingUser = false;
     }
   }
 

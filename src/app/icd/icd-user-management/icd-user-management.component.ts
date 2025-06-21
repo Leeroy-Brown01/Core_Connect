@@ -4,16 +4,13 @@ import { FormsModule, NgForm } from '@angular/forms';
 import { ICDAuthService } from '../../services/icd-auth.service';
 import { ToastService } from '../../services/toast.service';
 import { ToastComponent } from '../../components/toast/toast.component';
-import { AuthService, UserData } from '../../services/auth.service';
 import { ICDUserService, FirebaseICDUser } from '../../services/icd-user.service';
 
 interface User {
   id: string;
   name: string;
   department: string;
-  documents: number;
   createdDate: Date;
-  status: 'active' | 'inactive';
   email: string;
   role: string;
   phone: string;
@@ -60,15 +57,12 @@ export class IcdUserManagementComponent implements OnInit {
   ];
 
   provinces = [
-    'Eastern Cape',
-    'Free State',
-    'Gauteng',
-    'KwaZulu-Natal',
-    'Limpopo',
-    'Mpumalanga',
-    'Northern Cape',
-    'North West',
-    'Western Cape'
+    'Mashonaland Central',
+    'Mashonaland East',
+    'Mashonaland West',
+    'Matabeleland North',
+    'Matabeleland South',
+    
   ];
 
   roleOptions = [
@@ -94,13 +88,13 @@ export class IcdUserManagementComponent implements OnInit {
   };
 
   constructor(
+    private icdUserService: ICDUserService,
     private icdAuthService: ICDAuthService,
-    private toastService: ToastService,
-    private authService: AuthService,
-    private icdUserService: ICDUserService
+    private toastService: ToastService
   ) {}
 
   async ngOnInit(): Promise<void> {
+    await this.icdAuthService.waitForAuthInitialization();
     await this.loadUsers();
   }
 
@@ -117,9 +111,7 @@ export class IcdUserManagementComponent implements OnInit {
         department: user.department,
         role: user.role,
         phone: user.phone,
-        documents: user.documentsCount || 0,
-        createdDate: user.createdAt instanceof Date ? user.createdAt : new Date(user.createdAt),
-        status: user.status
+        createdDate: user.createdAt instanceof Date ? user.createdAt : new Date(user.createdAt)
       }));
 
       this.filterUsers();
@@ -149,7 +141,6 @@ export class IcdUserManagementComponent implements OnInit {
         case 'department': return a.department.localeCompare(b.department);
         case 'email': return a.email.localeCompare(b.email);
         case 'role': return a.role.localeCompare(b.role);
-        case 'documents': return b.documents - a.documents;
         case 'created': return b.createdDate.getTime() - a.createdDate.getTime();
         default: return 0;
       }
@@ -160,12 +151,6 @@ export class IcdUserManagementComponent implements OnInit {
 
   onSearchChange(): void { this.filterUsers(); }
   onSortChange(): void { this.filterUsers(); }
-
-  getStatusColor(status: string): string {
-    return status === 'active' 
-      ? 'bg-green-100 text-green-800 border-green-200' 
-      : 'bg-gray-100 text-gray-800 border-gray-200';
-  }
 
   getRoleColor(role: string): string {
     switch (role) {
@@ -211,15 +196,15 @@ export class IcdUserManagementComponent implements OnInit {
   async toggleUserStatus(userId: string): Promise<void> {
     const user = this.users.find(u => u.id === userId);
     if (user) {
-      const newStatus = user.status === 'active' ? 'inactive' : 'active';
+      const newStatus = 'active'; // Since we removed status, just keep users active
       try {
         const success = await this.icdUserService.updateUserStatus(userId, newStatus);
         if (success) {
           await this.loadUsers(); // Reload users
-          this.toastService.success(`User status updated to ${newStatus}`);
+          this.toastService.success(`User updated successfully`);
         }
       } catch (error) {
-        this.toastService.error('Failed to update user status');
+        this.toastService.error('Failed to update user');
       }
     }
   }
@@ -256,33 +241,17 @@ export class IcdUserManagementComponent implements OnInit {
     this.isCreatingUser = true;
     
     try {
-      console.log('🔑 Creating new ICD user in Firebase:', this.newUserForm.email);
+      console.log('🔑 Creating new ICD user:', this.newUserForm.email);
       
-      // Get current user info
-      const currentUser = await this.authService.getCurrentUser();
-      const userId = currentUser?.uid || 'unknown-user';
-      
-      // First create the user account
-      const userData: Omit<UserData, 'uid'> = {
-        fullName: this.newUserForm.fullName,
-        displayName: this.newUserForm.fullName, // Add missing displayName property
-        email: this.newUserForm.email,
-        phone: this.newUserForm.phone,
-        department: this.newUserForm.department,
-        province: this.newUserForm.province,
-        role: this.newUserForm.role,
-        profilePhoto: '',
-        status: 'active',
-        createdAt: new Date(),
-        trainingCompleted: false
-      };
+      const currentUser = this.icdAuthService.getCurrentUser();
+      if (!currentUser) {
+        this.toastService.error('Admin not authenticated');
+        return;
+      }
 
-      // Create user using ICDAuthService
-      const authResult = await this.icdAuthService.createUserAccount(userData, this.newUserForm.password);
-      
-      if (authResult.success && authResult.user) {
-        // Then save to ICD users collection
-        const icdUserResult = await this.icdUserService.createUser({
+      // Single user creation call - ICDUserService handles both Auth + Firestore
+      const result = await this.icdUserService.createUserForAdmin(
+        {
           fullName: this.newUserForm.fullName,
           email: this.newUserForm.email,
           phone: this.newUserForm.phone,
@@ -291,21 +260,19 @@ export class IcdUserManagementComponent implements OnInit {
           role: this.newUserForm.role,
           status: 'active',
           trainingCompleted: false,
-          createdBy: userId
-        });
+          profilePhoto: ''
+        },
+        this.newUserForm.password,
+        currentUser.email
+      );
 
-        if (icdUserResult.success) {
-          console.log('✅ ICD user created successfully in Firebase');
-          this.toastService.success(`User "${this.newUserForm.fullName}" created successfully!`);
-          
-          // Reload users from Firebase
-          await this.loadUsers();
-          
-          // Close modal and reset form
-          this.closeAddUserModal();
-        } else {
-          this.toastService.error(`Failed to save user data: ${icdUserResult.error}`);
-        }
+      if (result.success) {
+        console.log('✅ User created successfully');
+        this.toastService.success(`User "${this.newUserForm.fullName}" created successfully!`);
+        await this.loadUsers();
+        this.closeAddUserModal();
+      } else {
+        this.toastService.error(`Failed to create user: ${result.error}`);
       }
       
     } catch (error: any) {
@@ -325,6 +292,22 @@ export class IcdUserManagementComponent implements OnInit {
       }
     } finally {
       this.isCreatingUser = false;
+    }
+  }
+
+  async checkEmailAvailability(email: string): Promise<void> {
+    if (!email) return;
+
+    try {
+      const result = await this.icdUserService.checkEmailExists(email);
+      
+      if (!result.canCreate) {
+        this.toastService.error(result.message);
+      } else {
+        this.toastService.success(result.message);
+      }
+    } catch (error) {
+      this.toastService.error('Error checking email availability');
     }
   }
 

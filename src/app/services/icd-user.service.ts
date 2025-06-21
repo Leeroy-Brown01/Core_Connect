@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
-import { Firestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy, where } from '@angular/fire/firestore';
+import { Firestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy, where, setDoc } from '@angular/fire/firestore';
+import { Auth, createUserWithEmailAndPassword, signOut, fetchSignInMethodsForEmail } from '@angular/fire/auth';
 
 export interface FirebaseICDUser {
   id?: string;
@@ -24,6 +25,7 @@ export interface FirebaseICDUser {
 export class ICDUserService {
   private usersCollection = 'icd-users';
   private firestore = inject(Firestore);
+  private auth = inject(Auth);
 
   constructor() {
     console.log('ICDUserService initialized with proper injection context');
@@ -79,6 +81,160 @@ export class ICDUserService {
       return {
         success: false,
         error: error.message || 'Failed to create ICD user'
+      };
+    }
+  }
+
+  async checkEmailExists(email: string): Promise<{
+    existsInAuth: boolean;
+    existsInFirestore: boolean;
+    canCreate: boolean;
+    message: string;
+  }> {
+    try {
+      // Check Firebase Auth
+      const authMethods = await fetchSignInMethodsForEmail(this.auth, email);
+      const existsInAuth = authMethods.length > 0;
+
+      // Check ICD Firestore
+      const existsInFirestore = await this.checkEmailInFirestore(email);
+
+      let canCreate = false;
+      let message = '';
+
+      if (!existsInAuth && !existsInFirestore) {
+        canCreate = true;
+        message = 'Email is available for new user creation';
+      } else if (existsInAuth) {
+        message = 'Email already exists in Firebase Authentication';
+      } else if (existsInFirestore) {
+        message = 'Email already exists in ICD system';
+      }
+
+      return {
+        existsInAuth,
+        existsInFirestore,
+        canCreate,
+        message
+      };
+    } catch (error) {
+      console.error('Error checking email:', error);
+      return {
+        existsInAuth: false,
+        existsInFirestore: false,
+        canCreate: false,
+        message: 'Error checking email availability'
+      };
+    }
+  }
+
+  private async checkEmailInFirestore(email: string): Promise<boolean> {
+    try {
+      const usersRef = collection(this.firestore, this.usersCollection);
+      const q = query(usersRef, where('email', '==', email));
+      const snapshot = await getDocs(q);
+      return !snapshot.empty;
+    } catch (error) {
+      console.error('Error checking Firestore:', error);
+      return false;
+    }
+  }
+
+  async checkEmailExistsInAuth(email: string): Promise<boolean> {
+    try {
+      const authMethods = await fetchSignInMethodsForEmail(this.auth, email);
+      return authMethods.length > 0;
+    } catch (error) {
+      console.error('Error checking email in Firebase Auth:', error);
+      return false;
+    }
+  }
+
+  async createUserForAdmin(
+    userData: {
+      fullName: string;
+      email: string;
+      phone: string;
+      department: string;
+      province: string;
+      role: string;
+      status: 'active' | 'inactive';
+      profilePhoto?: string;
+      trainingCompleted: boolean;
+    },
+    password: string,
+    createdBy: string
+  ): Promise<{ success: boolean; user?: FirebaseICDUser; error?: string }> {
+    try {
+      console.log('🔑 Admin creating user:', userData.email);
+
+      // First check if email exists
+      const emailCheck = await this.checkEmailExists(userData.email);
+      if (!emailCheck.canCreate) {
+        return {
+          success: false,
+          error: emailCheck.message
+        };
+      }
+
+      // Create Firebase Auth user
+      console.log('Creating Firebase Auth account...');
+      const credential = await createUserWithEmailAndPassword(
+        this.auth, 
+        userData.email, 
+        password
+      );
+
+      console.log('✅ Firebase Auth user created:', credential.user.uid);
+
+      // Create ICD user record with the created user's UID
+      console.log('Creating ICD user record...');
+      const userDocRef = doc(this.firestore, this.usersCollection, credential.user.uid);
+      await setDoc(userDocRef, {
+        ...userData,
+        uid: credential.user.uid,
+        createdBy,
+        createdAt: new Date(),
+        documentsCount: 0
+      });
+
+      console.log('✅ ICD user record created');
+
+      // Sign out the newly created user immediately to prevent auto-login
+      console.log('🔓 Signing out newly created user...');
+      await signOut(this.auth);
+
+      console.log('✅ User created successfully by admin');
+      
+      return {
+        success: true,
+        user: {
+          id: credential.user.uid,
+          uid: credential.user.uid,
+          ...userData,
+          createdBy,
+          createdAt: new Date(),
+          documentsCount: 0
+        } as FirebaseICDUser
+      };
+
+    } catch (error: any) {
+      console.error('❌ Error in admin user creation:', error);
+      
+      let errorMessage = 'Failed to create user';
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = 'This email address is already registered.';
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = 'Password should be at least 6 characters.';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = 'Please enter a valid email address.';
+      } else if (error.code === 'auth/network-request-failed') {
+        errorMessage = 'Network error. Please check your internet connection.';
+      }
+
+      return {
+        success: false,
+        error: errorMessage
       };
     }
   }
@@ -164,6 +320,27 @@ export class ICDUserService {
     } catch (error) {
       console.error('Error fetching ICD users by role:', error);
       return [];
+    }
+  }
+
+  async getUserByEmail(email: string): Promise<FirebaseICDUser | null> {
+    try {
+      const usersRef = collection(this.firestore, 'icd-users');
+      const q = query(usersRef, where('email', '==', email));
+      const snapshot = await getDocs(q);
+      
+      if (snapshot.empty) {
+        return null;
+      }
+      
+      const userDoc = snapshot.docs[0];
+      return {
+        id: userDoc.id,
+        ...userDoc.data()
+      } as FirebaseICDUser;
+    } catch (error) {
+      console.error('Error getting user by email:', error);
+      return null;
     }
   }
 

@@ -40,6 +40,7 @@ export class SentComponent implements OnInit, OnDestroy {
   // Modal state
   showModal = false;
   selectedMessage: SentMessage | null = null;
+  isDeleting = false; // Add loading state for delete operation
 
   private subscriptions: Subscription[] = [];
 
@@ -278,6 +279,45 @@ export class SentComponent implements OnInit, OnDestroy {
     await this.loadSentMessages();
   }
 
+  // Delete message functionality
+  async deleteMessage(): Promise<void> {
+    if (!this.selectedMessage?.id) return;
+    
+    const confirmed = confirm(`Are you sure you want to delete the message "${this.selectedMessage.subject}"? This action cannot be undone.`);
+    if (confirmed) {
+      try {
+        console.log('🗑️ Deleting sent message:', this.selectedMessage.id);
+        
+        // Show loading state
+        this.isDeleting = true;
+        
+        // Get messageService from sentService and delete the message
+        const messageService = this.sentService.getMessageService();
+        await messageService.deleteMessage(this.selectedMessage.id);
+        
+        // Remove from local arrays
+        this.sentMessages = this.sentMessages.filter(msg => msg.id !== this.selectedMessage!.id);
+        this.filteredMessages = this.filteredMessages.filter(msg => msg.id !== this.selectedMessage!.id);
+        
+        // Update filter counts
+        this.updateFilterCounts();
+        
+        // Close modal
+        this.closeModal();
+        
+        // Show success message
+        this.toastService?.success('Message deleted successfully');
+        
+        console.log('✅ Sent message deleted successfully');
+      } catch (error) {
+        console.error('❌ Error deleting sent message:', error);
+        this.toastService?.error('Failed to delete message. Please try again.');
+      } finally {
+        this.isDeleting = false;
+      }
+    }
+  }
+
   // Utility methods
   trackByMessageId(index: number, item: SentMessage): string {
     return item.id || index.toString();
@@ -418,35 +458,5 @@ export class SentComponent implements OnInit, OnDestroy {
         : names[0][0].toUpperCase();
     }
     return 'S';
-  }
-
-  // Forward message
-  forwardMessage(message: SentMessage | null): void {
-    if (!message) {
-      console.warn('No message to forward');
-      this.toastService.warning('No message selected');
-      return;
-    }
-
-    try {
-      console.log('📤 Forwarding sent message:', message.id);
-      
-      // Set the message for forwarding in the sent service
-      this.sentService.setMessageForForwarding(message);
-      
-      // Show success notification
-      this.toastService.success('Message prepared for forwarding');
-      
-      // Close the modal
-      this.closeModal();
-      
-      // You might want to navigate to compose or open a compose modal here
-      // For now, we'll just log the action
-      console.log('✅ Message set for forwarding');
-      
-    } catch (error) {
-      console.error('❌ Error forwarding message:', error);
-      this.toastService.error('Failed to forward message');
-    }
   }
 }

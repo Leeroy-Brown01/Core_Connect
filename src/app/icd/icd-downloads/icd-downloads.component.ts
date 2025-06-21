@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { ICDDownloadsService, ICDDownloadItem } from '../../services/icd-downloads.service';
 import { ICDAuthService } from '../../services/icd-auth.service';
 import { ToastService } from '../../services/toast.service';
-import { TestDownloadsService } from '../../services/test-downloads.service';
 
 @Component({
   selector: 'app-icd-downloads',
@@ -33,7 +32,6 @@ export class IcdDownloadsComponent implements OnInit {
     private icdDownloadsService: ICDDownloadsService,
     private icdAuthService: ICDAuthService,
     private toastService: ToastService,
-    private testDownloadsService: TestDownloadsService
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -153,26 +151,6 @@ export class IcdDownloadsComponent implements OnInit {
     } catch (error) {
       console.error('❌ Error downloading file:', error);
       this.toastService.error('Failed to download file');
-    }
-  }
-
-  async createTestDownloads(): Promise<void> {
-    if (!this.currentUser?.uid && !this.currentUser?.email) {
-      this.toastService.error('User not authenticated');
-      return;
-    }
-
-    const userId = this.currentUser.uid || this.currentUser.email;
-    
-    try {
-      await this.testDownloadsService.createTestDownloads(userId);
-      this.toastService.success('Test downloads created successfully');
-      
-      // Refresh the downloads list
-      await this.loadUserDownloads();
-    } catch (error) {
-      console.error('Error creating test downloads:', error);
-      this.toastService.error('Failed to create test downloads');
     }
   }
 

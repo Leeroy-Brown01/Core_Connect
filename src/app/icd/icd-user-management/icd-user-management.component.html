@@ -89,7 +89,6 @@
             <option value="email">Email</option>
             <option value="department">Department</option>
             <option value="role">Role</option>
-            <option value="documents">Documents</option>
             <option value="created">Created Date</option>
           </select>
         </div>
@@ -113,9 +112,7 @@
             <th class="px-8 py-4 text-left text-xs font-bold theme-text-secondary uppercase tracking-wider">User</th>
             <th class="px-8 py-4 text-left text-xs font-bold theme-text-secondary uppercase tracking-wider">Department</th>
             <th class="px-8 py-4 text-left text-xs font-bold theme-text-secondary uppercase tracking-wider">Role</th>
-            <th class="px-8 py-4 text-left text-xs font-bold theme-text-secondary uppercase tracking-wider">Documents</th>
             <th class="px-8 py-4 text-left text-xs font-bold theme-text-secondary uppercase tracking-wider">Created</th>
-            <th class="px-8 py-4 text-left text-xs font-bold theme-text-secondary uppercase tracking-wider">Status</th>
             <th class="px-8 py-4 text-left text-xs font-bold theme-text-secondary uppercase tracking-wider">Actions</th>
           </tr>
         </thead>
@@ -142,19 +139,8 @@
                 {{ user.role | titlecase }}
               </span>
             </td>
-            <td class="px-8 py-6 whitespace-nowrap">
-              <div class="text-sm font-bold theme-text-primary">{{ user.documents }}</div>
-            </td>
             <td class="px-8 py-6 whitespace-nowrap text-sm theme-text-muted">
               {{ user.createdDate | date:'MMM d, y' }}
-            </td>
-            <td class="px-8 py-6 whitespace-nowrap">
-              <button 
-                (click)="toggleUserStatus(user.id)"
-                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border transition-colors cursor-pointer hover:shadow-sm"
-                [class]="getStatusColor(user.status)">
-                {{ user.status | titlecase }}
-              </button>
             </td>
             <td class="px-8 py-6 whitespace-nowrap text-sm font-medium">
               <div class="flex items-center space-x-3">

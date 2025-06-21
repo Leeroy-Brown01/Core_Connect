@@ -51,17 +51,14 @@ export class IcdSignUpComponent {
     'Other'
   ];
 
-  // Province options (South African provinces)
+  // Province options (Zimbabwean provinces)
   provinces = [
-    'Eastern Cape',
-    'Free State',
-    'Gauteng',
-    'KwaZulu-Natal',
-    'Limpopo',
-    'Mpumalanga',
-    'Northern Cape',
-    'North West',
-    'Western Cape'
+    'Mashonaland Central',
+    'Mashonaland East',
+    'Mashonaland West',
+    'Manicaland',
+    
+    
   ];
 
   // Role options for ICD

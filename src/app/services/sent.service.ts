@@ -288,4 +288,9 @@ export class SentService {
       console.error('❌ Error downloading attachment from sent message:', error);
     }
   }
+
+  // Get message service for delete operations
+  getMessageService() {
+    return this.messageService;
+  }
 }
