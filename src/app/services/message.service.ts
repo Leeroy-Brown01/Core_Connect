@@ -39,36 +39,147 @@ export class MessageService {
   }
 
   // Create a new message
-  async createMessage(messageData: Omit<MessageData, 'id' | 'timestamp' | 'senderId' | 'senderName' | 'senderEmail'>): Promise<string> {
+  async createMessage(messageData: any): Promise<string> {
     try {
+      console.log('📝 Creating message:', messageData);
+      
       const currentUser = this.icdAuthService.getCurrentUser(); // Using ICDAuthService
       if (!currentUser) {
         throw new Error('User must be authenticated to send messages');
       }
 
-      const messagesCollection = collection(this.firestore, this.MESSAGES_COLLECTION);
-
-      const messageToSave: Omit<MessageData, 'id'> = {
+      // Create base message object without undefined values
+      const message: any = {
+        ...messageData,
         senderId: currentUser.uid,
-        senderName: currentUser.fullName,
-        senderEmail: currentUser.email, // Add sender email
-        recipientDepartments: messageData.recipientDepartments,
-        to: messageData.to,
-        subject: messageData.subject,
-        message: messageData.message,
-        attachedFile: messageData.attachedFile,
+        senderEmail: currentUser.email,
+        senderName: currentUser.fullName || currentUser.email,
         timestamp: Timestamp.now(),
-        status: messageData.status,
-        readBy: [],
-        priority: messageData.priority || 'normal',
-        category: messageData.category || 'general'
+        read: false,
+        starred: false
       };
 
-      const docRef = await addDoc(messagesCollection, messageToSave);
-      console.log('✅ Message created successfully with ID:', docRef.id);
+      // Only add file-related fields if they exist and are not undefined
+      if (messageData.attachedFile && messageData.attachedFile !== undefined) {
+        message.attachedFile = messageData.attachedFile;
+      }
+      if (messageData.fileName && messageData.fileName !== undefined) {
+        message.fileName = messageData.fileName;
+      }
+      if (messageData.fileSize && messageData.fileSize !== undefined) {
+        message.fileSize = messageData.fileSize;
+      }
+      if (messageData.fileType && messageData.fileType !== undefined) {
+        message.fileType = messageData.fileType;
+      }
+
+      console.log('📤 Final message object:', message);
+      
+      const docRef = await addDoc(collection(this.firestore, this.MESSAGES_COLLECTION), message);
+      console.log('✅ Message created with ID:', docRef.id);
+      
       return docRef.id;
     } catch (error) {
       console.error('❌ Error creating message:', error);
+      throw error;
+    }
+  }
+
+  // Send message with attachment
+  async sendMessageWithAttachment(messageData: any, file?: File): Promise<string> {
+    try {
+      console.log('📤 Sending message with optional attachment:', { messageData, hasFile: !!file });
+
+      let finalMessageData = { ...messageData };
+
+      // Only process file if one is provided
+      if (file) {
+        console.log('📎 Processing file attachment:', file.name);
+        
+        // Validate file
+        const validation = this.validateFile(file);
+        if (!validation.valid) {
+          throw new Error(validation.error);
+        }
+
+        // Convert file to base64
+        const base64 = await this.convertFileToBase64(file);
+        
+        // Add file data to message
+        finalMessageData = {
+          ...finalMessageData,
+          attachedFile: {
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            base64Content: base64
+          }
+        };
+        
+        console.log('✅ File processed and added to message data');
+      } else {
+        console.log('📝 No file attachment - sending text-only message');
+      }
+
+      // Create the message
+      const messageId = await this.createMessage(finalMessageData);
+      
+      console.log('✅ Message sent successfully with ID:', messageId);
+      return messageId;
+      
+    } catch (error) {
+      console.error('❌ Error sending message with attachment:', error);
+      throw error;
+    }
+  }
+
+  // Save as draft
+  async saveDraft(messageData: any, file?: File): Promise<string> {
+    try {
+      console.log('💾 Saving draft with optional attachment:', { messageData, hasFile: !!file });
+
+      let finalMessageData = { 
+        ...messageData, 
+        status: 'draft' 
+      };
+
+      // Only process file if one is provided
+      if (file) {
+        console.log('📎 Processing file attachment for draft:', file.name);
+        
+        // Validate file
+        const validation = this.validateFile(file);
+        if (!validation.valid) {
+          throw new Error(validation.error);
+        }
+
+        // Convert file to base64
+        const base64 = await this.convertFileToBase64(file);
+        
+        // Add file data to draft
+        finalMessageData = {
+          ...finalMessageData,
+          attachedFile: {
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            base64Content: base64
+          }
+        };
+        
+        console.log('✅ File processed and added to draft data');
+      } else {
+        console.log('📝 No file attachment - saving text-only draft');
+      }
+
+      // Create the draft
+      const draftId = await this.createMessage(finalMessageData);
+      
+      console.log('✅ Draft saved successfully with ID:', draftId);
+      return draftId;
+      
+    } catch (error) {
+      console.error('❌ Error saving draft:', error);
       throw error;
     }
   }
@@ -94,75 +205,6 @@ export class MessageService {
       
       reader.readAsDataURL(file);
     });
-  }
-
-  // Send message with attachment
-  async sendMessageWithAttachment(
-    messageData: Omit<MessageData, 'id' | 'timestamp' | 'senderId' | 'senderName' | 'senderEmail' | 'attachedFile'>,
-    attachmentFile?: File
-  ): Promise<string> {
-    try {
-      let attachedFile: MessageData['attachedFile'] | undefined;
-
-      if (attachmentFile) {
-        console.log('📤 Converting attachment to Base64:', attachmentFile.name);
-        const base64Content = await this.convertFileToBase64(attachmentFile);
-        
-        attachedFile = {
-          name: attachmentFile.name,
-          size: attachmentFile.size,
-          type: attachmentFile.type,
-          base64Content: base64Content
-        };
-        
-        console.log('✅ File converted to Base64 successfully');
-      }
-
-      const messageId = await this.createMessage({
-        ...messageData,
-        attachedFile,
-        status: 'sent'
-      });
-
-      return messageId;
-    } catch (error) {
-      console.error('❌ Error sending message with attachment:', error);
-      throw error;
-    }
-  }
-
-  // Save as draft
-  async saveDraft(
-    messageData: Omit<MessageData, 'id' | 'timestamp' | 'senderId' | 'senderName' | 'senderEmail'>,
-    attachmentFile?: File
-  ): Promise<string> {
-    try {
-      let attachedFile: MessageData['attachedFile'] | undefined;
-
-      if (attachmentFile) {
-        console.log('📤 Converting attachment to Base64 for draft:', attachmentFile.name);
-        const base64Content = await this.convertFileToBase64(attachmentFile);
-        
-        attachedFile = {
-          name: attachmentFile.name,
-          size: attachmentFile.size,
-          type: attachmentFile.type,
-          base64Content: base64Content
-        };
-      }
-
-      const messageId = await this.createMessage({
-        ...messageData,
-        attachedFile,
-        status: 'draft'
-      });
-
-      console.log('✅ Draft saved successfully');
-      return messageId;
-    } catch (error) {
-      console.error('❌ Error saving draft:', error);
-      throw error;
-    }
   }
 
   // Download file from Base64

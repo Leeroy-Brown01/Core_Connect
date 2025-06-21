@@ -272,7 +272,8 @@ export class ComposeComponent implements OnInit {
       return false;
     }
 
-    if (this.isProcessingFile) {
+    // Only check file processing if a file was selected
+    if (this.attachedFile && this.isProcessingFile) {
       this.toastService.error('Please wait for file processing to complete.');
       return false;
     }
@@ -317,5 +318,16 @@ export class ComposeComponent implements OnInit {
 
   isCharacterLimitExceeded(): boolean {
     return this.getCharacterCount() > this.getMaxCharacters();
+  }
+
+  // New helper method to check if form has minimum required content for sending
+  canSendMessage(): boolean {
+    return !!(
+      (this.messageData.to || this.messageData.recipientDepartments.length > 0) &&
+      this.messageData.subject.trim() &&
+      this.messageData.message.trim() &&
+      !this.isCharacterLimitExceeded() &&
+      !this.isProcessingFile
+    );
   }
 }
