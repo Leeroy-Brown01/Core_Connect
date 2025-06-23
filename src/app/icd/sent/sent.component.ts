@@ -52,6 +52,8 @@ export class SentComponent implements OnInit, OnDestroy {
     private toastService: ToastService
   ) {}
 
+  
+
   ngOnInit(): void {
     this.loadUserData();
     this.loadSentMessages();

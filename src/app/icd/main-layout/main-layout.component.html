@@ -151,7 +151,7 @@
             <li *ngFor="let tab of tabs">
               <button 
                 [title]="isSidenavCollapsed ? tab.label : ''"
-                class="w-full text-left px-4 py-3 rounded-lg transition-colors duration-200 flex items-center gap-3 group relative"
+                class="w-full text-left px-4 py-3 rounded-lg transition-colors duration-200 flex items-center gap-3 group relative focus:outline-none"
                 [class.bg-gray-300]="activeTab === tab.id && !isComposeTab(tab.id)"
                 [class.dark:bg-gray-700]="activeTab === tab.id && !isComposeTab(tab.id)"
                 [class.text-gray-800]="activeTab === tab.id && !isComposeTab(tab.id)"
@@ -237,7 +237,7 @@
         <div class="flex-shrink-0 pt-4 theme-border border-t">
           <button 
             [title]="isSidenavCollapsed ? 'Settings' : ''"
-            class="w-full text-left px-4 py-3 rounded-lg transition-colors duration-200 flex items-center gap-3 group relative"
+            class="w-full text-left px-4 py-3 rounded-lg transition-colors duration-200 flex items-center gap-3 group relative focus:outline-none"
             [class.bg-gray-300]="activeTab === 'settings'"
             [class.dark:bg-gray-700]="activeTab === 'settings'"
             [class.text-gray-800]="activeTab === 'settings'"
@@ -327,7 +327,7 @@
       <!-- Home - 3/12 width -->
       <button 
         (click)="switchTab('inbox')"
-        class="w-3/12 flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors duration-200"
+        class="w-3/12 flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors duration-200 focus:outline-none"
         [class.text-blue-600]="activeTab === 'inbox'"
         [class.text-gray-600]="activeTab !== 'inbox'"
         [class.dark:text-gray-300]="activeTab !== 'inbox'"
@@ -342,7 +342,7 @@
       <!-- Dashboard - 2/12 width -->
       <button 
         (click)="switchTab('icd-dashboard')"
-        class="w-2/12 flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors duration-200"
+        class="w-2/12 flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors duration-200 focus:outline-none"
         [class.text-blue-600]="activeTab === 'icd-dashboard'"
         [class.text-gray-600]="activeTab !== 'icd-dashboard'"
         [class.dark:text-gray-300]="activeTab !== 'icd-dashboard'"
@@ -357,7 +357,7 @@
       <!-- Compose - 2/12 width -->
       <button 
         (click)="switchTab('compose')"
-        class="w-2/12 flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors duration-200"
+        class="w-2/12 flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors duration-200 focus:outline-none"
         [class.text-blue-600]="activeTab === 'compose'"
         [class.text-gray-600]="activeTab !== 'compose'"
         [class.dark:text-gray-300]="activeTab !== 'compose'"
@@ -372,7 +372,7 @@
       <!-- Settings - 2/12 width -->
       <button 
         (click)="switchTab('settings')"
-        class="w-2/12 flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors duration-200"
+        class="w-2/12 flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors duration-200 focus:outline-none"
         [class.text-blue-600]="activeTab === 'settings'"
         [class.text-gray-600]="activeTab !== 'settings'"
         [class.dark:text-gray-300]="activeTab !== 'settings'"
@@ -388,7 +388,7 @@
       <!-- User Profile - 3/12 width -->
       <button 
         (click)="switchTab('account-settings')"
-        class="w-3/12 flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors duration-200"
+        class="w-3/12 flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors duration-200 focus:outline-none"
         [class.text-blue-600]="activeTab === 'account-settings'"
         [class.text-gray-600]="activeTab !== 'account-settings'"
         [class.dark:text-gray-300]="activeTab !== 'account-settings'"
