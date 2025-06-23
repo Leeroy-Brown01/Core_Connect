@@ -91,7 +91,7 @@
 
       <!-- Side by Side Content: Active Departments & Activity Log -->
       <!-- Desktop Layout (md and above) -->
-      <div class="md:grid md:grid-cols-2 gap-6">
+      <div [class]="'md:grid gap-6 ' + (isAdmin() ? 'md:grid-cols-2' : 'md:grid-cols-1')">
         
         <!-- Active Departments -->
         <div class="theme-card rounded-lg flex flex-col">
@@ -147,7 +147,7 @@
 
         <!-- Activity Log -->
         <div 
-          
+         *ngIf="isAdmin()"
           class="theme-card rounded-lg flex flex-col">
           <div class="px-6 py-4 theme-border border-b">
             <h3 class="text-lg font-semibold theme-text-primary">Recent Activity</h3>

@@ -87,7 +87,7 @@
               <th class="px-8 py-4 text-left text-xs font-bold theme-text-secondary uppercase tracking-wider">Department</th>
               <th class="px-8 py-4 text-left text-xs font-bold theme-text-secondary uppercase tracking-wider">Size</th>
               <th class="px-8 py-4 text-left text-xs font-bold theme-text-secondary uppercase tracking-wider">Uploaded</th>
-              <th class="px-8 py-4 text-left text-xs font-bold theme-text-secondary uppercase tracking-wider">Actions</th>
+              <th *ngIf="isAdmin()" class="px-8 py-4 text-left text-xs font-bold theme-text-secondary uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
           <tbody class="theme-bg-primary divide-y theme-border">
@@ -115,7 +115,7 @@
                 <div class="text-sm theme-text-primary">{{ doc.uploadedBy }}</div>
                 <div class="text-xs theme-text-muted">{{ doc.uploadedDate | date:'MMM d, y' }}</div>
               </td>
-              <td class="px-8 py-6 whitespace-nowrap text-sm font-medium">
+              <td *ngIf="isAdmin()" class="px-8 py-6 whitespace-nowrap text-sm font-medium">
                 <div class="flex items-center space-x-3">
                   <button 
                     (click)="viewDocument(doc.id)"

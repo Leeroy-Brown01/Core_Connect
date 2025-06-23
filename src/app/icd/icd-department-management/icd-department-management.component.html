@@ -87,7 +87,7 @@
               <th class="px-8 py-4 text-left text-xs font-bold theme-text-secondary uppercase tracking-wider">Manager</th>
               <th class="px-8 py-4 text-left text-xs font-bold theme-text-secondary uppercase tracking-wider">Users</th>
               <th class="px-8 py-4 text-left text-xs font-bold theme-text-secondary uppercase tracking-wider">Created</th>
-              <th class="px-8 py-4 text-left text-xs font-bold theme-text-secondary uppercase tracking-wider">Actions</th>
+              <th *ngIf="isAdmin()" class="px-8 py-4 text-left text-xs font-bold theme-text-secondary uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
           <tbody class="theme-bg-primary divide-y theme-border">
@@ -112,7 +112,7 @@
               <td class="px-8 py-6 whitespace-nowrap text-sm theme-text-muted">
                 {{ dept.createdDate | date:'MMM d, y' }}
               </td>
-              <td class="px-8 py-6 whitespace-nowrap text-sm font-medium">
+              <td *ngIf="isAdmin()" class="px-8 py-6 whitespace-nowrap text-sm font-medium">
                 <div class="flex items-center space-x-3">
                   <button 
                     (click)="editDepartment(dept.id)"

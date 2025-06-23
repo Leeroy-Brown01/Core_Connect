@@ -115,7 +115,7 @@
             <th class="px-8 py-4 text-left text-xs font-bold theme-text-secondary uppercase tracking-wider">Department</th>
             <th class="px-8 py-4 text-left text-xs font-bold theme-text-secondary uppercase tracking-wider">Role</th>
             <th class="px-8 py-4 text-left text-xs font-bold theme-text-secondary uppercase tracking-wider">Created</th>
-            <th class="px-8 py-4 text-left text-xs font-bold theme-text-secondary uppercase tracking-wider">Actions</th>
+            <th *ngIf="isAdmin()" class="px-8 py-4 text-left text-xs font-bold theme-text-secondary uppercase tracking-wider">Actions</th>
           </tr>
         </thead>
         <tbody class="theme-bg-primary divide-y theme-border">
@@ -141,10 +141,10 @@
                 {{ user.role | titlecase }}
               </span>
             </td>
-            <td class="px-8 py-6 whitespace-nowrap text-sm theme-text-muted">
+            <td   class="px-8 py-6 whitespace-nowrap text-sm theme-text-muted">
               {{ user.createdDate | date:'MMM d, y' }}
             </td>
-            <td class="px-8 py-6 whitespace-nowrap text-sm font-medium">
+            <td  *ngIf="isAdmin()" class="px-8 py-6 whitespace-nowrap text-sm font-medium">
               <div class="flex items-center space-x-3">
                 <button 
                   (click)="editUser(user.id)"
@@ -153,6 +153,7 @@
                   (click)="viewUser(user.id)"
                   class="theme-text-muted hover:text-gray-600 transition-colors">View</button>
                 <button 
+                  *ngIf="isAdmin()"
                   (click)="deleteUser(user.id)"
                   class="text-red-600 hover:text-red-800 font-semibold transition-colors">Delete</button>
               </div>
