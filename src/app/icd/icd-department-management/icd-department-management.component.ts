@@ -41,9 +41,7 @@ export class IcdDepartmentManagementComponent implements OnInit {
     'Finance',
     'Information Technology',
     'Operations',
-    'Marketing',
-    'Legal',
-    'Administration'
+    
   ];
 
   newDepartmentForm: NewDepartmentForm = {
@@ -61,6 +59,8 @@ export class IcdDepartmentManagementComponent implements OnInit {
     private icdAuthService: ICDAuthService,
     private departmentService: DepartmentService
   ) {}
+
+
 
    // Add these simple role checker methods
    isAdmin(): boolean {
@@ -114,6 +114,18 @@ export class IcdDepartmentManagementComponent implements OnInit {
 
   filterDepartments(): void {
     let filtered = [...this.departments];
+
+    // Department-based filtering for non-admin users
+    if (!this.isAdmin()) {
+      const currentUser = this.icdAuthService.getCurrentUser();
+      const currentUserDepartment = currentUser?.department;
+      
+      if (currentUserDepartment) {
+        filtered = filtered.filter(dept => 
+          dept.name.toLowerCase() === currentUserDepartment.toLowerCase()
+        );
+      }
+    }
     
     if (this.searchQuery) {
       filtered = filtered.filter(dept => 

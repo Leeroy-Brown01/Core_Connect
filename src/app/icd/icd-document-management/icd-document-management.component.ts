@@ -70,6 +70,8 @@ export class IcdDocumentManagementComponent implements OnInit {
     
   ) {}
 
+  
+
   // Add these simple role checker methods
   isAdmin(): boolean {
     const user = this.icdAuthService.getCurrentUser();
@@ -129,6 +131,18 @@ export class IcdDocumentManagementComponent implements OnInit {
 
   filterDocuments(): void {
     let filtered = [...this.documents];
+
+     // Department-based filtering for non-admin users
+     if (!this.isAdmin()) {
+      const currentUser = this.icdAuthService.getCurrentUser();
+      const currentUserDepartment = currentUser?.department;
+      
+      if (currentUserDepartment) {
+        filtered = filtered.filter(doc => 
+          doc.department.toLowerCase() === currentUserDepartment.toLowerCase()
+        );
+      }
+    }
     
     if (this.searchQuery) {
       filtered = filtered.filter(doc => 

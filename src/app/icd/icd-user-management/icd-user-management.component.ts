@@ -148,6 +148,19 @@ export class IcdUserManagementComponent implements OnInit {
   filterUsers(): void {
     let filtered = [...this.users];
     
+    // Department-based filtering for non-admin users
+    if (!this.isAdmin()) {
+      const currentUser = this.icdAuthService.getCurrentUser();
+      const currentUserDepartment = currentUser?.department;
+      
+      if (currentUserDepartment) {
+        filtered = filtered.filter(user => 
+          user.department.toLowerCase() === currentUserDepartment.toLowerCase()
+        );
+      }
+    }
+    
+    // ...existing code... (search filtering)
     if (this.searchQuery) {
       filtered = filtered.filter(user => 
         user.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
@@ -156,6 +169,7 @@ export class IcdUserManagementComponent implements OnInit {
       );
     }
     
+    // ...existing code... (sorting)
     filtered.sort((a, b) => {
       switch (this.sortBy) {
         case 'name': return a.name.localeCompare(b.name);

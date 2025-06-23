@@ -12,11 +12,6 @@
           </svg>
           <h1 class="text-xl font-semibold text-gray-800">Compose New Message</h1>
         </div>
-        <button 
-          (click)="onCancel()"
-          class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors duration-200">
-          Cancel
-        </button>
       </div>
     </div>
   </div>
@@ -50,34 +45,7 @@
             </div>
           </div>
 
-          <!-- Priority and Category -->
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label for="priority" class="block text-sm font-medium text-gray-700 mb-2">Priority:</label>
-              <select
-                id="priority"
-                name="priority"
-                [(ngModel)]="messageData.priority"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200">
-                <option *ngFor="let option of priorityOptions" [value]="option.value">
-                  {{ option.label }}
-                </option>
-              </select>
-            </div>
-
-            <div>
-              <label for="category" class="block text-sm font-medium text-gray-700 mb-2">Category:</label>
-              <select
-                id="category"
-                name="category"
-                [(ngModel)]="messageData.category"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200">
-                <option *ngFor="let option of categoryOptions" [value]="option.value">
-                  {{ option.label }}
-                </option>
-              </select>
-            </div>
-          </div>
+          
         </div>
 
         <!-- Department Selection -->
@@ -266,19 +234,7 @@
               {{ isSending ? 'Sending...' : 'Send Message' }}
             </button>
             
-            <button 
-              type="button"
-              (click)="saveAsDraft()"
-              [disabled]="isSaving || isProcessingFile"
-              class="px-4 py-2 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:cursor-not-allowed text-gray-700 font-medium rounded-lg transition-colors duration-200 flex items-center gap-2">
-              <svg *ngIf="isSaving" class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-              </svg>
-              <svg *ngIf="!isSaving" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 12l2 2 4-4"></path>
-              </svg>
-              {{ isSaving ? 'Saving...' : 'Save as Draft' }}
-            </button>
+            
           </div>
 
           <!-- Form Status -->
@@ -293,7 +249,6 @@
               ⚙️ Processing file...
             </div>
             <div>
-              ⚡ {{ messageData.priority }} priority • 📂 {{ messageData.category }}
             </div>
           </div>
         </div>

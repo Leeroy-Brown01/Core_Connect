@@ -13,8 +13,6 @@ interface MessageFormData {
   recipientDepartments: string[];
   subject: string;
   message: string;
-  priority: 'low' | 'normal' | 'high';
-  category: string;
 }
 
 @Component({
@@ -30,8 +28,6 @@ export class ComposeComponent implements OnInit, OnDestroy {
     recipientDepartments: [],
     subject: '',
     message: '',
-    priority: 'normal',
-    category: 'general'
   };
 
   attachedFile: File | null = null;
@@ -42,23 +38,7 @@ export class ComposeComponent implements OnInit, OnDestroy {
 
   // Available options
   availableDepartments: string[] = [];
-  priorityOptions = [
-    { value: 'low', label: 'Low Priority' },
-    { value: 'normal', label: 'Normal Priority' },
-    { value: 'high', label: 'High Priority' }
-  ];
-
-  categoryOptions = [
-    { value: 'general', label: 'General' },
-    { value: 'urgent', label: 'Urgent' },
-    { value: 'announcement', label: 'Announcement' },
-    { value: 'policy', label: 'Policy Update' },
-    { value: 'training', label: 'Training' },
-    { value: 'meeting', label: 'Meeting' },
-    { value: 'report', label: 'Report' },
-    { value: 'other', label: 'Other' }
-  ];
-
+  
   private replySubscription?: Subscription;
 
   constructor(
@@ -69,8 +49,13 @@ export class ComposeComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.availableDepartments = this.messageService.getDepartments();
-
+    this.availableDepartments = [
+      'Human Resources',
+      'Finance', 
+      'Information Technology',
+      'Operations',
+    ];
+     
     // Subscribe to reply data
     this.subscribeToReplyData();
   }
@@ -94,8 +79,6 @@ export class ComposeComponent implements OnInit, OnDestroy {
             recipientDepartments: this.messageData.recipientDepartments,
             subject: this.messageData.subject,
             message: this.messageData.message,
-            priority: this.messageData.priority,
-            category: this.messageData.category,
             status: 'sent'
           },
           this.attachedFile || undefined
@@ -111,41 +94,6 @@ export class ComposeComponent implements OnInit, OnDestroy {
       } finally {
         this.isSending = false;
       }
-    }
-  }
-
-  async saveAsDraft() {
-    if (!this.hasContent()) {
-      this.toastService.warning('Please add some content before saving as draft.');
-      return;
-    }
-
-    this.isSaving = true;
-
-    try {
-      console.log('💾 Saving as draft:', this.messageData);
-
-      const draftId = await this.messageService.saveDraft(
-        {
-          to: this.messageData.to,
-          recipientDepartments: this.messageData.recipientDepartments,
-          subject: this.messageData.subject,
-          message: this.messageData.message,
-          priority: this.messageData.priority,
-          category: this.messageData.category,
-          status: 'draft'
-        },
-        this.attachedFile || undefined
-      );
-
-      console.log('✅ Draft saved successfully with ID:', draftId);
-      this.toastService.success('Draft saved successfully!');
-
-    } catch (error: any) {
-      console.error('❌ Error saving draft:', error);
-      this.toastService.error(error.message || 'Failed to save draft. Please try again.');
-    } finally {
-      this.isSaving = false;
     }
   }
 
@@ -314,8 +262,6 @@ export class ComposeComponent implements OnInit, OnDestroy {
       recipientDepartments: [],
       subject: '',
       message: '',
-      priority: 'normal',
-      category: 'general'
     };
     this.attachedFile = null;
   }
@@ -373,12 +319,7 @@ export class ComposeComponent implements OnInit, OnDestroy {
 
       this.messageData.message = quotedMessage;
 
-      // Set priority to normal for replies
-      this.messageData.priority = 'normal';
-
-      // Set category based on original or default to reply
-      this.messageData.category = 'general';
-
+      
       // Clear departments selection (since we're replying to specific email)
       this.messageData.recipientDepartments = [];
 
@@ -418,12 +359,6 @@ export class ComposeComponent implements OnInit, OnDestroy {
       );
 
       this.messageData.message = forwardMessage;
-
-      // Set priority to normal for forwards
-      this.messageData.priority = 'normal';
-
-      // Set category to general
-      this.messageData.category = 'general';
 
       // Clear departments selection (user needs to select who to forward to)
       this.messageData.recipientDepartments = [];
