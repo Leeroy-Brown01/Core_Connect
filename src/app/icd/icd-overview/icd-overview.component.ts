@@ -76,6 +76,28 @@ export class IcdOverviewComponent implements OnInit, OnDestroy {
     private inboxService: InboxService
   ) {}
 
+  // Add these simple role checker methods
+  isAdmin(): boolean {
+    const user = this.icdAuthService.getCurrentUser();
+    return user?.role?.toLowerCase() === 'admin';
+  }
+
+  isUser(): boolean {
+    const user = this.icdAuthService.getCurrentUser();
+    return user?.role?.toLowerCase() === 'user';
+  }
+
+  isViewer(): boolean {
+    const user = this.icdAuthService.getCurrentUser();
+    return user?.role?.toLowerCase() === 'viewer';
+  }
+
+  hasAnyRole(roles: string[]): boolean {
+    const user = this.icdAuthService.getCurrentUser();
+    const userRole = user?.role?.toLowerCase();
+    return roles.some(role => role.toLowerCase() === userRole);
+  }
+
   ngOnInit(): void {
     this.loadAllData();
   }

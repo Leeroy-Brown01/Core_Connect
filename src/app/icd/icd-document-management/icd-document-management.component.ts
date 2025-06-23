@@ -66,8 +66,31 @@ export class IcdDocumentManagementComponent implements OnInit {
 
   constructor(
     private documentService: DocumentService,
-    private icdAuthService: ICDAuthService
+    private icdAuthService: ICDAuthService,
+    
   ) {}
+
+  // Add these simple role checker methods
+  isAdmin(): boolean {
+    const user = this.icdAuthService.getCurrentUser();
+    return user?.role?.toLowerCase() === 'admin';
+  }
+
+  isUser(): boolean {
+    const user = this.icdAuthService.getCurrentUser();
+    return user?.role?.toLowerCase() === 'user';
+  }
+
+  isViewer(): boolean {
+    const user = this.icdAuthService.getCurrentUser();
+    return user?.role?.toLowerCase() === 'viewer';
+  }
+
+  hasAnyRole(roles: string[]): boolean {
+    const user = this.icdAuthService.getCurrentUser();
+    const userRole = user?.role?.toLowerCase();
+    return roles.some(role => role.toLowerCase() === userRole);
+  }
 
   async ngOnInit(): Promise<void> {
     console.log('🔄 Initializing ICD Document Management component...');

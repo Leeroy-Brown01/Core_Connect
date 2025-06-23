@@ -13,6 +13,7 @@
         
         <!-- Add User Button - Only visible on md+ screens -->
         <button 
+        *ngIf="isAdmin()"
           (click)="openAddUserModal()"
           class="hidden md:inline-flex items-center px-6 py-3 theme-button-primary font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl">
           <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -48,6 +49,7 @@
         <!-- Add User Button - Below search on small screens -->
         <div class="flex justify-start">
           <button 
+            *ngIf="isAdmin()"
             (click)="openAddUserModal()"
             class="theme-button-primary px-4 py-2 font-medium rounded-lg transition-all duration-200 shadow-md hover:shadow-lg text-sm inline-flex items-center">
             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

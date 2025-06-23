@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { DepartmentService, FirebaseDepartment } from '../../services/department.service';
+import { ICDUserService } from 'src/app/services/icd-user.service';
+import { ICDAuthService } from 'src/app/services/icd-auth.service';
 
 interface Department {
   id: string;
@@ -56,8 +58,31 @@ export class IcdDepartmentManagementComponent implements OnInit {
 
   constructor(
     private authService: AuthService,
+    private icdAuthService: ICDAuthService,
     private departmentService: DepartmentService
   ) {}
+
+   // Add these simple role checker methods
+   isAdmin(): boolean {
+    const user = this.icdAuthService.getCurrentUser();
+    return user?.role?.toLowerCase() === 'admin';
+  }
+
+  isUser(): boolean {
+    const user = this.icdAuthService.getCurrentUser();
+    return user?.role?.toLowerCase() === 'user';
+  }
+
+  isViewer(): boolean {
+    const user = this.icdAuthService.getCurrentUser();
+    return user?.role?.toLowerCase() === 'viewer';
+  }
+
+  hasAnyRole(roles: string[]): boolean {
+    const user = this.icdAuthService.getCurrentUser();
+    const userRole = user?.role?.toLowerCase();
+    return roles.some(role => role.toLowerCase() === userRole);
+  }
 
   async ngOnInit(): Promise<void> {
     await this.loadDepartments();
