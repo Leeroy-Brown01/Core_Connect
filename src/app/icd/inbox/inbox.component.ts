@@ -14,6 +14,7 @@ import { Subscription } from 'rxjs';
 import { IcdDownloadsComponent } from '../icd-downloads/icd-downloads.component';
 import { ReplyService, ReplyData, ForwardData } from '../../services/reply.service';
 import { ComposeComponent } from '../compose/compose.component';
+import { Router } from '@angular/router';
 
 interface InboxMessage {
   id?: string;
@@ -109,7 +110,8 @@ export class InboxComponent implements OnInit, OnDestroy {
     private inboxService: InboxService,
     private icdDownloadsService: ICDDownloadsService,
     private toastService: ToastService,
-    private replyService: ReplyService
+    private replyService: ReplyService,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -201,7 +203,7 @@ export class InboxComponent implements OnInit, OnDestroy {
       id: msg.id,
       senderId: msg.senderId,
       senderName: msg.senderName || 'Unknown Sender',
-      senderEmail: msg.senderId,
+      senderEmail: msg.senderEmail, // Use the actual senderEmail field, not senderId
       recipientDepartments: msg.recipientDepartments,
       to: msg.to,
       subject: msg.subject || 'No Subject',
@@ -563,13 +565,18 @@ export class InboxComponent implements OnInit, OnDestroy {
     }
   }
 
-  replyToMessage(): void {
+  async replyToMessage(): Promise<void> {
     if (!this.selectedModalMessage) {
       console.warn('No message selected for reply');
       return;
     }
     
     console.log('📧 Preparing reply to message:', this.selectedModalMessage.id);
+    console.log('📧 Message data:', {
+      senderEmail: this.selectedModalMessage.senderEmail,
+      senderId: this.selectedModalMessage.senderId,
+      senderName: this.selectedModalMessage.senderName
+    });
     
     // Get current user data for context
     const currentUser = this.icdAuthService.getCurrentUser();
@@ -578,8 +585,80 @@ export class InboxComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Use sender's email from the message, fallback to senderId if no email
-    const senderEmail = this.selectedModalMessage.senderEmail || this.selectedModalMessage.senderId || '';
+    // Get sender's email - try multiple approaches
+    let senderEmail = this.selectedModalMessage.senderEmail;
+    
+    // If no email, try to look it up using the senderId
+    if (!senderEmail && this.selectedModalMessage.senderId) {
+      try {
+        console.log('🔍 Looking up sender email for senderId:', this.selectedModalMessage.senderId);
+        
+        // Get all users and find by senderId - try multiple matching strategies
+        const allUsers = await this.icdUserService.getUsers();
+        console.log('👥 Available users for lookup:', allUsers.map(u => ({ 
+          id: u.id, 
+          email: u.email, 
+          fullName: u.fullName 
+        })));
+        
+        let senderUser = allUsers.find(user => 
+          user.id === this.selectedModalMessage!.senderId
+        );
+        
+        // If not found by id, try email field
+        if (!senderUser) {
+          senderUser = allUsers.find(user => 
+            user.email === this.selectedModalMessage!.senderId
+          );
+        }
+        
+        // If still not found, try any field that might contain the senderId
+        if (!senderUser) {
+          senderUser = allUsers.find(user => 
+            user.id === this.selectedModalMessage!.senderId || // if uid field exists
+            (user as any).firebaseUid === this.selectedModalMessage!.senderId // if firebaseUid field exists
+          );
+        }
+        
+        if (senderUser) {
+          senderEmail = senderUser.email;
+          console.log('✅ Found sender email via user lookup:', senderEmail);
+        } else {
+          console.warn('⚠️ No user found for senderId:', this.selectedModalMessage.senderId);
+          console.warn('⚠️ Searched in users with IDs:', allUsers.map(u => u.id));
+        }
+      } catch (error) {
+        console.error('❌ Error looking up sender email:', error);
+      }
+    }
+
+    // If still no email and senderId looks like an email, use it directly
+    if (!senderEmail && this.selectedModalMessage.senderId?.includes('@')) {
+      senderEmail = this.selectedModalMessage.senderId;
+      console.log('📧 Using senderId as email fallback:', senderEmail);
+    }
+
+    // Try to get email from the original message data if available
+    if (!senderEmail && this.allMessages.length > 0) {
+      const originalMessage = this.allMessages.find(msg => msg.id === this.selectedModalMessage!.id);
+      if (originalMessage?.senderEmail) {
+        senderEmail = originalMessage.senderEmail;
+        console.log('📧 Found sender email from original message data:', senderEmail);
+      }
+    }
+
+    // Final validation
+    if (!senderEmail || !senderEmail.includes('@')) {
+      // Show more detailed error information
+      this.toastService?.warning(`Cannot determine sender email address for reply. Please contact ${this.selectedModalMessage.senderName} directly.`);
+      console.error('❌ No valid sender email found after all attempts:', {
+        senderEmail: this.selectedModalMessage.senderEmail,
+        senderId: this.selectedModalMessage.senderId,
+        senderName: this.selectedModalMessage.senderName,
+        availableUserCount: (await this.icdUserService.getUsers()).length
+      });
+      return;
+    }
 
     // Prepare reply data
     const replyData: ReplyData = {
@@ -602,9 +681,9 @@ export class InboxComponent implements OnInit, OnDestroy {
     this.activeTab = 'compose';
     
     // Show success message
-    this.toastService?.info(`Replying to: ${replyData.replyToName}`);
+    this.toastService?.info(`Replying to: ${replyData.replyToName} (${senderEmail})`);
     
-    console.log('✅ Reply data set, navigating to compose');
+    console.log('✅ Reply data set, navigating to compose with email:', senderEmail);
   }
 
   forwardMessage(): void {
