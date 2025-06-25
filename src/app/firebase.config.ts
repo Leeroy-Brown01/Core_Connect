@@ -1,8 +1,8 @@
 export const firebaseConfig = {
-  apiKey: "AIzaSyD4qUpThhIyB4I24bHXJvFDCa-v_f_XNts",
-  authDomain: "fundo-5fdc5.firebaseapp.com",
-  projectId: "fundo-5fdc5",
-  storageBucket: "fundo-5fdc5.firebasestorage.app",
-  messagingSenderId: "948380954724",
-  appId: "1:948380954724:web:6bf99f61ff9a6a4575ef71"
+  apiKey: "AIzaSyCg5AlYl271hrgSMIzaX7aDpjqKBtmdKrw",
+  authDomain: "core-connect-85bf8.firebaseapp.com",
+  projectId: "core-connect-85bf8",
+  storageBucket: "core-connect-85bf8.firebasestorage.app",
+  messagingSenderId: "1097346357094",
+  appId: "1:1097346357094:web:b8e9b6ed4b72254aeedaa7"
 };

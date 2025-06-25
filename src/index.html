@@ -141,6 +141,63 @@
         background: #374151;
       }
     }
+
+    /* Force light mode for login component to fix text visibility */
+    app-icd-log-in,
+    app-icd-log-in *,
+    app-icd-log-in input,
+    app-icd-log-in textarea,
+    app-icd-log-in select,
+    app-icd-log-in button,
+    app-icd-log-in form,
+    app-icd-log-in .form-control,
+    app-icd-log-in .form-group {
+      color: #1f2937 !important;
+      background-color: #ffffff !important;
+      border-color: #d1d5db !important;
+    }
+
+    /* Specific input field overrides */
+    app-icd-log-in input[type="text"],
+    app-icd-log-in input[type="email"],
+    app-icd-log-in input[type="password"],
+    app-icd-log-in input[type="tel"],
+    app-icd-log-in textarea {
+      background-color: #ffffff !important;
+      color: #1f2937 !important;
+      border: 1px solid #d1d5db !important;
+    }
+
+    /* Placeholder text visibility */
+    app-icd-log-in input::placeholder,
+    app-icd-log-in textarea::placeholder {
+      color: #9ca3af !important;
+      opacity: 1 !important;
+    }
+
+    /* Force light background for the entire login component */
+    app-icd-log-in {
+      background-color: #ffffff !important;
+      color: #1f2937 !important;
+    }
+
+    /* Override any dark mode styles specifically for login */
+    @media (prefers-color-scheme: dark) {
+      app-icd-log-in,
+      app-icd-log-in *,
+      app-icd-log-in input,
+      app-icd-log-in textarea,
+      app-icd-log-in select {
+        background-color: #ffffff !important;
+        color: #1f2937 !important;
+        border-color: #d1d5db !important;
+      }
+      
+      app-icd-log-in input::placeholder,
+      app-icd-log-in textarea::placeholder {
+        color: #9ca3af !important;
+      }
+    }
     
     /* Hide loader when app loads */
     .app-loaded #initial-loader {

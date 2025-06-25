@@ -267,9 +267,50 @@ body {
       font-size: 0.75rem;
     }
   }
+
+  app-icd-log-in,
+  app-icd-log-in * {
+    /* Override dark mode variables with light mode values */
+    --bg-primary: #ffffff !important;
+    --bg-secondary: #f9fafb !important;
+    --bg-tertiary: #f3f4f6 !important;
+    --text-primary: #1f2937 !important;
+    --text-secondary: #6b7280 !important;
+    --text-muted: #9ca3af !important;
+    --border-primary: #e5e7eb !important;
+    --border-secondary: #d1d5db !important;
+    --color-primary: #3b82f6 !important;
+    --color-primary-hover: #2563eb !important;
+  }
+  
+  /* Ensure input fields have proper contrast */
+  app-icd-log-in input,
+  app-icd-log-in textarea,
+  app-icd-log-in select {
+    background-color: #ffffff !important;
+    color: #1f2937 !important;
+    border-color: #d1d5db !important;
+  }
+  
+  app-icd-log-in input::placeholder,
+  app-icd-log-in textarea::placeholder {
+    color: #9ca3af !important;
+  }
+  
   
   /* Status badges */
-  .status-badge {
+  .status-badge {pp-icd-log-in,
+    app-icd-log-in * {
+      /* Override dark mode variables with light mode values */
+      --bg-primary: #ffffff !important;
+      --bg-secondary: #f9fafb !important;
+      --bg-tertiary: #f3f4f6 !important;
+      --text-primary: #1f2937 !important;
+      --text-secondary: #6b7280 !important;
+      --text-muted: #9ca3af !important;
+      --border-primary: #e5e7eb !important;
+      --border-secondary: #d1d5db !important;
+    }
     padding: 0.25rem 0.5rem;
     border-radius: 9999px;
     font-size: 0.75rem;

@@ -22,19 +22,7 @@ export class AppComponent implements OnInit, OnDestroy {
   title = 'my-pos';
   showNavbar = true;
 
-  // Routes where navbar should be hidden
-  private hideNavbarRoutes = [
-    '/get-started',
-    '/landing-page',
-    '/log-in',
-    '/create-user-account',
-    '/video-output',
-    '/icd',
-    '/icd-log-in',
-    '/icd-sign-up',
-    '/icd-dashbaord',
-    '/main-layout'
-  ];
+  
 
   private routerSubscription: Subscription | null = null;
   private hasInitialRedirectHandled = false;
@@ -79,20 +67,7 @@ export class AppComponent implements OnInit, OnDestroy {
     // Extract the base path (remove query params and fragments)
     const basePath = url.split('?')[0].split('#')[0];
     
-    // Check if current route should hide navbar
-    this.showNavbar = !this.hideNavbarRoutes.some(route => {
-      // Exact match for most routes
-      if (basePath === route) {
-        return true;
-      }
-      
-      // Special handling for video-output with dynamic routes like /course/:id
-      if (route === '/video-output' && (basePath.startsWith('/course/') || basePath === '/video-output')) {
-        return true;
-      }
-      
-      return false;
-    });
+    
 
     console.log('Current route:', basePath, 'Show navbar:', this.showNavbar);
   }
@@ -103,24 +78,7 @@ export class AppComponent implements OnInit, OnDestroy {
     
     console.log('🔍 Handling initial route - Route:', currentRoute, 'User:', user ? user.email : 'No user');
     
-    // Define public routes that don't require authentication
-    const publicRoutes = ['/log-in', '/create-user-account', '/get-started', '/landing-page'];
-    const isPublicRoute = publicRoutes.some(route => currentRoute.startsWith(route));
     
-    if (isPublicRoute) {
-      console.log('✅ Public route access allowed:', currentRoute);
-      return;
-    }
     
-    // If trying to access protected route without authentication
-    if (!user && !isPublicRoute) {
-      console.log('🔒 Redirecting to login from protected route:', currentRoute);
-      this.router.navigate(['/log-in'], { 
-        queryParams: { returnUrl: currentRoute },
-        replaceUrl: true 
-      });
-    } else if (user) {
-      console.log('✅ Authenticated user accessing:', currentRoute);
-    }
-  }
+}
 }

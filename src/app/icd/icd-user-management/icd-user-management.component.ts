@@ -46,14 +46,6 @@ export class IcdUserManagementComponent implements OnInit {
     'Finance',
     'Information Technology',
     'Operations',
-    'Marketing',
-    'Legal',
-    'Administration',
-    'Communications',
-    'Engineering',
-    'Sales',
-    'Customer Service',
-    'Other'
   ];
 
   provinces = [

@@ -44,11 +44,7 @@ export class IcdSignUpComponent {
     'Finance',
     'Information Technology',
     'Operations',
-    'Marketing',
-    'Legal',
-    'Administration',
-    'Communications',
-    'Other'
+    
   ];
 
   // Province options (Zimbabwean provinces)

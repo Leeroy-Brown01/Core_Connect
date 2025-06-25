@@ -40,14 +40,7 @@ export class IcdDocumentManagementComponent implements OnInit {
     'Finance',
     'Information Technology',
     'Operations',
-    'Marketing',
-    'Legal',
-    'Administration',
-    'Communications',
-    'Engineering',
-    'Sales',
-    'Customer Service',
-    'Other'
+    
   ];
 
   newDocumentForm: NewDocumentForm = {
