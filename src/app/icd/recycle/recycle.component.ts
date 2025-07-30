@@ -51,7 +51,7 @@ export class RecycleComponent {
       textContent: 'Here are the notes from our weekly standup meeting. Please review and let me know if I missed anything important.',
       time: '-- days ago',
       hasAttachment: false,
-      deletedDate: '2024-01-20',
+      deletedDate: '----.--.--',
       originalFolder: 'inbox',
       daysUntilPermanentDelete: 27
     },
