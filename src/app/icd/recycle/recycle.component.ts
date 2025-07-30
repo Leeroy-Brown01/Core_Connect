@@ -46,26 +46,26 @@ export class RecycleComponent {
   recycledItems: RecycledItem[] = [
     {
       id: 1,
-      senderName: 'Alice Johnson',
+      senderName: 'Leeroy Brown Nyandoro',
       subject: 'Meeting Notes - Weekly Standup',
       textContent: 'Here are the notes from our weekly standup meeting. Please review and let me know if I missed anything important.',
-      time: '3 days ago',
+      time: '-- days ago',
       hasAttachment: false,
       deletedDate: '2024-01-20',
       originalFolder: 'inbox',
       daysUntilPermanentDelete: 27
     },
-    {
-      id: 2,
-      senderName: 'Support Team',
-      subject: 'Ticket #12345 - Issue Resolved',
-      textContent: 'Your support ticket has been resolved. The issue with the login system has been fixed and is now working properly.',
-      time: '1 week ago',
-      hasAttachment: true,
-      deletedDate: '2024-01-16',
-      originalFolder: 'inbox',
-      daysUntilPermanentDelete: 23
-    },
+    // {
+    //   id: 2,
+    //   senderName: 'Support Team',
+    //   subject: 'Ticket #12345 - Issue Resolved',
+    //   textContent: 'Your support ticket has been resolved. The issue with the login system has been fixed and is now working properly.',
+    //   time: '1 week ago',
+    //   hasAttachment: true,
+    //   deletedDate: '2024-01-16',
+    //   originalFolder: 'inbox',
+    //   daysUntilPermanentDelete: 23
+    // },
     {
       id: 3,
       senderName: 'Finance Department',
