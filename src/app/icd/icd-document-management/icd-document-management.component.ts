@@ -76,10 +76,10 @@ export class IcdDocumentManagementComponent implements OnInit {
     return user?.role?.toLowerCase() === 'user';
   }
 
-  isViewer(): boolean {
-    const user = this.icdAuthService.getCurrentUser();
-    return user?.role?.toLowerCase() === 'viewer';
-  }
+  // isViewer(): boolean {
+  //   const user = this.icdAuthService.getCurrentUser();
+  //   return user?.role?.toLowerCase() === 'viewer';
+  // }
 
   hasAnyRole(roles: string[]): boolean {
     const user = this.icdAuthService.getCurrentUser();

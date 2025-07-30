@@ -45,11 +45,11 @@ Check Firebase Console:
 
 ## Test Data Example:
 ```
-Full Name: John Test User
-Email: john.test@example.com (use unique email each time)
-Phone: +27123456789
+Full Name: Brown Test User
+Email: lee.brown@example.com (use unique email each time)
+Phone: +263787640780
 Department: SHEQ
-Province: Gauteng
+Province: Mash West
 Role: Employee
 Password: testpass123
 ```
@@ -59,10 +59,10 @@ Password: testpass123
 {
   uid: "firebase-generated-uid",
   fullName: "John Test User",
-  email: "john.test@example.com",
-  phone: "+27123456789",
+  email: "lee.brown@example.com",
+  phone: "+263787640780",
   department: "SHEQ",
-  province: "Gauteng", 
+  province: "Mash West", 
   role: "Employee",
   profilePhoto: "base64-string-or-empty",
   status: "Active",

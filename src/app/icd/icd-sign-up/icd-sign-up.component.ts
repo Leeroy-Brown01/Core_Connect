@@ -61,7 +61,7 @@ export class IcdSignUpComponent {
   roles = [
     { value: 'user', label: 'User' },
     { value: 'admin', label: 'Administrator' },
-    { value: 'viewer', label: 'Viewer' }
+    // { value: 'viewer', label: 'Viewer' }
   ];
 
   constructor(

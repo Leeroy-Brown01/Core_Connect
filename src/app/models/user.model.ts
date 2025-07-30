@@ -4,7 +4,7 @@ export enum RoleName {
   WAREHOUSE_STAFF = 'Warehouse Staff',
   SALES_REP = 'Sales Rep',
   SUPPLIER = 'Supplier',
-  VIEWER = 'Viewer'
+  // VIEWER = 'Viewer'
 }
 
 export enum UserStatus {

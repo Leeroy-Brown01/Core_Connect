@@ -95,10 +95,10 @@ export class IcdUserManagementComponent implements OnInit {
     return user?.role?.toLowerCase() === 'user';
   }
 
-  isViewer(): boolean {
-    const user = this.icdAuthService.getCurrentUser();
-    return user?.role?.toLowerCase() === 'viewer';
-  }
+  // isViewer(): boolean {
+  //   const user = this.icdAuthService.getCurrentUser();
+  //   return user?.role?.toLowerCase() === 'viewer';
+  // }
 
   hasAnyRole(roles: string[]): boolean {
     const user = this.icdAuthService.getCurrentUser();
@@ -183,7 +183,7 @@ export class IcdUserManagementComponent implements OnInit {
     switch (role) {
       case 'admin': return 'bg-red-100 text-red-800 border-red-200';
       case 'user': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'viewer': return 'bg-gray-100 text-gray-800 border-gray-200';
+      // case 'viewer': return 'bg-gray-100 text-gray-800 border-gray-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   }
