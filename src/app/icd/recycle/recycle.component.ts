@@ -66,17 +66,17 @@ export class RecycleComponent {
     //   originalFolder: 'inbox',
     //   daysUntilPermanentDelete: 23
     // },
-    {
-      id: 3,
-      senderName: 'Finance Department',
-      subject: 'Expense Report Reminder',
-      textContent: 'This is a reminder to submit your expense reports by the end of the month. Please include all receipts.',
-      time: '2 weeks ago',
-      hasAttachment: false,
-      deletedDate: '2024-01-09',
-      originalFolder: 'sent',
-      daysUntilPermanentDelete: 16
-    }
+    // {
+    //   id: 3,
+    //   senderName: 'Finance Department',
+    //   subject: 'Expense Report Reminder',
+    //   textContent: 'This is a reminder to submit your expense reports by the end of the month. Please include all receipts.',
+    //   time: '2 weeks ago',
+    //   hasAttachment: false,
+    //   deletedDate: '2024-01-09',
+    //   originalFolder: 'sent',
+    //   daysUntilPermanentDelete: 16
+    // }
   ];
 
   onFilterChange(filterValue: string): void {
