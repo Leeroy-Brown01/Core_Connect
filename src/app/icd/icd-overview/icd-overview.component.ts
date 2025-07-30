@@ -86,11 +86,11 @@ export class IcdOverviewComponent implements OnInit, OnDestroy {
     const user = this.icdAuthService.getCurrentUser();
     return user?.role?.toLowerCase() === 'user';
   }
-
-  isViewer(): boolean {
-    const user = this.icdAuthService.getCurrentUser();
-    return user?.role?.toLowerCase() === 'viewer';
-  }
+// Removed this User Role Note Neccessary
+  // isViewer(): boolean {
+  //   const user = this.icdAuthService.getCurrentUser();
+  //   return user?.role?.toLowerCase() === 'viewer';
+  // }
 
   hasAnyRole(roles: string[]): boolean {
     const user = this.icdAuthService.getCurrentUser();
