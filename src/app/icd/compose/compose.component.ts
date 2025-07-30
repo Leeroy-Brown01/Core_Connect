@@ -50,10 +50,10 @@ export class ComposeComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.availableDepartments = [
-      'Human Resources',
-      'Finance', 
+      // 'Human Resources',
+      // 'Finance', 
       'Information Technology',
-      'Operations',
+      'Project management',
     ];
      
     // Subscribe to reply data

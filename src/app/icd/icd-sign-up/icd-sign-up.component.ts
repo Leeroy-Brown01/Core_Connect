@@ -40,10 +40,10 @@ export class IcdSignUpComponent {
 
   // Department options for ICD
   departments = [
-    'Human Resources',
-    'Finance',
+    // 'Human Resources',
+    // 'Finance',
     'Information Technology',
-    'Operations',
+    'Project Management',
     
   ];
 

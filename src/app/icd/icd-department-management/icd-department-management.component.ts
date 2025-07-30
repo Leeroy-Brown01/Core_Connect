@@ -38,9 +38,9 @@ export class IcdDepartmentManagementComponent implements OnInit {
   // Available department options
   departmentOptions = [
     'Human Resources',
-    'Finance',
+    // 'Finance',
     'Information Technology',
-    'Operations',
+    'Project Management',
     
   ];
 

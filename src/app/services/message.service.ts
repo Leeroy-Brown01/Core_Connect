@@ -550,10 +550,10 @@ export class MessageService {
   // Get available departments (for dropdown)
   getDepartments(): string[] {
     return [
-      'Human Resources',
-      'Finance',
+      // 'Human Resources',
+      // 'Finance',
       'Information Technology',
-      'Operations',
+      'Project Management',
       'Marketing',
       'Legal',
       'Administration',

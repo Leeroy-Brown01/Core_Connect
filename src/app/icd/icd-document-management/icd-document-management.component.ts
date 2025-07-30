@@ -36,10 +36,10 @@ export class IcdDocumentManagementComponent implements OnInit {
 
   // Available departments
   departments = [
-    'Human Resources',
-    'Finance',
+    // 'Human Resources',
+    // 'Finance',
     'Information Technology',
-    'Operations',
+    'Project Management',
     
   ];
 

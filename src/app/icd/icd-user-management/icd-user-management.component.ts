@@ -43,9 +43,9 @@ export class IcdUserManagementComponent implements OnInit {
   // Available options
   departments = [
     'Human Resources',
-    'Finance',
+    // 'Finance',
     'Information Technology',
-    'Operations',
+    'Project Management',
   ];
 
   provinces = [
