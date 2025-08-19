@@ -290,7 +290,7 @@ export class AuthService {
       this.router.navigate(['/log-in'], { 
         replaceUrl: true,
         queryParams: {},
-        fragment: null 
+  fragment: undefined 
       });
       
     } catch (error) {
@@ -303,7 +303,7 @@ export class AuthService {
       this.router.navigate(['/log-in'], { 
         replaceUrl: true,
         queryParams: {},
-        fragment: null 
+  fragment: undefined 
       });
       
       throw error;

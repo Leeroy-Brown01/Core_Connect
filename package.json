@@ -46,6 +46,7 @@
     "@types/eslint": "^9.6.1",
     "@types/googlemaps": "^3.43.3",
     "@types/jasmine": "~5.1.0",
+    "@types/smoothscroll-polyfill": "^0.3.4",
     "autoprefixer": "^10.4.19",
     "daisyui": "^4.12.10",
     "jasmine-core": "~5.1.0",
