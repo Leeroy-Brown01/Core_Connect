@@ -164,7 +164,7 @@ export class MainLayoutComponent {
         this.router.navigate(['/icd-log-in'], { 
           replaceUrl: true,
           queryParams: {},
-          fragment: null 
+          fragment: undefined 
         });
       }, 1000);
       
@@ -183,7 +183,7 @@ export class MainLayoutComponent {
         this.router.navigate(['/icd-log-in'], { 
           replaceUrl: true,
           queryParams: {},
-          fragment: null 
+          fragment: undefined 
         });
       }, 500);
     }

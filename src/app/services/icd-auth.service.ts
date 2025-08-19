@@ -202,7 +202,7 @@ export class ICDAuthService extends AuthService {
       this.router.navigate(['/icd-log-in'], { 
         replaceUrl: true,
         queryParams: {},
-        fragment: null 
+  fragment: undefined
       });
       
     } catch (error) {
@@ -215,7 +215,7 @@ export class ICDAuthService extends AuthService {
       this.router.navigate(['/icd-log-in'], { 
         replaceUrl: true,
         queryParams: {},
-        fragment: null 
+  fragment: undefined
       });
       
       throw error;

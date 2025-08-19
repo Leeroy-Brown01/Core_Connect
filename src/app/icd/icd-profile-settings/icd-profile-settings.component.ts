@@ -238,7 +238,7 @@ export class IcdProfileSettingsComponent implements OnInit {
         this.router.navigate(['/icd-log-in'], { 
           replaceUrl: true,
           queryParams: {},
-          fragment: null 
+          fragment: undefined 
         });
       }, 500);
     }

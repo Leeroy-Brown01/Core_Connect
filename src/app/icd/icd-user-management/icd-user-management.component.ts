@@ -397,9 +397,9 @@ export class IcdUserManagementComponent implements OnInit {
 
   // Form validation methods
   isFormValid(form: NgForm): boolean {
-    return form.valid && 
-           this.newUserForm.password === this.newUserForm.confirmPassword &&
-           this.newUserForm.password.length >= 6;
+  return !!form.valid && 
+       this.newUserForm.password === this.newUserForm.confirmPassword &&
+       this.newUserForm.password.length >= 6;
   }
 
   passwordsMatch(): boolean {

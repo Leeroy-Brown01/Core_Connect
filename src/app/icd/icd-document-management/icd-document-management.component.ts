@@ -338,7 +338,7 @@ export class IcdDocumentManagementComponent implements OnInit {
   }
 
   isFormValid(form: NgForm): boolean {
-    return form.valid && this.newDocumentForm.file !== null;
+    return !!form.valid && this.newDocumentForm.file !== null;
   }
 
   // Add getter for current date

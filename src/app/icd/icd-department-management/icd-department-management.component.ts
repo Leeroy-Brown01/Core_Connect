@@ -254,7 +254,7 @@ export class IcdDepartmentManagementComponent implements OnInit {
   }
 
   isFormValid(form: NgForm): boolean {
-    return form.valid;
+    return !!form.valid;
   }
 
   // Department actions

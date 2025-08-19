@@ -155,7 +155,7 @@ export class IcdDownloadsComponent implements OnInit {
   }
 
   trackByDownloadId(index: number, item: ICDDownloadItem): string {
-    return item.id;
+    return item.id ?? index.toString();
   }
 
   formatFileSize(bytes: number): string {
