@@ -13,26 +13,26 @@ import { UserCardComponent } from './user-card/user-card.component';
 export class UserListComponent {
   users:any[]=[
     {
-      name:'Sarah Parkesh',
+      name:'Leeroy Brown',
       position:'I.T',
       imageUrl:'assets/images/moslim.jfif',
       admin: true
     },
     {
-      name:'Durai Churu',
+      name:'Mutsa mhlanga',
       position:'Supervisor',
       systemAdmin: true,
       supervisor: true,
 
     },
     {
-      name:'Kate Williams',
+      name:'simba',
       position:'I.T',
       imageUrl:'assets/images/white-dude-02.webp',
       client: true,
     },
     {
-      name:'Peter Griffin',
+      name:'Peter Brown',
       position:'I.T',
       imageUrl:'assets/images/white-dude.webp',
       siteManager: true,
@@ -44,12 +44,12 @@ export class UserListComponent {
       admin: true,
     },
     {
-      name:'Scott Adkins',
+      name:'myla Nyandoro',
       position:'I.T',
       admin: true,
     },
     {
-      name:'John Travolta',
+      name:'Frank Nyandoro',
       position:'I.T',
       security: true,
     },

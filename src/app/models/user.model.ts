@@ -1,10 +1,6 @@
 export enum RoleName {
   ADMIN = 'Admin',
-  MANAGER = 'Manager',
-  WAREHOUSE_STAFF = 'Warehouse Staff',
-  SALES_REP = 'Sales Rep',
-  SUPPLIER = 'Supplier',
-  // VIEWER = 'Viewer'
+ 
 }
 
 export enum UserStatus {
