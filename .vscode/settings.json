@@ -1,4 +1,4 @@
 {
     "gitlens.currentLine.enabled": false,
-    "gitlens.currentLine.pullRequests.enabled": false
+    "gitlens.currentLine.pullRequests.enabled": false,
 }
