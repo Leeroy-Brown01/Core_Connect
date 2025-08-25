@@ -1,36 +1,43 @@
-import { Injectable, inject } from '@angular/core';
-import { Firestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy, where, setDoc } from '@angular/fire/firestore';
-import { Auth, createUserWithEmailAndPassword, signOut, fetchSignInMethodsForEmail } from '@angular/fire/auth';
+// Angular service for managing ICD user records in Firestore and Firebase Auth
+import { Injectable, inject } from '@angular/core'; // Angular DI
+import { Firestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy, where, setDoc } from '@angular/fire/firestore'; // Firestore DB
+import { Auth, createUserWithEmailAndPassword, signOut, fetchSignInMethodsForEmail } from '@angular/fire/auth'; // Firebase Auth
 
+// Interface representing an ICD user in Firestore
 export interface FirebaseICDUser {
-  id?: string;
-  fullName: string;
-  email: string;
-  phone: string;
-  department: string;
-  province: string;
-  role: string;
-  status: 'active' | 'inactive';
-  profilePhoto?: string;
-  trainingCompleted: boolean;
-  createdAt: Date;
-  createdBy: string;
-  lastLoginAt?: Date;
-  documentsCount?: number;
+  id?: string; // Firestore document ID
+  fullName: string; // User's full name
+  email: string; // User's email
+  phone: string; // User's phone number
+  department: string; // User's department
+  province: string; // User's province
+  role: string; // User's role
+  status: 'active' | 'inactive'; // User's status
+  profilePhoto?: string; // Optional: profile photo URL
+  trainingCompleted: boolean; // Training completion flag
+  createdAt: Date; // Account creation date
+  createdBy: string; // User who created this record
+  lastLoginAt?: Date; // Optional: last login date
+  documentsCount?: number; // Optional: number of documents
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class ICDUserService {
+  // Name of the Firestore collection for ICD users
   private usersCollection = 'icd-users';
+  // Injected Firestore instance
   private firestore = inject(Firestore);
+  // Injected Firebase Auth instance
   private auth = inject(Auth);
 
   constructor() {
+    // Log service initialization
     console.log('ICDUserService initialized with proper injection context');
   }
 
+  // Create a new ICD user in Firestore
   async createUser(
     userData: {
       fullName: string;
@@ -48,7 +55,7 @@ export class ICDUserService {
     try {
       console.log('👤 Starting ICD user creation...');
 
-      // Save user data to Firestore
+      // Prepare user data for Firestore (omit id)
       const userInfo: Omit<FirebaseICDUser, 'id'> = {
         fullName: userData.fullName,
         email: userData.email,
@@ -64,10 +71,12 @@ export class ICDUserService {
         documentsCount: 0
       };
 
+      // Add new user document to Firestore
       const docRef = await addDoc(collection(this.firestore, this.usersCollection), userInfo);
       
       console.log('✅ ICD User saved to Firestore');
 
+      // Return success and the created user (with Firestore ID)
       return {
         success: true,
         user: {
@@ -77,6 +86,7 @@ export class ICDUserService {
       };
 
     } catch (error: any) {
+      // Log and return error
       console.error('❌ Error creating ICD user:', error);
       return {
         success: false,

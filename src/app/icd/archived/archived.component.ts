@@ -1,6 +1,8 @@
+
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
+// Interface representing a single archived message item
 interface ArchivedItem {
   id: number;
   senderName: string;
@@ -12,20 +14,22 @@ interface ArchivedItem {
   originalFolder: string;
 }
 
+// Interface for filter options in the UI
 interface FilterOption {
   value: string;
   label: string;
 }
 
 @Component({
-  selector: 'app-archived',
-  imports: [CommonModule],
-  templateUrl: './archived.component.html',
-  styleUrl: './archived.component.scss'
+  selector: 'app-archived', // Selector for this component
+  imports: [CommonModule], // Import CommonModule for ngIf, ngFor, etc.
+  templateUrl: './archived.component.html', // HTML template file
+  styleUrl: './archived.component.scss' // SCSS style file
 })
 export class ArchivedComponent {
-  selectedFilter: string = 'all';
+  selectedFilter: string = 'all'; // Currently selected filter for desktop
   
+  // List of filter options for desktop view
   filterOptions: FilterOption[] = [
     { value: 'all', label: 'All Archived' },
     { value: 'inbox', label: 'From Inbox' },
@@ -34,15 +38,16 @@ export class ArchivedComponent {
     { value: 'attachments', label: 'With Attachments' }
   ];
 
-  // Mobile filter categories (for the rounded pills)
+  // Mobile filter categories (for the rounded pills UI)
   mobileFilterCategories = [
     { id: 'all', label: 'All', count: 15 },
     { id: 'unread', label: 'Unread', count: 4 },
     { id: 'documents', label: 'Documents', count: 7 }
   ];
 
-  selectedMobileFilter = 'all';
+  selectedMobileFilter = 'all'; // Currently selected filter for mobile
 
+  // List of archived message items (mock data)
   archivedItems: ArchivedItem[] = [
     {
       id: 1,
@@ -76,26 +81,31 @@ export class ArchivedComponent {
     }
   ];
 
+  // Handler for changing the desktop filter
   onFilterChange(filterValue: string): void {
     this.selectedFilter = filterValue;
   }
 
+  // Handler for changing the mobile filter
   onMobileFilterChange(filterId: string): void {
     this.selectedMobileFilter = filterId;
     console.log('Mobile filter changed to:', filterId);
   }
 
+  // TrackBy function for ngFor to optimize rendering
   trackByItemId(index: number, item: ArchivedItem): number {
     return item.id;
   }
 
+  // Restore a message from the archive
   restoreMessage(item: ArchivedItem): void {
     console.log('Restoring message:', item);
-    // Handle restore logic
+    // Handle restore logic here
   }
 
+  // Permanently delete a message from the archive
   permanentlyDelete(item: ArchivedItem): void {
     console.log('Permanently deleting message:', item);
-    // Handle permanent delete logic
+    // Handle permanent delete logic here
   }
 }

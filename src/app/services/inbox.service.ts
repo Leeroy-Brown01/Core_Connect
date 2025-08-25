@@ -216,9 +216,9 @@ export class InboxService {
     });
   }
 
-  /**
-   * Fallback method for department messages (returns Promise) - Fixed injection context
-   */
+  
+  //  Fallback method for department messages (returns Promise) - Fixed injection context
+  
   private async getFallbackDepartmentMessages(department: string): Promise<InboxMessage[]> {
     console.log('🏢 Fallback: Getting department messages for:', department);
     
@@ -250,9 +250,8 @@ export class InboxService {
     });
   }
 
-  /**
-   * Initialize inbox streams for the current user
-   */
+  //  Initialize inbox streams for the current user
+   
   private initializeInboxStreams(): void {
     // Subscribe to authentication changes
     this.icdAuthService.currentUser$.subscribe(authUser => {
@@ -266,9 +265,7 @@ export class InboxService {
     });
   }
 
-  /**
-   * Start real-time inbox streams
-   */
+  // Start real-time inbox streams
   private startInboxStreams(userId: string, userEmail: string, department: string): void {
     // Stop existing streams
     this.stopInboxStreams();
@@ -289,9 +286,9 @@ export class InboxService {
     // the observables handle their own cleanup
   }
 
-  /**
-   * Stop all real-time streams
-   */
+
+  // Stop all real-time streams
+  
   private stopInboxStreams(): void {
     // Unsubscribe from all Firestore listeners
     this.activeListeners.forEach(unsubscribe => unsubscribe());
@@ -305,9 +302,8 @@ export class InboxService {
     console.log('🛑 Stopped all inbox streams');
   }
 
-  /**
-   * Get unread message count
-   */
+  //  * Get unread message count
+
   getUnreadCount(): Observable<number> {
     return this.allInboxMessages$.pipe(
       map(messages => {
@@ -321,9 +317,9 @@ export class InboxService {
     );
   }
 
-  /**
-   * Mark message as read
-   */
+  
+  //  Mark message as read
+  
   async markAsRead(messageId: string): Promise<void> {
     try {
       await this.messageService.markAsRead(messageId);
@@ -334,18 +330,14 @@ export class InboxService {
     }
   }
 
-  /**
-   * Get messages by type (direct, department, broadcast)
-   */
+  // Get messages by type (direct, department, broadcast)
   getMessagesByType(messageType: 'direct' | 'department' | 'broadcast'): Observable<InboxMessage[]> {
     return this.allInboxMessages$.pipe(
       map(messages => messages.filter(msg => msg.messageType === messageType))
     );
   }
 
-  /**
-   * Get messages by read status
-   */
+  // Get messages by read status
   getMessagesByReadStatus(isRead: boolean): Observable<InboxMessage[]> {
     return this.allInboxMessages$.pipe(
       map(messages => {
@@ -360,9 +352,7 @@ export class InboxService {
     );
   }
 
-  /**
-   * Cleanup method
-   */
+  // Cleanup method
   ngOnDestroy(): void {
     this.stopInboxStreams();
   }

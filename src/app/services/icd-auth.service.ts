@@ -22,7 +22,8 @@ export class ICDAuthService extends AuthService {
     firestore: Firestore,
     router: Router
   ) {
-    super(auth, firestore, router);
+  // Call parent AuthService constructor
+  super(auth, firestore, router);
     console.log('ICDAuthService initialized');
   }
 

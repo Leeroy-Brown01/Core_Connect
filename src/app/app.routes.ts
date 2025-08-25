@@ -1,5 +1,7 @@
-import { Routes } from '@angular/router';
-import { AuthGuard } from './guards/auth.guard';
+
+import { Routes } from '@angular/router'; // Angular router types
+import { AuthGuard } from './guards/auth.guard'; // Route guard for authentication
+// Import all components used in routes
 import { IcdComponent } from './icd/icd.component';
 import { IcdLogInComponent } from './icd/icd-log-in/icd-log-in.component';
 import { IcdSignUpComponent } from './icd/icd-sign-up/icd-sign-up.component';
@@ -20,101 +22,113 @@ import { IcdDraftComponent } from './icd/icd-draft/icd-draft.component';
 import { IcdDownloadsComponent } from './icd/icd-downloads/icd-downloads.component';
 import { IcdMessageDetailsComponent } from './icd/icd-message-details/icd-message-details.component';
 
+// Main application routes configuration
 export const routes: Routes = [
-  // Public routes (no authentication required)
+  // Public route: redirect root path to login
   {
     path: '',
     redirectTo: '/icd-log-in',
     pathMatch: 'full'
   },
 
-  // icd routes
+  // Main layout route with child routes for authenticated sections
   {
     path: 'main-layout',
-    component: MainLayoutComponent,  
+    component: MainLayoutComponent,  // Main layout wrapper
     children: [
+      // User management
       {
         path: 'icd-user-management',
         component: IcdUserManagementComponent
       },
+      // Overview dashboard
       {
         path: 'icd-overview',
         component: IcdOverviewComponent
       },
+      // Dashboard
       {
         path: 'icd-dashboard',
         component: IcdDashboardComponent
       },
+      // Inbox
       {
         path: 'inbox',
         component: InboxComponent
       },
+      // Compose message
       {
         path: 'compose',
         component: ComposeComponent
       },
+      // Users list
       {
         path: 'icd-users',
         component: IcdUsersComponent
       },
+      // Downloads
       {
         path: 'icd-downloads',
         component: IcdDownloadsComponent
       },
+      // Drafts
       {
         path: 'icd-draft',
         component: IcdDraftComponent
       },
+      // Department management
       {
         path: 'icd-department-management',
         component: IcdDepartmentManagementComponent
       },
+      // Document management
       {
         path: 'icd-document-management',
         component: IcdDocumentManagementComponent
       },
+      // Archived messages
       {
         path: 'archived',
         component: ArchivedComponent
       },
+      // Message details (with dynamic ID)
       {
         path: 'icd-message-details/:id',
         component: IcdMessageDetailsComponent
       },
+      // Recycle bin
       {
         path: 'recycle',
         component: RecycleComponent
       },
+      // Sent messages
       {
         path: 'sent',
         component: SentComponent
       },
+      // Profile settings
       {
         path: 'icd-profile-settings',
         component: IcdProfileSettingsComponent
       },
-
     ]
   },
+  // ICD landing page
   {
     path: 'icd',
-    component: IcdComponent  //landing-page
+    component: IcdComponent  // Landing page
   },
+  // Login page
   {
     path: 'icd-log-in',
     component: IcdLogInComponent
   },
+  // Sign up page
   {
     path: 'icd-sign-up',
     component: IcdSignUpComponent
   },
-  
- 
-
-  
-
-  // Fallback route
-  
+  // Fallback route (add a wildcard route here if needed)
 ];
 
 

@@ -1,30 +1,34 @@
-import { Injectable } from '@angular/core';
-import { Firestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy, where } from '@angular/fire/firestore';
-import { Observable, from } from 'rxjs';
+// Angular service for managing document uploads and metadata in Firestore
+import { Injectable } from '@angular/core'; // Angular DI
+import { Firestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy, where } from '@angular/fire/firestore'; // Firestore DB
+import { Observable, from } from 'rxjs'; // RxJS for async
 
+// Interface representing a document stored in Firestore
 export interface FirebaseDocument {
-  id?: string;
-  name: string;
-  description: string;
-  department: string;
-  fileName: string;
-  fileSize: number;
-  fileType: string;
+  id?: string; // Firestore document ID
+  name: string; // Document name
+  description: string; // Document description
+  department: string; // Department associated with document
+  fileName: string; // Name of the uploaded file
+  fileSize: number; // Size of the file in bytes
+  fileType: string; // MIME type of the file
   fileData: string; // Base64 encoded file data
-  uploadedBy: string;
-  uploadedAt: Date;
-  createdAt: Date;
-  createdBy: string;
+  uploadedBy: string; // User who uploaded the file
+  uploadedAt: Date; // Upload timestamp
+  createdAt: Date; // Document creation timestamp
+  createdBy: string; // User who created the document record
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class DocumentService {
+  // Name of the Firestore collection for documents
   private documentsCollection = 'documents';
 
   constructor(private firestore: Firestore) {}
 
+  // Upload a document file and its metadata to Firestore
   async uploadDocument(
     file: File,
     documentData: {
@@ -38,11 +42,11 @@ export class DocumentService {
     try {
       console.log('📤 Starting document upload...');
 
-      // Convert file to base64
+      // Convert file to base64 string for storage
       const fileData = await this.fileToBase64(file);
       console.log('✅ File converted to base64');
 
-      // Save document with base64 data to Firestore
+      // Prepare document data for Firestore (omit id)
       const docData: Omit<FirebaseDocument, 'id'> = {
         name: documentData.name,
         description: documentData.description,
@@ -57,6 +61,7 @@ export class DocumentService {
         createdBy: documentData.createdBy
       };
 
+      // Add new document record to Firestore
       const docRef = await addDoc(collection(this.firestore, this.documentsCollection), docData);
       
       console.log('✅ Document saved to Firestore with base64 data');

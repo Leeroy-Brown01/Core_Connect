@@ -1,22 +1,26 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing'; // Angular testing utilities
+import { UserCardComponent } from './user-card.component'; // Component under test
 
-import { UserCardComponent } from './user-card.component';
-
+// Test suite for UserCardComponent
 describe('UserCardComponent', () => {
-  let component: UserCardComponent;
-  let fixture: ComponentFixture<UserCardComponent>;
+  let component: UserCardComponent; // Instance of the component
+  let fixture: ComponentFixture<UserCardComponent>; // Test fixture for the component
 
+  // Runs before each test in this suite
   beforeEach(async () => {
+    // Configure the testing module with the component to test
     await TestBed.configureTestingModule({
       imports: [UserCardComponent]
     })
-    .compileComponents();
+    .compileComponents(); // Compile template and CSS
 
+    // Create the component fixture and instance
     fixture = TestBed.createComponent(UserCardComponent);
     component = fixture.componentInstance;
-    fixture.detectChanges();
+    fixture.detectChanges(); // Trigger initial data binding
   });
 
+  // Basic test to check if the component is created successfully
   it('should create', () => {
     expect(component).toBeTruthy();
   });

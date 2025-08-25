@@ -1,15 +1,22 @@
+
 import { Injectable, inject } from '@angular/core';
 import { Auth, fetchSignInMethodsForEmail } from '@angular/fire/auth';
 import { ICDUserService } from './icd-user.service';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root' // Makes this service available app-wide
 })
 export class UserCleanupService {
+  // Inject Firebase Auth service
   private auth = inject(Auth);
+  // Inject custom ICD user service for Firestore operations
   private icdUserService = inject(ICDUserService);
 
-  // Method to check for orphaned Firebase Auth users
+  /**
+   * Method to check for orphaned Firebase Auth users (users in Auth but not in Firestore)
+   * Note: This requires server-side implementation; client-side cannot list all Auth users
+   * @returns An empty array (placeholder)
+   */
   async findOrphanedAuthUsers(): Promise<string[]> {
     // This would require server-side implementation
     // Client-side cannot list all Firebase Auth users
@@ -17,7 +24,11 @@ export class UserCleanupService {
     return [];
   }
 
-  // Method to check if email has conflicts
+  /**
+   * Check if an email exists in Firebase Auth and/or Firestore, and if a new user can be created
+   * @param email The email to check
+   * @returns Object with existence flags and a guidance message
+   */
   async checkEmailConflicts(email: string): Promise<{
     existsInAuth: boolean;
     existsInFirestore: boolean;
@@ -25,13 +36,16 @@ export class UserCleanupService {
     message: string;
   }> {
     try {
+      // Check if email exists in Firebase Auth
       const existsInAuth = await this.icdUserService.checkEmailExistsInAuth(email);
+      // Check if user exists in Firestore
       const firestoreUser = await this.icdUserService.getUserByEmail(email);
       const existsInFirestore = !!firestoreUser;
 
       let canCreateNew = false;
       let message = '';
 
+      // Determine the state and set message accordingly
       if (!existsInAuth && !existsInFirestore) {
         canCreateNew = true;
         message = 'Email is available for new user creation';
@@ -50,6 +64,7 @@ export class UserCleanupService {
         message
       };
     } catch (error) {
+      // Log error and return default response
       console.error('Error checking email conflicts:', error);
       return {
         existsInAuth: false,
@@ -60,10 +75,14 @@ export class UserCleanupService {
     }
   }
 
-  // Method to provide user creation guidance
+  /**
+   * Provide user creation guidance based on email conflict checks
+   * @param email The email to check
+   * @returns Guidance string for user creation
+   */
   async getCreationGuidance(email: string): Promise<string> {
     const conflicts = await this.checkEmailConflicts(email);
-    
+    // Return guidance based on conflict state
     if (conflicts.canCreateNew) {
       return 'You can proceed with creating this user.';
     } else if (conflicts.existsInAuth && !conflicts.existsInFirestore) {

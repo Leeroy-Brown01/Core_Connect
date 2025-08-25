@@ -1,58 +1,66 @@
-import { Injectable } from '@angular/core';
-import { Auth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, authState, User, onAuthStateChanged, setPersistence, browserLocalPersistence } from '@angular/fire/auth';
-import { Firestore, doc, setDoc, getDoc, updateDoc } from '@angular/fire/firestore';
-import { BehaviorSubject, Observable, firstValueFrom } from 'rxjs';
-import { Router } from '@angular/router';
-import { map, filter, take } from 'rxjs/operators';
+// Angular service for handling authentication and user management using Firebase Auth and Firestore
+import { Injectable } from '@angular/core'; // Angular DI decorator
+import { Auth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, authState, User, onAuthStateChanged, setPersistence, browserLocalPersistence } from '@angular/fire/auth'; // Firebase Auth
+import { Firestore, doc, setDoc, getDoc, updateDoc } from '@angular/fire/firestore'; // Firestore DB
+import { BehaviorSubject, Observable, firstValueFrom } from 'rxjs'; // RxJS for state
+import { Router } from '@angular/router'; // Angular Router
+import { map, filter, take } from 'rxjs/operators'; // RxJS operators
 
 // NOTE: For ICD components, use ICDAuthService instead of this generic AuthService
 // This service is kept for non-ICD legacy components only
 
+// Interface for user data stored in Firestore and used in the app
 export interface UserData {
-  displayName: any;
-  uid: string;
-  fullName: string;
-  email: string;
-  phone: string | number;
-  department: string;
-  province?: string; // Make province optional instead of required
-  role: string;
-  profilePhoto?: string;
-  status: string;
-  createdAt: Date;
-  lastLogin?: Date;
-  trainingCompleted?: boolean;
+  displayName: any; // User's display name (string or object)
+  uid: string; // Firebase Auth user ID
+  fullName: string; // User's full name
+  email: string; // User's email address
+  phone: string | number; // User's phone number
+  department: string; // User's department
+  province?: string; // Optional: user's province
+  role: string; // User's role (admin, user, etc.)
+  profilePhoto?: string; // Optional: profile photo URL
+  status: string; // User's status (active, inactive, etc.)
+  createdAt: Date; // Account creation date
+  lastLogin?: Date; // Optional: last login date
+  trainingCompleted?: boolean; // Optional: training completion flag
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
+  // Holds the current user data as an observable
   protected currentUserSubject = new BehaviorSubject<UserData | null>(null);
+  // Tracks if Firebase Auth has been initialized
   private authInitialized = new BehaviorSubject<boolean>(false);
-  private isAdminCreatingUser = false; // Flag to prevent auto-navigation
+  // Flag to prevent navigation when admin is creating a user
+  private isAdminCreatingUser = false;
 
+  // Observable for current user
   public currentUser$ = this.currentUserSubject.asObservable();
+  // Observable for auth initialization state
   public authInitialized$ = this.authInitialized.asObservable();
 
   constructor(
-    public auth: Auth,
-    public firestore: Firestore,
-    public router: Router
+    public auth: Auth, // Injected Firebase Auth instance
+    public firestore: Firestore, // Injected Firestore instance
+    public router: Router // Injected Angular Router
   ) {
     console.log('AuthService initialized with Firebase Auth and Firestore');
-    this.initializeAuth();
+    this.initializeAuth(); // Start auth initialization on service creation
   }
 
+  // Initializes Firebase Auth and sets up auth state listener
   private async initializeAuth() {
     try {
       console.log('🔥 Initializing Firebase Auth...');
-      await setPersistence(this.auth, browserLocalPersistence);
-      
-      // Listen to auth state changes
+      await setPersistence(this.auth, browserLocalPersistence); // Persist auth state in browser
+
+      // Listen to auth state changes (login/logout)
       onAuthStateChanged(this.auth, async (user) => {
         console.log('🔥 Auth state changed:', user ? `✅ ${user.email}` : '❌ No user');
-        
+
         // Skip processing if admin is creating a user
         if (this.isAdminCreatingUser) {
           console.log('⏭️ Skipping auth state change (admin creating user)');

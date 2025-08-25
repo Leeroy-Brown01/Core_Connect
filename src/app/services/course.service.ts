@@ -299,8 +299,8 @@ export class CourseService {
       
       const filteredCourses = allCourses.filter(course => 
         course.title.toLowerCase().includes(searchTermLower) ||
-        course.description.toLowerCase().includes(searchTermLower) ||
-        course.tags.some(tag => tag.toLowerCase().includes(searchTermLower))
+        (course.description && course.description.toLowerCase().includes(searchTermLower)) ||
+        (course.tags && course.tags.some(tag => tag.toLowerCase().includes(searchTermLower)))
       );
       
       console.log('Search found', filteredCourses.length, 'courses for term:', searchTerm);

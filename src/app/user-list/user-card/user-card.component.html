@@ -1,4 +1,4 @@
- <!-- 0.1 -->
+ 0.1
     <div class="flex rounded-lg hover:border border-blue-500 duration-100 bg-slate-50 hover:bg-slate-100 min-h-52 ">
       <div class="flex flex-row w-full p-5 ">
         <div class="flex w-5/12">
@@ -18,19 +18,17 @@
                    @if (user.admin) {
                     <div class="badge badge-outline">Admin</div>
                    }
-                   @if (user.siteManager) {
-                    <div class="badge badge-outline">Site Manager</div>
+                   @if (user.TeamLead) {
+                    <div class="badge badge-outline">Team Lead</div>
                    }
-                   @if (user.supervisor) {
-                    <div class="badge badge-outline ">Supervisor</div>
+                   @if (user.QualityAssurer) {
+                    <div class="badge badge-outline ">Quality Assurer</div>
                    }
-                   @if (user.client) {
-                    <div 
-                    class="badge badge-outline ">Client</div>
+                   @if (user.SoftwareDeveloper) {
+                    <div class="badge badge-outline ">Software Developer</div>
                    }
-                   @if (user.security) {
-                    <div 
-                    class="badge badge-outline ">Security</div>
+                   @if (user.ProjectManager) {
+                    <div class="badge badge-outline ">Project Manager</div>
                    }
                 </div>
         </div>

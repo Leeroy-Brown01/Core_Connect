@@ -19,10 +19,11 @@ import { InboxService } from '../../services/inbox.service';
 import { ThemeService } from '../../services/theme.service';
 import { Subscription } from 'rxjs';
 
+// Interface representing a tab in the main layout
 interface Tab {
-  id: string;
-  label: string;
-  icon?: string;
+  id: string; // Unique tab identifier
+  label: string; // Display label for the tab
+  icon?: string; // Optional icon for the tab
 }
 
 @Component({
@@ -69,35 +70,15 @@ export class MainLayoutComponent {
     console.log('MainLayoutComponent initialized with ThemeService');
   }
 
+  // List of tabs for navigation in the main layout
   tabs: Tab[] = [
-    { 
-      id: 'icd-dashboard', 
-      label: 'Dashboard'
-    },
-    { 
-      id: 'compose', 
-      label: 'Compose'
-    },
-    { 
-      id: 'downloads', 
-      label: 'Downloads'
-    },
-    { 
-      id: 'inbox', 
-      label: 'Inbox'
-    },
-    { 
-      id: 'sent', 
-      label: 'Sent'
-    },
-    { 
-      id: 'icd-user-management', 
-      label: 'Active Users'
-    },
-    { 
-      id: 'recycle', 
-      label: 'Recycled'
-    }
+    { id: 'icd-dashboard', label: 'Dashboard' },
+    { id: 'compose', label: 'Compose' },
+    { id: 'downloads', label: 'Downloads' },
+    { id: 'inbox', label: 'Inbox' },
+    { id: 'sent', label: 'Sent' },
+    { id: 'icd-user-management', label: 'Active Users' },
+    { id: 'recycle', label: 'Recycled' }
   ];
 
   switchTab(tabId: string): void {
