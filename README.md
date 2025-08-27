@@ -1,7 +1,7 @@
  HEAD
  HEAD
 # Sheq-IG
-E-learning software
+CoreConect- Software Development Hub
 
 # MyPos
 
